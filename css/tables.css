@@ -1,0 +1,377 @@
+/* ========================================
+   TABLES.CSS - Tablas y Sorting
+   ======================================== */
+
+.table-container {
+    overflow-x: auto;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.sticky-header-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead {
+    background: var(--bg);
+}
+
+th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--primary);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+tr:hover {
+    background: var(--bg);
+}
+
+tr.clickable {
+    cursor: pointer;
+}
+
+.currency {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.vencimiento-proximo {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+th.sortable::after {
+    content: ' ↕';
+    opacity: 0.3;
+    font-size: 0.8em;
+}
+
+th.sorted-asc::after {
+    content: ' ↑';
+    opacity: 1;
+    color: var(--primary);
+}
+
+th.sorted-desc::after {
+    content: ' ↓';
+    opacity: 1;
+    color: var(--primary);
+}
+
+/* ========================================
+   PROVEEDORES TABLE STYLES
+   ======================================== */
+
+#proveedoresTable {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#proveedoresTable thead th:nth-child(1),
+#proveedoresTable tbody td:nth-child(1) {
+    max-width: 250px;
+    width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#proveedoresTable thead th:nth-child(2),
+#proveedoresTable tbody td:nth-child(2) {
+    max-width: 150px;
+    width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#proveedoresTable thead th:nth-child(3),
+#proveedoresTable tbody td:nth-child(3) {
+    max-width: 250px;
+    width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#proveedoresTable thead th:nth-child(4),
+#proveedoresTable tbody td:nth-child(4) {
+    max-width: 120px;
+    width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#proveedoresTable thead th:nth-child(5),
+#proveedoresTable tbody td:nth-child(5) {
+    max-width: 200px;
+    width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#proveedoresTable tbody td {
+    position: relative;
+    cursor: pointer;
+}
+
+#proveedoresTable tbody td[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    white-space: normal;
+    max-width: 300px;
+    z-index: 1000;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   BITÁCORA HOVER
+   ======================================== */
+
+.bitacora-notas-hover {
+    position: relative;
+    cursor: help;
+}
+
+.bitacora-notas-hover:hover::after {
+    content: attr(data-notas);
+    position: fixed;  /* ← CAMBIO: De absolute a fixed */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;  /* ← CAMBIO: Sólido, sin transparencia */
+    border: 3px solid var(--primary);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    z-index: 999999;
+    white-space: pre-wrap;
+    max-width: 600px;
+    min-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #000000;
+    font-weight: 500;
+}
+
+/* Overlay oscuro de fondo */
+.bitacora-notas-hover:hover::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999998;
+    pointer-events: none;
+}
+
+/* ========================================
+   HOVER CLABE EN FACTURAS POR PAGAR
+   ======================================== */
+
+.proveedor-clabe-hover {
+    position: relative !important;
+}
+
+.proveedor-clabe-hover[data-clabe]:hover::after {
+    content: attr(data-clabe);
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(26, 54, 93, 0.98);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    z-index: 999999;
+    white-space: nowrap;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    border: 3px solid white;
+    pointer-events: none; /* ← AGREGADO */
+}
+
+.proveedor-clabe-hover[data-clabe]:hover::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 999998;
+    pointer-events: none; /* ← AGREGADO */
+}
+
+/* ========================================
+   MOBILE: TABLAS COMPACTAS CON WRAP
+   Solo aplica en pantallas ≤768px
+   ======================================== */
+
+@media (max-width: 768px) {
+    
+    /* ── Todas las tablas: wrap y texto más chico ── */
+    table {
+        font-size: 0.78rem;
+    }
+    
+    th, td {
+        padding: 0.4rem 0.3rem;
+        white-space: normal !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        vertical-align: top;
+    }
+    
+    th {
+        font-size: 0.75rem;
+    }
+    
+    /* ── Proveedores: anchos fijos con wrap ── */
+    #proveedoresTable {
+        table-layout: fixed;
+    }
+    
+    #proveedoresTable thead th:nth-child(1),
+    #proveedoresTable tbody td:nth-child(1) {
+        width: 28%;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal !important;
+    }
+    
+    #proveedoresTable thead th:nth-child(2),
+    #proveedoresTable tbody td:nth-child(2) {
+        width: 18%;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal !important;
+    }
+    
+    #proveedoresTable thead th:nth-child(3),
+    #proveedoresTable tbody td:nth-child(3) {
+        width: 18%;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal !important;
+    }
+    
+    #proveedoresTable thead th:nth-child(4),
+    #proveedoresTable tbody td:nth-child(4) {
+        width: 18%;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal !important;
+    }
+    
+    #proveedoresTable thead th:nth-child(5),
+    #proveedoresTable tbody td:nth-child(5) {
+        width: 18%;
+        max-width: none;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal !important;
+    }
+    
+    /* ── Facturas Pagadas (standalone) ── */
+    #proveedoresFacturasPagadasTable {
+        table-layout: fixed;
+    }
+    
+    #proveedoresFacturasPagadasTable th,
+    #proveedoresFacturasPagadasTable td {
+        white-space: normal !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* ── Facturas Por Pagar (standalone) ── */
+    #proveedoresFacturasPorPagarTable {
+        table-layout: fixed;
+    }
+    
+    #proveedoresFacturasPorPagarTable th,
+    #proveedoresFacturasPorPagarTable td {
+        white-space: normal !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    /* ── Tablas dentro de modales (fichas de detalle) ── */
+    .modal table {
+        table-layout: fixed;
+        font-size: 0.78rem;
+    }
+    
+    .modal table th,
+    .modal table td {
+        padding: 0.35rem 0.3rem;
+        white-space: normal !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        vertical-align: top;
+    }
+    
+    /* Evitar que los iconos de acción se partan */
+    .modal table td:last-child {
+        white-space: nowrap !important;
+    }
+    
+    /* ── Inquilino Detail: hide RFC/CLABE on mobile ── */
+    #filaRfcClabe {
+        display: none !important;
+    }
+    
+    /* ── Inquilino Detail: compress dates + contrato in one line ── */
+    #filaFechasContrato {
+        flex-wrap: nowrap !important;
+        gap: 0.15rem !important;
+    }
+    
+    #filaFechasContrato > div {
+        min-width: 0 !important;
+        padding: 0.25rem 0.35rem !important;
+        font-size: 0.8rem;
+    }
+}

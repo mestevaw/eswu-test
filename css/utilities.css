@@ -1,0 +1,108 @@
+/* ========================================
+   UTILITIES.CSS - Helpers y Responsive
+   ======================================== */
+
+.hidden {
+    display: none !important;
+}
+
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.total-row {
+    background: #e6f2ff !important;
+    font-weight: bold;
+}
+
+.total-row td {
+    padding: 1rem !important;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .menu-sidebar {
+        width: 40%;
+        min-width: 150px;
+    }
+    
+    .menu-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        margin: 0.25rem 0.5rem;
+    }
+    
+    .submenu-container {
+        left: 40%;
+        width: 60%;
+    }
+    
+    .submenu-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .content-area {
+        margin-left: 0 !important;
+        padding: 1rem;
+    }
+    
+    .header-search-bar {
+        margin: 0 0.5rem;
+    }
+    
+    .header-search-bar input {
+        font-size: 0.875rem;
+        padding: 0.5rem;
+    }
+    
+    .header-search-bar .btn-icon {
+        font-size: 1.25rem;
+        padding: 0.25rem;
+    }
+    
+    .tables-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 100%;
+        max-height: 95vh;
+        margin: 1rem;
+    }
+    
+    .form-row-inline {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .form-row-inline label {
+        font-weight: 600;
+    }
+}
+
+@media print {
+    .header,
+    .menu-sidebar,
+    .submenu-container,
+    .btn,
+    .modal {
+        display: none !important;
+    }
+    
+    .content-area {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+}

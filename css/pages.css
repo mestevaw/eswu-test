@@ -1,0 +1,41 @@
+/* ========================================
+   PAGES.CSS - Páginas específicas
+   ======================================== */
+
+.bitacora-notas-cell {
+    position: relative;
+    max-width: 600px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bitacora-notas-cell:hover::after {
+    content: attr(data-fulltext);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: white;
+    border: 2px solid var(--primary);
+    padding: 1rem;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 1000;
+    white-space: pre-wrap;
+    max-width: 600px;
+    min-width: 300px;
+    margin-top: 0.5rem;
+}
+
+.estacionamiento-espacio {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    min-width: 60px;
+    text-align: center;
+    color: #1a365d !important;
+    background: #e6f2ff !important;
+    border: 2px solid #5a9fd4;
+}
