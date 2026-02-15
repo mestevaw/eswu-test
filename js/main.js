@@ -62,6 +62,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         
         await initializeApp();
         
+        // Aplicar restricciones de nivel
+        applyUserLevel();
+        
     } catch (error) {
         alert(error.message);
     } finally {
