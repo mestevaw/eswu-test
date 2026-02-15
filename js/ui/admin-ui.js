@@ -300,21 +300,26 @@ function renderUsuariosTable() {
     const tbody = document.getElementById('usuariosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    const nivelLabels = { 1: 'Admin', 2: 'Edita', 3: 'Consulta', 4: 'Contabilidad' };
+    
     usuarios.forEach(u => {
         const estadoBadge = u.activo 
             ? '<span class="badge badge-success">Activo</span>' 
             : '<span class="badge badge-danger">Inactivo</span>';
+        const nivelLabel = nivelLabels[u.nivel] || `Nivel ${u.nivel || '?'}`;
         tbody.innerHTML += `
-            <tr style="cursor: pointer;" onclick="showUsuarioDetail(${u.id})">
+            <tr>
                 <td>${u.nombre}</td>
                 <td>••••••••</td>
+                <td><span class="badge" style="font-size:0.75rem;">${nivelLabel}</span></td>
                 <td>${estadoBadge}</td>
+                <td><span onclick="showUsuarioDetail(${u.id})" title="Editar" style="cursor:pointer; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span></td>
             </tr>
         `;
     });
     
     if (usuarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No hay usuarios</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay usuarios</td></tr>';
     }
 }
 
@@ -326,7 +331,47 @@ function showUsuarioDetail(id) {
     document.getElementById('addUsuarioTitle').textContent = 'Editar Usuario';
     document.getElementById('usuarioNombre').value = usuario.nombre;
     document.getElementById('usuarioPassword').value = usuario.password;
+    document.getElementById('usuarioNivel').value = usuario.nivel || 4;
+    document.getElementById('usuarioActivo').checked = usuario.activo !== false;
     document.getElementById('addUsuarioModal').classList.add('active');
+}
+
+async function saveUsuario(event) {
+    event.preventDefault();
+    showLoading();
+    
+    try {
+        const usuarioData = {
+            nombre: document.getElementById('usuarioNombre').value,
+            password: document.getElementById('usuarioPassword').value,
+            nivel: parseInt(document.getElementById('usuarioNivel').value),
+            activo: document.getElementById('usuarioActivo').checked
+        };
+        
+        if (isEditMode && currentUsuarioId) {
+            const { error } = await supabaseClient
+                .from('usuarios')
+                .update(usuarioData)
+                .eq('id', currentUsuarioId);
+            if (error) throw error;
+        } else {
+            const { error } = await supabaseClient
+                .from('usuarios')
+                .insert([usuarioData]);
+            if (error) throw error;
+        }
+        
+        await loadUsuarios();
+        closeModal('addUsuarioModal');
+        renderUsuariosTable();
+        isEditMode = false;
+        currentUsuarioId = null;
+    } catch (e) {
+        console.error('Error:', e);
+        alert('Error al guardar usuario: ' + e.message);
+    } finally {
+        hideLoading();
+    }
 }
 
 // ============================================
