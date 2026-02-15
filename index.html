@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v2 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v3 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=2">
-    <link rel="stylesheet" href="css/layout.css?v=2">
-    <link rel="stylesheet" href="css/components.css?v=2">
-    <link rel="stylesheet" href="css/modals.css?v=2">
-    <link rel="stylesheet" href="css/tables.css?v=2">
-    <link rel="stylesheet" href="css/pages.css?v=2">
-    <link rel="stylesheet" href="css/utilities.css?v=2">
+    <link rel="stylesheet" href="css/base.css?v=3">
+    <link rel="stylesheet" href="css/layout.css?v=3">
+    <link rel="stylesheet" href="css/components.css?v=3">
+    <link rel="stylesheet" href="css/modals.css?v=3">
+    <link rel="stylesheet" href="css/tables.css?v=3">
+    <link rel="stylesheet" href="css/pages.css?v=3">
+    <link rel="stylesheet" href="css/utilities.css?v=3">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -80,6 +80,7 @@
                 <button class="submenu-btn" onclick="showActivosPage()">Activos</button>
                 <button class="submenu-btn" onclick="showAdminView('bancos')">Bancos</button>
                 <button class="submenu-btn" onclick="showPageFromMenu('bitacora')">Bitácora</button>
+                <button class="submenu-btn" onclick="showContabilidadPage()">Contabilidad</button>
                 <button class="submenu-btn" onclick="showPageFromMenu('estacionamiento')">Estacionamiento</button>
                 <button class="submenu-btn" onclick="showNumerosPage()">Números</button>
                 <button class="submenu-btn" onclick="showAdminView('usuarios')">Usuarios</button>
@@ -324,6 +325,22 @@
                                 <thead><tr><th>Nombre</th><th>Último Mantenimiento</th><th>Próximo Mantenimiento</th><th>Proveedor</th></tr></thead>
                                 <tbody></tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contabilidad Page -->
+                <div id="contabilidadPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Contabilidad - Documentos</h2>
+                            <span id="contabilidadAddBtn" onclick="showAddCarpetaModal()" title="Agregar carpeta" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                        </div>
+                        <div style="padding:1rem;">
+                            <!-- Años -->
+                            <div id="contabilidadAnios" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
+                            <!-- Meses del año seleccionado -->
+                            <div id="contabilidadMeses"></div>
                         </div>
                     </div>
                 </div>
@@ -1073,6 +1090,51 @@
     <!-- Modal Cargar Contrato Renta -->
     <div id="cargarContratoModal" class="modal">
 
+    <!-- Modal Agregar Carpeta Contabilidad -->
+    <div id="addCarpetaModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="addCarpetaTitle">Agregar Carpeta</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="carpetaForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addCarpetaModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="carpetaForm" onsubmit="saveCarpetaContabilidad(event)">
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Año *</label>
+                            <input type="number" id="carpetaAnio" required min="2018" max="2050" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Mes *</label>
+                            <select id="carpetaMes" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                                <option value="">--</option>
+                                <option value="1">01 - Enero</option>
+                                <option value="2">02 - Febrero</option>
+                                <option value="3">03 - Marzo</option>
+                                <option value="4">04 - Abril</option>
+                                <option value="5">05 - Mayo</option>
+                                <option value="6">06 - Junio</option>
+                                <option value="7">07 - Julio</option>
+                                <option value="8">08 - Agosto</option>
+                                <option value="9">09 - Septiembre</option>
+                                <option value="10">10 - Octubre</option>
+                                <option value="11">11 - Noviembre</option>
+                                <option value="12">12 - Diciembre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Link de Google Drive *</label>
+                        <input type="url" id="carpetaURL" required placeholder="https://drive.google.com/drive/folders/..." autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Agregar Nota -->
     <div id="agregarNotaModal" class="modal">
         <div class="modal-content" style="max-width:450px;">
@@ -1161,23 +1223,23 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v2 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=2"></script>
-    <script src="js/database/db-core.js?v=2"></script>
-    <script src="js/database/db-inquilinos.js?v=2"></script>
-    <script src="js/database/db-proveedores.js?v=2"></script>
-    <script src="js/database/db-facturas.js?v=2"></script>
-    <script src="js/database/db-fetch-docs.js?v=2"></script>
-    <script src="js/ui/navigation.js?v=2"></script>
-    <script src="js/ui/tables.js?v=2"></script>
-    <script src="js/ui/inquilinos-ui.js?v=2"></script>
-    <script src="js/ui/proveedores-ui.js?v=2"></script>
-    <script src="js/ui/admin-ui.js?v=2"></script>
-    <script src="js/ui/numeros-ui.js?v=2"></script>
-    <script src="js/modals/modals.js?v=2"></script>
-    <script src="js/modals/inquilino-modals.js?v=2"></script>
-    <script src="js/modals/proveedor-modals.js?v=2"></script>
-    <script src="js/main.js?v=2"></script>
+    <script>console.log('%c ESWU v3 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=3"></script>
+    <script src="js/database/db-core.js?v=3"></script>
+    <script src="js/database/db-inquilinos.js?v=3"></script>
+    <script src="js/database/db-proveedores.js?v=3"></script>
+    <script src="js/database/db-facturas.js?v=3"></script>
+    <script src="js/database/db-fetch-docs.js?v=3"></script>
+    <script src="js/ui/navigation.js?v=3"></script>
+    <script src="js/ui/tables.js?v=3"></script>
+    <script src="js/ui/inquilinos-ui.js?v=3"></script>
+    <script src="js/ui/proveedores-ui.js?v=3"></script>
+    <script src="js/ui/admin-ui.js?v=3"></script>
+    <script src="js/ui/numeros-ui.js?v=3"></script>
+    <script src="js/modals/modals.js?v=3"></script>
+    <script src="js/modals/inquilino-modals.js?v=3"></script>
+    <script src="js/modals/proveedor-modals.js?v=3"></script>
+    <script src="js/main.js?v=3"></script>
 </body>
 </html>
 
