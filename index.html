@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v1 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v2 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=1">
-    <link rel="stylesheet" href="css/layout.css?v=1">
-    <link rel="stylesheet" href="css/components.css?v=1">
-    <link rel="stylesheet" href="css/modals.css?v=1">
-    <link rel="stylesheet" href="css/tables.css?v=1">
-    <link rel="stylesheet" href="css/pages.css?v=1">
-    <link rel="stylesheet" href="css/utilities.css?v=1">
+    <link rel="stylesheet" href="css/base.css?v=2">
+    <link rel="stylesheet" href="css/layout.css?v=2">
+    <link rel="stylesheet" href="css/components.css?v=2">
+    <link rel="stylesheet" href="css/modals.css?v=2">
+    <link rel="stylesheet" href="css/tables.css?v=2">
+    <link rel="stylesheet" href="css/pages.css?v=2">
+    <link rel="stylesheet" href="css/utilities.css?v=2">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -26,12 +26,7 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Usuario</label>
-                    <select id="username" required>
-                        <option value="">-- Seleccione --</option>
-                        <option value="Anabel">Anabel</option>
-                        <option value="Doris">Doris</option>
-                        <option value="Miguel">Miguel</option>
-                    </select>
+                    <input type="text" id="username" required autocomplete="username" placeholder="Tu nombre">
                 </div>
                 <div class="form-group">
                     <label>Password</label>
@@ -337,11 +332,11 @@
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">Usuarios</h2>
-                            <button class="btn btn-primary" onclick="showAddUsuarioModal()">+ Agregar</button>
+                            <span onclick="showAddUsuarioModal()" title="Agregar usuario" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
                         </div>
                         <div class="table-container">
                             <table id="usuariosTable" class="sticky-header-table">
-                                <thead><tr><th>Nombre</th><th>Password</th><th>Estado</th></tr></thead>
+                                <thead><tr><th>Nombre</th><th>Password</th><th>Nivel</th><th>Estado</th><th style="width:40px;"></th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -956,20 +951,38 @@
         </div>
     </div>
 
-    <!-- Modal Add Usuario -->
+    <!-- Modal Add/Edit Usuario -->
     <div id="addUsuarioModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:400px;">
             <div class="modal-header">
                 <h2 class="modal-title" id="addUsuarioTitle">Agregar Usuario</h2>
-                <button class="close-modal" onclick="closeModal('addUsuarioModal')">×</button>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="usuarioForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addUsuarioModal')">×</button>
+                </div>
             </div>
-            <div style="padding: 1.5rem;">
+            <div style="padding: 1.25rem;">
                 <form id="usuarioForm" onsubmit="saveUsuario(event)">
-                    <div class="form-group"><label>Nombre *</label><input type="text" id="usuarioNombre" required autocomplete="off"></div>
-                    <div class="form-group"><label>Password *</label><input type="password" id="usuarioPassword" required autocomplete="new-password"></div>
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('addUsuarioModal')">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Guardar</button>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Nombre *</label>
+                        <input type="text" id="usuarioNombre" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Password *</label>
+                        <input type="text" id="usuarioPassword" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Nivel *</label>
+                        <select id="usuarioNivel" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="1">1 — Admin (todo)</option>
+                            <option value="2">2 — Edita (no elimina)</option>
+                            <option value="3">3 — Solo consulta</option>
+                            <option value="4" selected>4 — Contabilidad</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem;">Activo</label>
+                        <input type="checkbox" id="usuarioActivo" checked style="width:18px; height:18px; cursor:pointer;">
                     </div>
                 </form>
             </div>
@@ -1148,23 +1161,23 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v1 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=1"></script>
-    <script src="js/database/db-core.js?v=1"></script>
-    <script src="js/database/db-inquilinos.js?v=1"></script>
-    <script src="js/database/db-proveedores.js?v=1"></script>
-    <script src="js/database/db-facturas.js?v=1"></script>
-    <script src="js/database/db-fetch-docs.js?v=1"></script>
-    <script src="js/ui/navigation.js?v=1"></script>
-    <script src="js/ui/tables.js?v=1"></script>
-    <script src="js/ui/inquilinos-ui.js?v=1"></script>
-    <script src="js/ui/proveedores-ui.js?v=1"></script>
-    <script src="js/ui/admin-ui.js?v=1"></script>
-    <script src="js/ui/numeros-ui.js?v=1"></script>
-    <script src="js/modals/modals.js?v=1"></script>
-    <script src="js/modals/inquilino-modals.js?v=1"></script>
-    <script src="js/modals/proveedor-modals.js?v=1"></script>
-    <script src="js/main.js?v=1"></script>
+    <script>console.log('%c ESWU v2 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=2"></script>
+    <script src="js/database/db-core.js?v=2"></script>
+    <script src="js/database/db-inquilinos.js?v=2"></script>
+    <script src="js/database/db-proveedores.js?v=2"></script>
+    <script src="js/database/db-facturas.js?v=2"></script>
+    <script src="js/database/db-fetch-docs.js?v=2"></script>
+    <script src="js/ui/navigation.js?v=2"></script>
+    <script src="js/ui/tables.js?v=2"></script>
+    <script src="js/ui/inquilinos-ui.js?v=2"></script>
+    <script src="js/ui/proveedores-ui.js?v=2"></script>
+    <script src="js/ui/admin-ui.js?v=2"></script>
+    <script src="js/ui/numeros-ui.js?v=2"></script>
+    <script src="js/modals/modals.js?v=2"></script>
+    <script src="js/modals/inquilino-modals.js?v=2"></script>
+    <script src="js/modals/proveedor-modals.js?v=2"></script>
+    <script src="js/main.js?v=2"></script>
 </body>
 </html>
 
