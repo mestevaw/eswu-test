@@ -654,4 +654,206 @@ function agregarNuevaSemana() {
     agregarSemanaBitacora();
 }
 
-console.log('✅ ADMIN-UI.JS cargado (2026-02-12 19:30 CST)');
+console.log('✅ ADMIN-UI.JS cargado (2026-02-15)');
+
+// ============================================
+// CONTABILIDAD - DOCUMENTOS
+// ============================================
+
+var contabilidadCarpetas = [];
+var contabilidadAnioSeleccionado = null;
+var editingCarpetaId = null;
+
+function showContabilidadPage() {
+    document.getElementById('adminSubMenu').classList.remove('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('contabilidadPage').classList.add('active');
+    
+    currentSubContext = 'admin-contabilidad';
+    
+    document.getElementById('btnRegresa').classList.remove('hidden');
+    document.getElementById('btnSearch').classList.add('hidden');
+    
+    document.getElementById('contentArea').classList.remove('with-submenu');
+    document.getElementById('menuSidebar').classList.add('hidden');
+    document.getElementById('contentArea').classList.add('fullwidth');
+    
+    loadContabilidadCarpetas();
+}
+
+async function loadContabilidadCarpetas() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('contabilidad_carpetas')
+            .select('*')
+            .order('anio', { ascending: false })
+            .order('mes', { ascending: true });
+        if (error) throw error;
+        contabilidadCarpetas = data || [];
+        renderContabilidad();
+    } catch (e) {
+        console.error('Error cargando contabilidad:', e);
+    }
+}
+
+function renderContabilidad() {
+    const aniosDiv = document.getElementById('contabilidadAnios');
+    const mesesDiv = document.getElementById('contabilidadMeses');
+    
+    // Get unique years
+    const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
+    
+    if (anios.length === 0) {
+        aniosDiv.innerHTML = '<p style="color:var(--text-light);">No hay carpetas. Usa el + para agregar.</p>';
+        mesesDiv.innerHTML = '';
+        return;
+    }
+    
+    // Select first year by default
+    if (!contabilidadAnioSeleccionado || !anios.includes(contabilidadAnioSeleccionado)) {
+        contabilidadAnioSeleccionado = anios[0];
+    }
+    
+    // Render year buttons
+    aniosDiv.innerHTML = anios.map(a => {
+        const isActive = a === contabilidadAnioSeleccionado;
+        return `<button onclick="selectContabilidadAnio(${a})" style="padding:0.5rem 1rem; border-radius:6px; border:2px solid ${isActive ? 'var(--primary)' : 'var(--border)'}; background:${isActive ? 'var(--primary)' : 'white'}; color:${isActive ? 'white' : 'var(--text)'}; font-weight:600; font-size:1rem; cursor:pointer; transition:all 0.2s;">${a}</button>`;
+    }).join('');
+    
+    // Render months for selected year
+    const mesesAnio = contabilidadCarpetas.filter(c => c.anio === contabilidadAnioSeleccionado);
+    const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    if (mesesAnio.length === 0) {
+        mesesDiv.innerHTML = '<p style="color:var(--text-light); margin-top:1rem;">No hay carpetas para este año.</p>';
+        return;
+    }
+    
+    mesesDiv.innerHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem; margin-top:0.5rem;">' +
+        mesesAnio.map(c => {
+            const mesNum = String(c.mes).padStart(2, '0');
+            const mesNombre = mesesNombres[c.mes] || 'Mes ' + c.mes;
+            return `
+                <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+                    <a href="${c.google_drive_url}" target="_blank" rel="noopener" style="flex:1; text-decoration:none; color:var(--text); display:flex; align-items:center; gap:0.5rem;">
+                        <span style="font-size:1.3rem;">📁</span>
+                        <div>
+                            <div style="font-weight:600; font-size:0.95rem;">${mesNum}. ${mesNombre}</div>
+                            <div style="font-size:0.7rem; color:var(--text-light);">Abrir en Google Drive</div>
+                        </div>
+                    </a>
+                    <span onclick="editCarpetaContabilidad(${c.id})" title="Editar" style="cursor:pointer; font-size:0.9rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                    <span onclick="deleteCarpetaContabilidad(${c.id}, '${mesNombre} ${c.anio}')" title="Eliminar" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
+                </div>
+            `;
+        }).join('') + '</div>';
+}
+
+function selectContabilidadAnio(anio) {
+    contabilidadAnioSeleccionado = anio;
+    renderContabilidad();
+}
+
+function showAddCarpetaModal() {
+    editingCarpetaId = null;
+    document.getElementById('addCarpetaTitle').textContent = 'Agregar Carpeta';
+    document.getElementById('carpetaAnio').value = new Date().getFullYear();
+    document.getElementById('carpetaMes').value = '';
+    document.getElementById('carpetaURL').value = '';
+    document.getElementById('addCarpetaModal').classList.add('active');
+}
+
+function editCarpetaContabilidad(id) {
+    const c = contabilidadCarpetas.find(x => x.id === id);
+    if (!c) return;
+    editingCarpetaId = id;
+    document.getElementById('addCarpetaTitle').textContent = 'Editar Carpeta';
+    document.getElementById('carpetaAnio').value = c.anio;
+    document.getElementById('carpetaMes').value = c.mes;
+    document.getElementById('carpetaURL').value = c.google_drive_url;
+    document.getElementById('addCarpetaModal').classList.add('active');
+}
+
+async function saveCarpetaContabilidad(event) {
+    event.preventDefault();
+    showLoading();
+    
+    const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const mes = parseInt(document.getElementById('carpetaMes').value);
+    
+    const data = {
+        anio: parseInt(document.getElementById('carpetaAnio').value),
+        mes: mes,
+        nombre_mes: mesesNombres[mes] || '',
+        google_drive_url: document.getElementById('carpetaURL').value.trim()
+    };
+    
+    try {
+        if (editingCarpetaId) {
+            const { error } = await supabaseClient
+                .from('contabilidad_carpetas')
+                .update(data)
+                .eq('id', editingCarpetaId);
+            if (error) throw error;
+        } else {
+            const { error } = await supabaseClient
+                .from('contabilidad_carpetas')
+                .insert([data]);
+            if (error) throw error;
+        }
+        
+        closeModal('addCarpetaModal');
+        contabilidadAnioSeleccionado = data.anio;
+        await loadContabilidadCarpetas();
+    } catch (e) {
+        console.error('Error:', e);
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteCarpetaContabilidad(id, label) {
+    if (!confirm('¿Eliminar carpeta ' + label + '?')) return;
+    showLoading();
+    try {
+        const { error } = await supabaseClient
+            .from('contabilidad_carpetas')
+            .delete()
+            .eq('id', id);
+        if (error) throw error;
+        await loadContabilidadCarpetas();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// NIVEL 4 - RESTRICCIÓN
+// ============================================
+
+function applyUserLevel() {
+    const nivel = (currentUser && currentUser.nivel) || 1;
+    
+    if (nivel === 4) {
+        // Level 4: solo ve Contabilidad y Salir en el menú
+        document.getElementById('menuInquilinos').style.display = 'none';
+        document.getElementById('menuProveedores').style.display = 'none';
+        // Replace "Admin" with "Contabilidad" direct link
+        const adminBtn = document.getElementById('menuAdmin');
+        adminBtn.textContent = 'Contabilidad';
+        adminBtn.onclick = function() { showContabilidadPage(); };
+        
+        // Auto-navigate to Contabilidad
+        showContabilidadPage();
+    } else {
+        // Niveles 1-3: todo visible
+        document.getElementById('menuInquilinos').style.display = '';
+        document.getElementById('menuProveedores').style.display = '';
+        const adminBtn = document.getElementById('menuAdmin');
+        adminBtn.textContent = 'Admin';
+        adminBtn.onclick = function() { showSubMenu('admin'); };
+    }
+}
