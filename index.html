@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v3 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v4 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=3">
-    <link rel="stylesheet" href="css/layout.css?v=3">
-    <link rel="stylesheet" href="css/components.css?v=3">
-    <link rel="stylesheet" href="css/modals.css?v=3">
-    <link rel="stylesheet" href="css/tables.css?v=3">
-    <link rel="stylesheet" href="css/pages.css?v=3">
-    <link rel="stylesheet" href="css/utilities.css?v=3">
+    <link rel="stylesheet" href="css/base.css?v=4">
+    <link rel="stylesheet" href="css/layout.css?v=4">
+    <link rel="stylesheet" href="css/components.css?v=4">
+    <link rel="stylesheet" href="css/modals.css?v=4">
+    <link rel="stylesheet" href="css/tables.css?v=4">
+    <link rel="stylesheet" href="css/pages.css?v=4">
+    <link rel="stylesheet" href="css/utilities.css?v=4">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -1089,6 +1089,23 @@
 
     <!-- Modal Cargar Contrato Renta -->
     <div id="cargarContratoModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Cargar Contrato Renta</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveContratoRenta()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('cargarContratoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <div onclick="document.getElementById('contratoUploadPDF').click()" style="padding:0.75rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-light);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <input type="file" id="contratoUploadPDF" accept=".pdf" style="display:none;" onchange="document.getElementById('contratoUploadFileName').textContent = this.files[0] ? this.files[0].name : ''">
+                    <span>Click para seleccionar PDF</span>
+                    <span id="contratoUploadFileName" style="color:var(--success); display:block; margin-top:0.35rem;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal Agregar Carpeta Contabilidad -->
     <div id="addCarpetaModal" class="modal">
@@ -1150,23 +1167,6 @@
             </div>
         </div>
     </div>
-        <div class="modal-content" style="max-width:400px;">
-            <div class="modal-header">
-                <h2 class="modal-title">Cargar Contrato Renta</h2>
-                <div style="display:flex; align-items:center; gap:0.25rem;">
-                    <button onclick="saveContratoRenta()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
-                    <button class="close-modal" onclick="closeModal('cargarContratoModal')">×</button>
-                </div>
-            </div>
-            <div style="padding: 1.25rem;">
-                <div onclick="document.getElementById('contratoUploadPDF').click()" style="padding:0.75rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-light);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <input type="file" id="contratoUploadPDF" accept=".pdf" style="display:none;" onchange="document.getElementById('contratoUploadFileName').textContent = this.files[0] ? this.files[0].name : ''">
-                    <span>Click para seleccionar PDF</span>
-                    <span id="contratoUploadFileName" style="color:var(--success); display:block; margin-top:0.35rem;"></span>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal Contacto Detail (mobile) -->
     <div id="contactDetailModal" class="modal">
@@ -1223,23 +1223,23 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v3 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=3"></script>
-    <script src="js/database/db-core.js?v=3"></script>
-    <script src="js/database/db-inquilinos.js?v=3"></script>
-    <script src="js/database/db-proveedores.js?v=3"></script>
-    <script src="js/database/db-facturas.js?v=3"></script>
-    <script src="js/database/db-fetch-docs.js?v=3"></script>
-    <script src="js/ui/navigation.js?v=3"></script>
-    <script src="js/ui/tables.js?v=3"></script>
-    <script src="js/ui/inquilinos-ui.js?v=3"></script>
-    <script src="js/ui/proveedores-ui.js?v=3"></script>
-    <script src="js/ui/admin-ui.js?v=3"></script>
-    <script src="js/ui/numeros-ui.js?v=3"></script>
-    <script src="js/modals/modals.js?v=3"></script>
-    <script src="js/modals/inquilino-modals.js?v=3"></script>
-    <script src="js/modals/proveedor-modals.js?v=3"></script>
-    <script src="js/main.js?v=3"></script>
+    <script>console.log('%c ESWU v4 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=4"></script>
+    <script src="js/database/db-core.js?v=4"></script>
+    <script src="js/database/db-inquilinos.js?v=4"></script>
+    <script src="js/database/db-proveedores.js?v=4"></script>
+    <script src="js/database/db-facturas.js?v=4"></script>
+    <script src="js/database/db-fetch-docs.js?v=4"></script>
+    <script src="js/ui/navigation.js?v=4"></script>
+    <script src="js/ui/tables.js?v=4"></script>
+    <script src="js/ui/inquilinos-ui.js?v=4"></script>
+    <script src="js/ui/proveedores-ui.js?v=4"></script>
+    <script src="js/ui/admin-ui.js?v=4"></script>
+    <script src="js/ui/numeros-ui.js?v=4"></script>
+    <script src="js/modals/modals.js?v=4"></script>
+    <script src="js/modals/inquilino-modals.js?v=4"></script>
+    <script src="js/modals/proveedor-modals.js?v=4"></script>
+    <script src="js/main.js?v=4"></script>
 </body>
 </html>
 
