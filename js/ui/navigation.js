@@ -48,6 +48,18 @@ function showSubMenu(menu) {
 }
 
 function handleRegresa() {
+    // Level 4: show sidebar with Contabilidad + Salir
+    if (currentUser && currentUser.nivel === 4) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.submenu-container').forEach(s => s.classList.remove('active'));
+        currentSubContext = null;
+        document.getElementById('btnRegresa').classList.add('hidden');
+        document.getElementById('btnSearch').classList.add('hidden');
+        document.getElementById('menuSidebar').classList.remove('hidden');
+        document.getElementById('contentArea').classList.remove('fullwidth');
+        return;
+    }
+    
     if (currentSubContext) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
