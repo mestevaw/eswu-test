@@ -451,6 +451,9 @@ async function iniciarVinculacionBancos() {
         await loadContabilidadCarpetas();
     }
     
+    console.log('🔗 Iniciando vinculación. Carpetas cargadas:', contabilidadCarpetas.length);
+    console.log('   Google conectado:', isGoogleConnected());
+    
     // Build list of all months that have "Reportes financieros" subfolder
     vinculacionMeses = [];
     
@@ -464,16 +467,21 @@ async function iniciarVinculacionBancos() {
             var monthFolderId = extractFolderId(carpeta.google_drive_url);
             if (!monthFolderId) continue;
             
+            console.log('📂 Escaneando ' + carpeta.anio + '/' + carpeta.mes + ' folderId=' + monthFolderId);
             var { folders } = await listDriveFolder(monthFolderId);
+            console.log('   Subcarpetas encontradas:', folders.map(f => f.name));
             var reportes = folders.find(f => f.name.toLowerCase().includes('reporte'));
             
             if (reportes) {
+                console.log('   ✅ Carpeta reportes encontrada: ' + reportes.name + ' id=' + reportes.id);
                 vinculacionMeses.push({
                     anio: carpeta.anio,
                     mes: carpeta.mes,
                     mesNombre: MESES_NOMBRES[carpeta.mes],
                     folderId: reportes.id
                 });
+            } else {
+                console.log('   ❌ No se encontró carpeta de reportes');
             }
         }
         
@@ -590,7 +598,8 @@ async function vincularGuardarMes(anio, mes, fileIdsStr) {
             var fileData = await resp.json();
             
             // Save to Supabase
-            await supabaseClient
+            console.log('💾 Guardando:', tipo, fileData.name, 'anio=' + anio, 'mes=' + mes);
+            var { error: insertError } = await supabaseClient
                 .from('bancos_documentos')
                 .insert([{
                     tipo: tipo,
@@ -600,6 +609,12 @@ async function vincularGuardarMes(anio, mes, fileIdsStr) {
                     mes: mes,
                     fecha_subida: new Date().toISOString().split('T')[0]
                 }]);
+            
+            if (insertError) {
+                console.error('❌ Error insert:', insertError);
+            } else {
+                console.log('✅ Guardado OK');
+            }
         }
         
         await loadBancosDocumentos();
@@ -917,7 +932,10 @@ async function loadContabilidadCarpetas() {
             .order('mes', { ascending: true });
         if (error) throw error;
         contabilidadCarpetas = data || [];
-        renderContabilidadContent();
+        // Only render if on contabilidad page
+        if (document.getElementById('contabilidadPage') && document.getElementById('contabilidadPage').classList.contains('active')) {
+            renderContabilidadContent();
+        }
         // Check if next year needs creation (Nov+)
         setTimeout(checkAutoCreateNextYear, 2000);
     } catch (e) {
