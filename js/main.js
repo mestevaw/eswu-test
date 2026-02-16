@@ -349,19 +349,29 @@ async function saveDocumentoAdicional(event) {
             throw new Error('Seleccione un archivo PDF');
         }
         
-        const pdfBase64 = await fileToBase64(file);
-        
-        // Verificar si marcó como contrato original
+        // Check if marked as contrato original
         const radioSi = document.querySelector('input[name="esContratoNuevoDoc"][value="si"]');
         const esContratoOriginal = radioSi && radioSi.checked;
         
         if (esContratoOriginal) {
-            const { error: contratoError } = await supabaseClient
-                .from('inquilinos')
-                .update({ contrato_file: pdfBase64 })
-                .eq('id', currentInquilinoId);
-            
-            if (contratoError) throw contratoError;
+            // Upload contrato to Drive or base64
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected() && inq) {
+                var folderId = inq.google_drive_folder_id;
+                if (!folderId) {
+                    folderId = await getOrCreateInquilinoFolder(inq.nombre);
+                }
+                var result = await uploadFileToDrive(file, folderId);
+                await supabaseClient
+                    .from('inquilinos')
+                    .update({ contrato_drive_file_id: result.id, google_drive_folder_id: folderId })
+                    .eq('id', currentInquilinoId);
+            } else {
+                var pdfBase64 = await fileToBase64(file);
+                await supabaseClient
+                    .from('inquilinos')
+                    .update({ contrato_file: pdfBase64 })
+                    .eq('id', currentInquilinoId);
+            }
             
             await loadInquilinos();
             closeModal('agregarDocumentoModal');
@@ -377,15 +387,42 @@ async function saveDocumentoAdicional(event) {
             throw new Error('Ingresa el nombre del documento');
         }
         
+        var docData = {
+            inquilino_id: currentInquilinoId,
+            nombre_documento: nombre,
+            fecha_guardado: new Date().toISOString().split('T')[0],
+            usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
+        };
+        
+        // Upload to Drive if connected
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected() && inq) {
+            var folderId = inq.google_drive_folder_id;
+            if (!folderId) {
+                try {
+                    folderId = await getOrCreateInquilinoFolder(inq.nombre);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ google_drive_folder_id: folderId })
+                        .eq('id', currentInquilinoId);
+                } catch (e) {
+                    console.error('⚠️ No se encontró carpeta Drive');
+                }
+            }
+            
+            if (folderId) {
+                var result = await uploadFileToDrive(file, folderId);
+                docData.google_drive_file_id = result.id;
+                docData.archivo_pdf = '';
+            } else {
+                docData.archivo_pdf = await fileToBase64(file);
+            }
+        } else {
+            docData.archivo_pdf = await fileToBase64(file);
+        }
+        
         const { error } = await supabaseClient
             .from('inquilinos_documentos')
-            .insert([{
-                inquilino_id: currentInquilinoId,
-                nombre_documento: nombre,
-                archivo_pdf: pdfBase64,
-                fecha_guardado: new Date().toISOString().split('T')[0],
-                usuario_guardo: currentUser.nombre
-            }]);
+            .insert([docData]);
         
         if (error) throw error;
         
