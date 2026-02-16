@@ -663,6 +663,8 @@ console.log('✅ ADMIN-UI.JS cargado (2026-02-15)');
 var contabilidadCarpetas = [];
 var contabilidadAnioSeleccionado = null;
 var editingCarpetaId = null;
+var contabilidadNavStack = []; // breadcrumb: [{label, folderId}]
+var currentDriveFolderId = null;
 
 function showContabilidadPage() {
     document.getElementById('adminSubMenu').classList.remove('active');
@@ -678,6 +680,13 @@ function showContabilidadPage() {
     document.getElementById('menuSidebar').classList.add('hidden');
     document.getElementById('contentArea').classList.add('fullwidth');
     
+    // Initialize Google Drive if GIS library is loaded
+    if (typeof google !== 'undefined' && google.accounts) {
+        initGoogleDrive();
+    }
+    
+    contabilidadNavStack = [];
+    currentDriveFolderId = null;
     loadContabilidadCarpetas();
 }
 
@@ -690,60 +699,86 @@ async function loadContabilidadCarpetas() {
             .order('mes', { ascending: true });
         if (error) throw error;
         contabilidadCarpetas = data || [];
-        renderContabilidad();
+        renderContabilidadContent();
     } catch (e) {
         console.error('Error cargando contabilidad:', e);
     }
 }
 
-function renderContabilidad() {
-    const aniosDiv = document.getElementById('contabilidadAnios');
-    const mesesDiv = document.getElementById('contabilidadMeses');
+function renderContabilidadContent() {
+    const connected = isGoogleConnected();
     
-    // Get unique years
-    const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
+    // Show/hide connect bar and search
+    document.getElementById('gdriveConnectBar').style.display = connected ? 'none' : 'flex';
+    document.getElementById('contabilidadSearchBar').style.display = connected ? 'block' : 'none';
     
-    if (anios.length === 0) {
-        aniosDiv.innerHTML = '<p style="color:var(--text-light);">No hay carpetas. Usa el + para agregar.</p>';
-        mesesDiv.innerHTML = '';
+    // If we're navigating inside a Drive folder, show that
+    if (connected && contabilidadNavStack.length > 0) {
+        renderBreadcrumb();
+        navigateToDriveFolder(currentDriveFolderId);
         return;
     }
     
-    // Select first year by default
+    // Otherwise show years + months
+    document.getElementById('contabilidadBreadcrumb').style.display = 'none';
+    document.getElementById('contabilidadUploadBtn').style.display = 'none';
+    renderContabilidadYearsAndMonths();
+}
+
+function renderContabilidadYearsAndMonths() {
+    const aniosDiv = document.getElementById('contabilidadAnios');
+    const contentDiv = document.getElementById('contabilidadContent');
+    
+    const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
+    
+    if (anios.length === 0) {
+        aniosDiv.innerHTML = '<p style="color:var(--text-light);">No hay carpetas. Usa el + para agregar un mes.</p>';
+        contentDiv.innerHTML = '';
+        return;
+    }
+    
     if (!contabilidadAnioSeleccionado || !anios.includes(contabilidadAnioSeleccionado)) {
         contabilidadAnioSeleccionado = anios[0];
     }
     
-    // Render year buttons
+    // Year buttons
     aniosDiv.innerHTML = anios.map(a => {
         const isActive = a === contabilidadAnioSeleccionado;
         return `<button onclick="selectContabilidadAnio(${a})" style="padding:0.5rem 1rem; border-radius:6px; border:2px solid ${isActive ? 'var(--primary)' : 'var(--border)'}; background:${isActive ? 'var(--primary)' : 'white'}; color:${isActive ? 'white' : 'var(--text)'}; font-weight:600; font-size:1rem; cursor:pointer; transition:all 0.2s;">${a}</button>`;
     }).join('');
     
-    // Render months for selected year
+    // Month cards
     const mesesAnio = contabilidadCarpetas.filter(c => c.anio === contabilidadAnioSeleccionado);
     const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const connected = isGoogleConnected();
     
     if (mesesAnio.length === 0) {
-        mesesDiv.innerHTML = '<p style="color:var(--text-light); margin-top:1rem;">No hay carpetas para este año.</p>';
+        contentDiv.innerHTML = '<p style="color:var(--text-light); margin-top:1rem;">No hay carpetas para este año.</p>';
         return;
     }
     
-    mesesDiv.innerHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem; margin-top:0.5rem;">' +
+    contentDiv.innerHTML = '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem;">' +
         mesesAnio.map(c => {
             const mesNum = String(c.mes).padStart(2, '0');
             const mesNombre = mesesNombres[c.mes] || 'Mes ' + c.mes;
+            const folderId = extractFolderId(c.google_drive_url);
+            
+            // If connected, clicking opens inside the app; otherwise opens in Drive
+            const clickAction = connected && folderId
+                ? `onclick="openMonthFolder(${c.anio}, '${mesNombre}', '${folderId}')"`
+                : `onclick="window.open('${c.google_drive_url}', '_blank')"`;
+            
             return `
-                <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
-                    <a href="${c.google_drive_url}" target="_blank" rel="noopener" style="flex:1; text-decoration:none; color:var(--text); display:flex; align-items:center; gap:0.5rem;">
+                <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+                    <div ${clickAction} style="flex:1; display:flex; align-items:center; gap:0.5rem;">
                         <span style="font-size:1.3rem;">📁</span>
                         <div>
                             <div style="font-weight:600; font-size:0.95rem;">${mesNum}. ${mesNombre}</div>
-                            <div style="font-size:0.7rem; color:var(--text-light);">Abrir en Google Drive</div>
+                            <div style="font-size:0.7rem; color:var(--text-light);">${connected ? 'Ver contenido' : 'Abrir en Drive'}</div>
                         </div>
-                    </a>
-                    <span onclick="editCarpetaContabilidad(${c.id})" title="Editar" style="cursor:pointer; font-size:0.9rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
-                    <span onclick="deleteCarpetaContabilidad(${c.id}, '${mesNombre} ${c.anio}')" title="Eliminar" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
+                    </div>
+                    <span onclick="event.stopPropagation(); editCarpetaContabilidad(${c.id})" title="Editar" style="cursor:pointer; font-size:0.9rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                    <span onclick="event.stopPropagation(); deleteCarpetaContabilidad(${c.id}, '${mesNombre} ${c.anio}')" title="Eliminar" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
                 </div>
             `;
         }).join('') + '</div>';
@@ -751,7 +786,239 @@ function renderContabilidad() {
 
 function selectContabilidadAnio(anio) {
     contabilidadAnioSeleccionado = anio;
-    renderContabilidad();
+    contabilidadNavStack = [];
+    currentDriveFolderId = null;
+    renderContabilidadYearsAndMonths();
+}
+
+// ============================================
+// DRIVE FOLDER NAVIGATION
+// ============================================
+
+function openMonthFolder(anio, mesNombre, folderId) {
+    contabilidadNavStack = [{ label: anio + ' > ' + mesNombre, folderId: null }];
+    currentDriveFolderId = folderId;
+    renderBreadcrumb();
+    navigateToDriveFolder(folderId);
+}
+
+function openDriveSubfolder(name, folderId) {
+    contabilidadNavStack.push({ label: name, folderId: currentDriveFolderId });
+    currentDriveFolderId = folderId;
+    renderBreadcrumb();
+    navigateToDriveFolder(folderId);
+}
+
+function navigateBackTo(index) {
+    if (index < 0) {
+        // Go back to years/months view
+        contabilidadNavStack = [];
+        currentDriveFolderId = null;
+        document.getElementById('contabilidadBreadcrumb').style.display = 'none';
+        document.getElementById('contabilidadUploadBtn').style.display = 'none';
+        document.getElementById('contabilidadAnios').style.display = 'flex';
+        renderContabilidadYearsAndMonths();
+        return;
+    }
+    
+    // Navigate to specific breadcrumb level
+    const target = contabilidadNavStack[index];
+    contabilidadNavStack = contabilidadNavStack.slice(0, index + 1);
+    
+    if (index === 0) {
+        // Back to month level - re-enter the month folder
+        const folderId = extractFolderId(
+            contabilidadCarpetas.find(c => {
+                const label = c.anio + ' > ' + (['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][c.mes] || '');
+                return label === target.label;
+            })?.google_drive_url
+        );
+        currentDriveFolderId = folderId;
+    } else {
+        currentDriveFolderId = contabilidadNavStack[index - 1]?.folderId || currentDriveFolderId;
+    }
+    
+    renderBreadcrumb();
+    navigateToDriveFolder(currentDriveFolderId);
+}
+
+function renderBreadcrumb() {
+    const bcDiv = document.getElementById('contabilidadBreadcrumb');
+    bcDiv.style.display = 'block';
+    document.getElementById('contabilidadAnios').style.display = 'none';
+    
+    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;">📁 Contabilidad</span>';
+    
+    contabilidadNavStack.forEach((item, i) => {
+        html += ' <span style="color:var(--text-light);"> › </span> ';
+        if (i < contabilidadNavStack.length - 1) {
+            html += `<span onclick="navigateBackTo(${i})" style="cursor:pointer; color:var(--primary);">${item.label}</span>`;
+        } else {
+            html += `<span style="font-weight:600; color:var(--text);">${item.label}</span>`;
+        }
+    });
+    
+    bcDiv.innerHTML = html;
+}
+
+async function navigateToDriveFolder(folderId) {
+    const contentDiv = document.getElementById('contabilidadContent');
+    contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">⏳ Cargando...</p>';
+    
+    // Show upload button when inside a folder
+    document.getElementById('contabilidadUploadBtn').style.display = 'inline';
+    
+    try {
+        const { folders, files } = await listDriveFolder(folderId);
+        
+        let html = '';
+        
+        // Subfolders
+        if (folders.length > 0) {
+            html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem; margin-bottom:1rem;">';
+            folders.forEach(f => {
+                html += `
+                    <div onclick="openDriveSubfolder('${f.name.replace(/'/g, "\\'")}', '${f.id}')" style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+                        <span style="font-size:1.3rem;">📁</span>
+                        <div style="font-weight:600; font-size:0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        // Files
+        if (files.length > 0) {
+            html += '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
+            files.forEach((f, i) => {
+                const icon = getFileIcon(f.name, f.mimeType);
+                const size = formatFileSize(f.size);
+                const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
+                html += `
+                    <div onclick="window.open('${f.webViewLink}', '_blank')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                        <span style="font-size:1.1rem;">${icon}</span>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
+                        </div>
+                        <span style="font-size:0.75rem; color:var(--text-light); white-space:nowrap;">${size}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+        
+        if (folders.length === 0 && files.length === 0) {
+            html = '<p style="text-align:center; color:var(--text-light); padding:2rem;">📭 Carpeta vacía</p>';
+        }
+        
+        contentDiv.innerHTML = html;
+        
+    } catch (e) {
+        console.error('Error navigating folder:', e);
+        contentDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:2rem;">Error: ${e.message}</p>`;
+    }
+}
+
+function getFileIcon(name, mimeType) {
+    const ext = (name || '').split('.').pop().toLowerCase();
+    if (ext === 'pdf') return '📄';
+    if (['xls', 'xlsx', 'csv'].includes(ext)) return '📊';
+    if (['doc', 'docx'].includes(ext)) return '📝';
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) return '🖼️';
+    if (['zip', 'rar'].includes(ext)) return '📦';
+    if (mimeType && mimeType.includes('spreadsheet')) return '📊';
+    if (mimeType && mimeType.includes('document')) return '📝';
+    return '📎';
+}
+
+// ============================================
+// UPLOAD TO CURRENT FOLDER
+// ============================================
+
+function uploadToCurrentFolder() {
+    if (!currentDriveFolderId) {
+        alert('Navega a una carpeta primero');
+        return;
+    }
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png';
+    input.multiple = true;
+    input.onchange = async function() {
+        if (!input.files.length) return;
+        showLoading();
+        try {
+            for (const file of input.files) {
+                await uploadFileToDrive(file, currentDriveFolderId);
+            }
+            // Refresh folder view
+            await navigateToDriveFolder(currentDriveFolderId);
+        } catch (e) {
+            console.error('Error uploading:', e);
+            alert('Error al subir: ' + e.message);
+        } finally {
+            hideLoading();
+        }
+    };
+    input.click();
+}
+
+// ============================================
+// SEARCH
+// ============================================
+
+async function searchContabilidadDocs() {
+    const term = document.getElementById('contabilidadSearchInput').value.trim();
+    if (!term) return;
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    const contentDiv = document.getElementById('contabilidadContent');
+    contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">🔍 Buscando...</p>';
+    
+    // Hide years, show breadcrumb
+    document.getElementById('contabilidadAnios').style.display = 'none';
+    document.getElementById('contabilidadBreadcrumb').style.display = 'block';
+    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;">📁 Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
+    document.getElementById('contabilidadUploadBtn').style.display = 'none';
+    
+    try {
+        const files = await searchDriveFiles(term);
+        
+        if (files.length === 0) {
+            contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No se encontraron documentos con "' + term + '"</p>';
+            return;
+        }
+        
+        let html = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
+        files.forEach((f, i) => {
+            const icon = getFileIcon(f.name, f.mimeType);
+            const size = formatFileSize(f.size);
+            const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
+            html += `
+                <div onclick="window.open('${f.webViewLink}', '_blank')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                    <span style="font-size:1.1rem;">${icon}</span>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--text-light); white-space:nowrap;">${size}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        contentDiv.innerHTML = html;
+        
+    } catch (e) {
+        console.error('Error searching:', e);
+        contentDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:2rem;">Error: ${e.message}</p>`;
+    }
 }
 
 function showAddCarpetaModal() {
