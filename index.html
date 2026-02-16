@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v15 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v16 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=15">
-    <link rel="stylesheet" href="css/layout.css?v=15">
-    <link rel="stylesheet" href="css/components.css?v=15">
-    <link rel="stylesheet" href="css/modals.css?v=15">
-    <link rel="stylesheet" href="css/tables.css?v=15">
-    <link rel="stylesheet" href="css/pages.css?v=15">
-    <link rel="stylesheet" href="css/utilities.css?v=15">
+    <link rel="stylesheet" href="css/base.css?v=16">
+    <link rel="stylesheet" href="css/layout.css?v=16">
+    <link rel="stylesheet" href="css/components.css?v=16">
+    <link rel="stylesheet" href="css/modals.css?v=16">
+    <link rel="stylesheet" href="css/tables.css?v=16">
+    <link rel="stylesheet" href="css/pages.css?v=16">
+    <link rel="stylesheet" href="css/utilities.css?v=16">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -341,11 +341,7 @@
                         </div>
                         <div style="padding:1rem; position:relative;">
                             <!-- Google Drive Connection -->
-                            <div id="gdriveConnectBar" style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; padding:0.6rem 0.8rem; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
-                                <span style="font-size:1.2rem;">🔗</span>
-                                <span style="flex:1; font-size:0.9rem; color:var(--text);">Conecta con Google Drive para ver y subir documentos</span>
-                                <button onclick="googleSignIn()" style="padding:0.4rem 0.8rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">Conectar</button>
-                            </div>
+                            <div id="gdriveConnectBar" style="display:none; align-items:center; gap:0.75rem; margin-bottom:0.75rem; padding:0.4rem 0.8rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px;"></div>
                             <!-- Search bar (hidden until connected) -->
                             <div id="contabilidadSearchBar" style="display:none; margin-bottom:1rem;">
                                 <div style="display:flex; gap:0.5rem;">
@@ -1250,24 +1246,24 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v15 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=15"></script>
-    <script src="js/google-drive.js?v=15"></script>
-    <script src="js/database/db-core.js?v=15"></script>
-    <script src="js/database/db-inquilinos.js?v=15"></script>
-    <script src="js/database/db-proveedores.js?v=15"></script>
-    <script src="js/database/db-facturas.js?v=15"></script>
-    <script src="js/database/db-fetch-docs.js?v=15"></script>
-    <script src="js/ui/navigation.js?v=15"></script>
-    <script src="js/ui/tables.js?v=15"></script>
-    <script src="js/ui/inquilinos-ui.js?v=15"></script>
-    <script src="js/ui/proveedores-ui.js?v=15"></script>
-    <script src="js/ui/admin-ui.js?v=15"></script>
-    <script src="js/ui/numeros-ui.js?v=15"></script>
-    <script src="js/modals/modals.js?v=15"></script>
-    <script src="js/modals/inquilino-modals.js?v=15"></script>
-    <script src="js/modals/proveedor-modals.js?v=15"></script>
-    <script src="js/main.js?v=15"></script>
+    <script>console.log('%c ESWU v16 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=16"></script>
+    <script src="js/google-drive.js?v=16"></script>
+    <script src="js/database/db-core.js?v=16"></script>
+    <script src="js/database/db-inquilinos.js?v=16"></script>
+    <script src="js/database/db-proveedores.js?v=16"></script>
+    <script src="js/database/db-facturas.js?v=16"></script>
+    <script src="js/database/db-fetch-docs.js?v=16"></script>
+    <script src="js/ui/navigation.js?v=16"></script>
+    <script src="js/ui/tables.js?v=16"></script>
+    <script src="js/ui/inquilinos-ui.js?v=16"></script>
+    <script src="js/ui/proveedores-ui.js?v=16"></script>
+    <script src="js/ui/admin-ui.js?v=16"></script>
+    <script src="js/ui/numeros-ui.js?v=16"></script>
+    <script src="js/modals/modals.js?v=16"></script>
+    <script src="js/modals/inquilino-modals.js?v=16"></script>
+    <script src="js/modals/proveedor-modals.js?v=16"></script>
+    <script src="js/main.js?v=16"></script>
 </body>
 </html>
 
