@@ -127,6 +127,15 @@ async function initializeApp() {
         
         console.log('✅ App inicializada correctamente');
         
+        // Initialize Google Drive (non-blocking, auto-reconnects if previously connected)
+        try {
+            if (typeof initGoogleDrive === 'function') {
+                initGoogleDrive();
+            }
+        } catch (e) {
+            console.log('Google Drive init diferido');
+        }
+        
     } catch (error) {
         console.error('❌ Error inicializando app:', error);
         alert('Error cargando datos: ' + error.message);
@@ -823,8 +832,9 @@ async function loadBancosDocumentos() {
         const { data, error } = await supabaseClient
             .from('bancos_documentos')
             .select('id, tipo, fecha_subida, google_drive_file_id, nombre_archivo, anio, mes')
-            .order('fecha_subida', { ascending: false })
-            .limit(100);
+            .order('anio', { ascending: false })
+            .order('mes', { ascending: false })
+            .limit(200);
         
         if (error) throw error;
         
