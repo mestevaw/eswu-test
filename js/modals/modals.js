@@ -63,6 +63,9 @@ function showAddUsuarioModal() {
 function showAddBancoModal() {
     document.getElementById('bancoForm').reset();
     document.getElementById('bancoDocumentoFileName').textContent = '';
+    // Prefill with current year and month
+    document.getElementById('bancoAnio').value = new Date().getFullYear();
+    document.getElementById('bancoMes').value = new Date().getMonth() + 1;
     document.getElementById('addBancoModal').classList.add('active');
 }
 
