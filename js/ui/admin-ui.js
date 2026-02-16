@@ -307,9 +307,11 @@ function renderUsuariosTable() {
             ? '<span class="badge badge-success">Activo</span>' 
             : '<span class="badge badge-danger">Inactivo</span>';
         const nivelLabel = nivelLabels[u.nivel] || `Nivel ${u.nivel || '?'}`;
+        const email = u.email || '<span style="color:var(--text-light); font-size:0.8rem;">—</span>';
         tbody.innerHTML += `
             <tr>
                 <td>${u.nombre}</td>
+                <td style="font-size:0.82rem;">${email}</td>
                 <td>••••••••</td>
                 <td><span class="badge" style="font-size:0.75rem;">${nivelLabel}</span></td>
                 <td>${estadoBadge}</td>
@@ -319,7 +321,7 @@ function renderUsuariosTable() {
     });
     
     if (usuarios.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay usuarios</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay usuarios</td></tr>';
     }
 }
 
@@ -330,6 +332,7 @@ function showUsuarioDetail(id) {
     
     document.getElementById('addUsuarioTitle').textContent = 'Editar Usuario';
     document.getElementById('usuarioNombre').value = usuario.nombre;
+    document.getElementById('usuarioEmail').value = usuario.email || '';
     document.getElementById('usuarioPassword').value = usuario.password;
     document.getElementById('usuarioNivel').value = usuario.nivel || 4;
     document.getElementById('usuarioActivo').checked = usuario.activo !== false;
@@ -343,6 +346,7 @@ async function saveUsuario(event) {
     try {
         const usuarioData = {
             nombre: document.getElementById('usuarioNombre').value,
+            email: document.getElementById('usuarioEmail').value.trim(),
             password: document.getElementById('usuarioPassword').value,
             nivel: parseInt(document.getElementById('usuarioNivel').value),
             activo: document.getElementById('usuarioActivo').checked
@@ -712,7 +716,7 @@ function renderContabilidadContent() {
     
     // Show/hide connect bar and search
     document.getElementById('gdriveConnectBar').style.display = connected ? 'none' : 'flex';
-    document.getElementById('contabilidadSearchBar').style.display = connected ? 'block' : 'none';
+    document.getElementById('contabilidadSearchBar').style.display = 'block';
     
     // If we're navigating inside a Drive folder, show that
     if (connected && contabilidadNavStack.length > 0) {
@@ -861,7 +865,7 @@ function renderBreadcrumb() {
     bcDiv.style.display = 'block';
     document.getElementById('contabilidadAnios').style.display = 'none';
     
-    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#dcfce7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span>';
+    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#fed7d7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span>';
     
     contabilidadNavStack.forEach((item, i) => {
         html += ' <span style="color:var(--text-light);"> › </span> ';
@@ -930,6 +934,11 @@ async function navigateToDriveFolder(folderId) {
         
         contentDiv.innerHTML = html;
         
+        // Silently index files in Supabase for fast search
+        if (files.length > 0 && contabilidadNavStack.length >= 2) {
+            indexFilesToSupabase(files);
+        }
+        
     } catch (e) {
         console.error('Error navigating folder:', e);
         contentDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:2rem;">Error: ${e.message}</p>`;
@@ -970,8 +979,31 @@ function uploadToCurrentFolder() {
         if (!input.files.length) return;
         showLoading();
         try {
+            // Parse path info
+            var pathLabel = contabilidadNavStack[0] ? contabilidadNavStack[0].label : '';
+            var parts = pathLabel.split(' > ');
+            var anio = parseInt(parts[0]) || 0;
+            var mesNombre = (parts[1] || '').trim();
+            var mesNum = MESES_NOMBRES.indexOf(mesNombre);
+            var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[1].label : '';
+            
             for (const file of input.files) {
-                await uploadFileToDrive(file, currentDriveFolderId);
+                var result = await uploadFileToDrive(file, currentDriveFolderId);
+                
+                // Index in Supabase
+                if (result && result.id && anio && mesNum > 0 && subcarpeta) {
+                    await supabaseClient
+                        .from('contabilidad_documentos')
+                        .insert([{
+                            nombre: file.name,
+                            anio: anio,
+                            mes: mesNum,
+                            subcarpeta: subcarpeta,
+                            google_drive_file_id: result.id,
+                            size_bytes: file.size || 0,
+                            mime_type: file.type || ''
+                        }]);
+                }
             }
             // Refresh folder view
             await navigateToDriveFolder(currentDriveFolderId);
@@ -989,13 +1021,66 @@ function uploadToCurrentFolder() {
 // SEARCH
 // ============================================
 
+// ============================================
+// INDEX FILES TO SUPABASE (silent background)
+// ============================================
+
+async function indexFilesToSupabase(files) {
+    // Parse current path from nav stack
+    // navStack[0] = "2026 > Enero", navStack[1] = "Facturas proveedores"
+    var pathLabel = contabilidadNavStack[0] ? contabilidadNavStack[0].label : '';
+    var parts = pathLabel.split(' > ');
+    var anio = parseInt(parts[0]) || 0;
+    var mesNombre = (parts[1] || '').trim();
+    var mesNum = MESES_NOMBRES.indexOf(mesNombre);
+    if (mesNum < 1) mesNum = 0;
+    
+    var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[1].label : '';
+    
+    if (!anio || !mesNum || !subcarpeta) return;
+    
+    for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        if (f.mimeType === 'application/vnd.google-apps.folder') continue;
+        
+        try {
+            // Check if already indexed
+            var { data: existing } = await supabaseClient
+                .from('contabilidad_documentos')
+                .select('id')
+                .eq('google_drive_file_id', f.id)
+                .limit(1);
+            
+            if (existing && existing.length > 0) continue;
+            
+            // Index it
+            await supabaseClient
+                .from('contabilidad_documentos')
+                .insert([{
+                    nombre: f.name,
+                    anio: anio,
+                    mes: mesNum,
+                    subcarpeta: subcarpeta,
+                    google_drive_file_id: f.id,
+                    size_bytes: parseInt(f.size) || 0,
+                    mime_type: f.mimeType || ''
+                }]);
+        } catch (e) {
+            // Silent fail - indexing is best-effort
+        }
+    }
+}
+
+// Also index when uploading
+var _originalUploadFileToDrive = typeof uploadFileToDrive === 'function' ? uploadFileToDrive : null;
+
+// ============================================
+// SEARCH (Supabase-powered)
+// ============================================
+
 async function searchContabilidadDocs() {
     const term = document.getElementById('contabilidadSearchInput').value.trim();
     if (!term) return;
-    if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
-        return;
-    }
     
     const contentDiv = document.getElementById('contabilidadContent');
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">🔍 Buscando...</p>';
@@ -1003,35 +1088,45 @@ async function searchContabilidadDocs() {
     // Hide years, show breadcrumb
     document.getElementById('contabilidadAnios').style.display = 'none';
     document.getElementById('contabilidadBreadcrumb').style.display = 'block';
-    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#dcfce7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
+    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#fed7d7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
     document.getElementById('contabilidadUploadBtn').style.display = 'none';
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
     
     try {
-        const files = await searchDriveFiles(term);
+        // Search in Supabase
+        const { data: results, error } = await supabaseClient
+            .from('contabilidad_documentos')
+            .select('*')
+            .ilike('nombre', '%' + term + '%')
+            .order('anio', { ascending: false })
+            .order('mes', { ascending: true })
+            .limit(50);
         
-        if (files.length === 0) {
+        if (error) throw error;
+        
+        if (!results || results.length === 0) {
             contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No se encontraron documentos con "' + term + '"</p>';
             return;
         }
         
         let html = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
-        files.forEach((f, i) => {
-            const icon = getFileIcon(f.name, f.mimeType);
-            const size = formatFileSize(f.size);
+        results.forEach((doc, i) => {
+            const icon = getFileIcon(doc.nombre, doc.mime_type);
+            const size = formatFileSize(doc.size_bytes);
             const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
-            const displayName = f.name.length > 60 ? f.name.substring(0, 57) + '...' : f.name;
-            const monthYear = (f._month || '') + (f._year ? ' / ' + f._year : '');
-            const subfolder = f._subfolder || '';
+            const displayName = doc.nombre.length > 60 ? doc.nombre.substring(0, 57) + '...' : doc.nombre;
+            const mesNombre = MESES_NOMBRES[doc.mes] || '';
+            const monthYear = mesNombre + ' ' + doc.anio;
+            const safeName = doc.nombre.replace(/'/g, "\\'");
             html += `
-                <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                <div onclick="viewDriveFileInline('${doc.google_drive_file_id}', '${safeName}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                     <span style="font-size:1.1rem;">${icon}</span>
-                    <div style="flex:1; min-width:150px;">
-                        <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.name}">${displayName}</div>
+                    <div style="flex:1; min-width:120px;">
+                        <div style="font-size:0.88rem; font-weight:500; word-break:break-word;" title="${doc.nombre}">${displayName}</div>
                     </div>
                     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                         <span style="font-size:0.72rem; color:var(--primary); white-space:nowrap;">${monthYear}</span>
-                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${subfolder}</span>
+                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${doc.subcarpeta}</span>
                         <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${size}</span>
                     </div>
                 </div>
