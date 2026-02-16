@@ -903,11 +903,6 @@ function showContabilidadPage() {
     document.getElementById('menuSidebar').classList.add('hidden');
     document.getElementById('contentArea').classList.add('fullwidth');
     
-    // Initialize Google Drive if GIS library is loaded
-    if (typeof google !== 'undefined' && google.accounts) {
-        initGoogleDrive();
-    }
-    
     contabilidadNavStack = [];
     currentDriveFolderId = null;
     loadContabilidadCarpetas();
@@ -934,7 +929,12 @@ function renderContabilidadContent() {
     const connected = isGoogleConnected();
     
     // Show/hide connect bar and search
-    document.getElementById('gdriveConnectBar').style.display = connected ? 'none' : 'flex';
+    if (!connected) {
+        document.getElementById('gdriveConnectBar').style.display = 'flex';
+        document.getElementById('gdriveConnectBar').innerHTML = '<span style="font-size:0.85rem; color:var(--text-light);">Google Drive no conectado.</span> <span onclick="googleSignIn()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">Reconectar</span>';
+    } else {
+        document.getElementById('gdriveConnectBar').style.display = 'none';
+    }
     document.getElementById('contabilidadSearchBar').style.display = 'block';
     
     // If we're navigating inside a Drive folder, show that
