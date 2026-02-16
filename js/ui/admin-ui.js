@@ -386,18 +386,229 @@ function renderBancosTable() {
     const tbody = document.getElementById('bancosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
-    bancosDocumentos.forEach(b => {
+    // Show vincular button only for nivel 1 when connected
+    var vincBtn = document.getElementById('bancoVincularBtn');
+    if (vincBtn) {
+        vincBtn.style.display = (currentUser && currentUser.nivel === 1 && isGoogleConnected()) ? 'inline' : 'none';
+    }
+    
+    var mesesNombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    // Sort by año desc, mes desc
+    var sorted = [...bancosDocumentos].sort((a, b) => {
+        if (b.anio !== a.anio) return (b.anio || 0) - (a.anio || 0);
+        return (b.mes || 0) - (a.mes || 0);
+    });
+    
+    sorted.forEach(b => {
+        var anio = b.anio || '';
+        var mes = b.mes ? mesesNombres[b.mes] : '';
+        var tipo = b.tipo || 'Documento';
+        var nombre = b.nombre_archivo || '—';
+        var hasFile = b.google_drive_file_id || b.archivo_pdf;
+        var clickAction = '';
+        
+        if (b.google_drive_file_id) {
+            var safeName = (b.nombre_archivo || tipo).replace(/'/g, "\\'");
+            clickAction = `onclick="viewDriveFileInline('${b.google_drive_file_id}', '${safeName}')"`;
+        } else if (b.archivo_pdf) {
+            clickAction = `onclick="fetchAndViewBancoDoc(${b.id})"`;
+        }
+        
         tbody.innerHTML += `
-            <tr class="banco-clickable" onclick="fetchAndViewBancoDoc(${b.id})">
-                <td>${b.tipo || 'Documento'}</td>
-                <td>${formatDate(b.fecha_subida)}</td>
+            <tr ${clickAction} style="${hasFile ? 'cursor:pointer;' : ''}">
+                <td>${anio}</td>
+                <td>${mes}</td>
+                <td>${tipo}</td>
+                <td style="font-size:0.85rem; word-break:break-word;">${nombre}</td>
             </tr>
         `;
     });
     
     if (bancosDocumentos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-light)">No hay documentos</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light)">No hay documentos</td></tr>';
     }
+}
+
+// ============================================
+// BANCOS - VINCULAR DESDE DRIVE (herramienta temporal)
+// ============================================
+
+var vinculacionMeses = [];
+var vinculacionIndex = 0;
+
+async function iniciarVinculacionBancos() {
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    // Build list of all months that have "Reportes financieros" subfolder
+    vinculacionMeses = [];
+    
+    var area = document.getElementById('bancoVinculacionArea');
+    area.style.display = 'block';
+    area.innerHTML = '<p style="text-align:center; color:var(--text-light);">⏳ Preparando lista de carpetas...</p>';
+    
+    try {
+        for (var c = 0; c < contabilidadCarpetas.length; c++) {
+            var carpeta = contabilidadCarpetas[c];
+            var monthFolderId = extractFolderId(carpeta.google_drive_url);
+            if (!monthFolderId) continue;
+            
+            var { folders } = await listDriveFolder(monthFolderId);
+            var reportes = folders.find(f => f.name.toLowerCase().includes('reporte'));
+            
+            if (reportes) {
+                vinculacionMeses.push({
+                    anio: carpeta.anio,
+                    mes: carpeta.mes,
+                    mesNombre: MESES_NOMBRES[carpeta.mes],
+                    folderId: reportes.id
+                });
+            }
+        }
+        
+        // Sort by year desc, month desc
+        vinculacionMeses.sort((a, b) => {
+            if (b.anio !== a.anio) return b.anio - a.anio;
+            return b.mes - a.mes;
+        });
+        
+        if (vinculacionMeses.length === 0) {
+            area.innerHTML = '<p style="text-align:center; color:var(--text-light);">No se encontraron carpetas de Reportes Financieros</p>';
+            return;
+        }
+        
+        vinculacionIndex = 0;
+        mostrarVinculacionMes();
+        
+    } catch (e) {
+        console.error('Error:', e);
+        area.innerHTML = '<p style="color:var(--danger);">Error: ' + e.message + '</p>';
+    }
+}
+
+async function mostrarVinculacionMes() {
+    if (vinculacionIndex >= vinculacionMeses.length) {
+        var area = document.getElementById('bancoVinculacionArea');
+        area.innerHTML = '<p style="text-align:center; color:var(--success); font-weight:600; padding:1rem;">✅ Vinculación completada</p>';
+        await loadBancosDocumentos();
+        renderBancosTable();
+        setTimeout(function() { area.style.display = 'none'; }, 2000);
+        return;
+    }
+    
+    var m = vinculacionMeses[vinculacionIndex];
+    var area = document.getElementById('bancoVinculacionArea');
+    area.innerHTML = '<p style="text-align:center; color:var(--text-light);">⏳ Cargando ' + m.mesNombre + ' ' + m.anio + '...</p>';
+    
+    try {
+        var { files } = await listDriveFolder(m.folderId);
+        // Filter out folders
+        files = files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder');
+        
+        var progreso = (vinculacionIndex + 1) + ' de ' + vinculacionMeses.length;
+        
+        var html = '<div style="border:1px solid var(--border); border-radius:8px; padding:0.8rem; margin-bottom:0.5rem;">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">';
+        html += '<strong style="font-size:0.95rem; color:var(--primary);">📁 ' + m.mesNombre + ' ' + m.anio + ' — Reportes Financieros</strong>';
+        html += '<span style="font-size:0.75rem; color:var(--text-light);">' + progreso + '</span>';
+        html += '</div>';
+        
+        if (files.length === 0) {
+            html += '<p style="color:var(--text-light); font-size:0.85rem;">Carpeta vacía</p>';
+        } else {
+            files.forEach(f => {
+                // Check if already linked
+                var yaVinculado = bancosDocumentos.some(b => b.google_drive_file_id === f.id);
+                
+                if (yaVinculado) {
+                    html += '<div style="padding:0.4rem 0.5rem; font-size:0.85rem; color:var(--text-light); display:flex; align-items:center; gap:0.5rem;">✅ ' + f.name + ' <span style="font-size:0.75rem;">(ya vinculado)</span></div>';
+                } else {
+                    html += '<div style="padding:0.4rem 0.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">';
+                    html += '<span style="font-size:0.85rem; flex:1; min-width:150px; word-break:break-word;">' + f.name + '</span>';
+                    html += '<select id="vinc_tipo_' + f.id + '" style="padding:0.25rem; font-size:0.8rem; border:1px solid var(--border); border-radius:4px;">';
+                    html += '<option value="">— Omitir —</option>';
+                    html += '<option value="Estado de Cuenta">Estado de Cuenta</option>';
+                    html += '<option value="Consulta de Movimientos">Consulta de Movimientos</option>';
+                    html += '</select>';
+                    html += '</div>';
+                }
+            });
+        }
+        
+        html += '<div style="display:flex; justify-content:space-between; margin-top:0.75rem;">';
+        html += '<button onclick="vincularSaltarMes()" style="padding:0.4rem 0.8rem; background:var(--text-light); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">Saltar mes ▶</button>';
+        
+        if (files.length > 0) {
+            var fileIds = files.filter(f => !bancosDocumentos.some(b => b.google_drive_file_id === f.id)).map(f => f.id);
+            html += '<button onclick="vincularGuardarMes(' + m.anio + ',' + m.mes + ',\'' + fileIds.join(',') + '\')" style="padding:0.4rem 0.8rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">💾 Guardar y siguiente</button>';
+        }
+        
+        html += '</div></div>';
+        
+        // Cancel button
+        html += '<div style="text-align:center; margin-top:0.3rem;"><span onclick="cancelarVinculacion()" style="font-size:0.8rem; color:var(--danger); cursor:pointer; text-decoration:underline;">Cancelar vinculación</span></div>';
+        
+        area.innerHTML = html;
+        
+    } catch (e) {
+        area.innerHTML = '<p style="color:var(--danger);">Error cargando archivos: ' + e.message + '</p>';
+    }
+}
+
+function vincularSaltarMes() {
+    vinculacionIndex++;
+    mostrarVinculacionMes();
+}
+
+async function vincularGuardarMes(anio, mes, fileIdsStr) {
+    var fileIds = fileIdsStr ? fileIdsStr.split(',') : [];
+    showLoading();
+    
+    try {
+        for (var i = 0; i < fileIds.length; i++) {
+            var fid = fileIds[i];
+            var selectEl = document.getElementById('vinc_tipo_' + fid);
+            if (!selectEl || !selectEl.value) continue; // Omitir
+            
+            var tipo = selectEl.value;
+            
+            // Get file name from Drive
+            var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fid + '?fields=name,size,mimeType&key=' + GOOGLE_API_KEY, {
+                headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+            });
+            var fileData = await resp.json();
+            
+            // Save to Supabase
+            await supabaseClient
+                .from('bancos_documentos')
+                .insert([{
+                    tipo: tipo,
+                    google_drive_file_id: fid,
+                    nombre_archivo: fileData.name || '',
+                    anio: anio,
+                    mes: mes,
+                    fecha_subida: new Date().toISOString().split('T')[0]
+                }]);
+        }
+        
+        await loadBancosDocumentos();
+        renderBancosTable();
+        vinculacionIndex++;
+        mostrarVinculacionMes();
+        
+    } catch (e) {
+        console.error('Error vinculando:', e);
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function cancelarVinculacion() {
+    document.getElementById('bancoVinculacionArea').style.display = 'none';
 }
 
 // ============================================
