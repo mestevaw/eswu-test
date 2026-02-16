@@ -736,7 +736,7 @@ function renderContabilidadYearsAndMonths() {
     if (anios.length === 0) {
         aniosDiv.innerHTML = '';
         var emptyHtml = '<p style="color:var(--text-light);">No hay carpetas registradas.</p>';
-        if (isGoogleConnected()) {
+        if (isGoogleConnected() && currentUser && currentUser.nivel === 1) {
             emptyHtml += '<div style="margin-top:0.5rem;"><span onclick="importarAniosExistentes()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
         }
         contentDiv.innerHTML = emptyHtml;
@@ -785,8 +785,8 @@ function renderContabilidadYearsAndMonths() {
             `;
         }).join('') + '</div>';
     
-    // Add import link at bottom (only when connected)
-    if (connected) {
+    // Add import link at bottom (only for nivel 1 admin when connected)
+    if (connected && currentUser && currentUser.nivel === 1) {
         contentDiv.innerHTML += '<div style="margin-top:1rem; text-align:center;"><span onclick="importarAniosExistentes()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
     }
 }
@@ -861,7 +861,7 @@ function renderBreadcrumb() {
     bcDiv.style.display = 'block';
     document.getElementById('contabilidadAnios').style.display = 'none';
     
-    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;">📁 Contabilidad</span>';
+    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#dcfce7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span>';
     
     contabilidadNavStack.forEach((item, i) => {
         html += ' <span style="color:var(--text-light);"> › </span> ';
@@ -912,10 +912,10 @@ async function navigateToDriveFolder(folderId) {
                 const size = formatFileSize(f.size);
                 const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
                 html += `
-                    <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')"  style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                    <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                         <span style="font-size:1.1rem;">${icon}</span>
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
+                        <div style="flex:1; min-width:150px;">
+                            <div style="font-size:0.88rem; font-weight:500; word-break:break-word;">${f.name}</div>
                         </div>
                         <span style="font-size:0.75rem; color:var(--text-light); white-space:nowrap;">${size}</span>
                     </div>
@@ -1003,7 +1003,7 @@ async function searchContabilidadDocs() {
     // Hide years, show breadcrumb
     document.getElementById('contabilidadAnios').style.display = 'none';
     document.getElementById('contabilidadBreadcrumb').style.display = 'block';
-    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;">📁 Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
+    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#dcfce7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
     document.getElementById('contabilidadUploadBtn').style.display = 'none';
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
     
@@ -1020,13 +1020,20 @@ async function searchContabilidadDocs() {
             const icon = getFileIcon(f.name, f.mimeType);
             const size = formatFileSize(f.size);
             const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
+            const displayName = f.name.length > 60 ? f.name.substring(0, 57) + '...' : f.name;
+            const monthYear = (f._month || '') + (f._year ? ' / ' + f._year : '');
+            const subfolder = f._subfolder || '';
             html += `
-                <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')"  style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                     <span style="font-size:1.1rem;">${icon}</span>
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
+                    <div style="flex:1; min-width:150px;">
+                        <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.name}">${displayName}</div>
                     </div>
-                    <span style="font-size:0.75rem; color:var(--text-light); white-space:nowrap;">${size}</span>
+                    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                        <span style="font-size:0.72rem; color:var(--primary); white-space:nowrap;">${monthYear}</span>
+                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${subfolder}</span>
+                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${size}</span>
+                    </div>
                 </div>
             `;
         });
