@@ -405,18 +405,17 @@ function renderBancosTable() {
         var mes = b.mes ? mesesNombres[b.mes] : '';
         var tipo = b.tipo || 'Documento';
         var nombre = b.nombre_archivo || '—';
-        var hasFile = b.google_drive_file_id || b.archivo_pdf;
         var clickAction = '';
+        var rowStyle = '';
         
         if (b.google_drive_file_id) {
             var safeName = (b.nombre_archivo || tipo).replace(/'/g, "\\'");
             clickAction = `onclick="viewDriveFileInline('${b.google_drive_file_id}', '${safeName}')"`;
-        } else if (b.archivo_pdf) {
-            clickAction = `onclick="fetchAndViewBancoDoc(${b.id})"`;
+            rowStyle = 'cursor:pointer;';
         }
         
         tbody.innerHTML += `
-            <tr ${clickAction} style="${hasFile ? 'cursor:pointer;' : ''}">
+            <tr ${clickAction} style="${rowStyle}">
                 <td>${anio}</td>
                 <td>${mes}</td>
                 <td>${tipo}</td>
