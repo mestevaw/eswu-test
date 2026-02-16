@@ -324,4 +324,38 @@ function formatFileSize(bytes) {
     return (num / (1024 * 1024)).toFixed(1) + ' MB';
 }
 
+// ============================================
+// INQUILINOS - Drive folder management
+// ============================================
+
+async function getOrCreateInquilinoFolder(inquilinoNombre) {
+    // Search for "Inquilinos" parent folder in Drive
+    var q = "name = 'Inquilinos' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    
+    if (!data.files || data.files.length === 0) {
+        throw new Error('No se encontró la carpeta "Inquilinos" en Google Drive');
+    }
+    
+    var inquilinosParentId = data.files[0].id;
+    
+    // Search for inquilino subfolder
+    var safeName = inquilinoNombre.replace(/'/g, "\\'");
+    var q2 = "'" + inquilinosParentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp2 = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q2) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data2 = await resp2.json();
+    
+    if (data2.files && data2.files.length > 0) {
+        return data2.files[0].id;
+    }
+    
+    // Create it
+    return await createDriveFolder(inquilinoNombre, inquilinosParentId);
+}
+
 console.log('✅ GOOGLE-DRIVE.JS cargado');
