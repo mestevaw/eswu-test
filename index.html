@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v5 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v6 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=5">
-    <link rel="stylesheet" href="css/layout.css?v=5">
-    <link rel="stylesheet" href="css/components.css?v=5">
-    <link rel="stylesheet" href="css/modals.css?v=5">
-    <link rel="stylesheet" href="css/tables.css?v=5">
-    <link rel="stylesheet" href="css/pages.css?v=5">
-    <link rel="stylesheet" href="css/utilities.css?v=5">
+    <link rel="stylesheet" href="css/base.css?v=6">
+    <link rel="stylesheet" href="css/layout.css?v=6">
+    <link rel="stylesheet" href="css/components.css?v=6">
+    <link rel="stylesheet" href="css/modals.css?v=6">
+    <link rel="stylesheet" href="css/tables.css?v=6">
+    <link rel="stylesheet" href="css/pages.css?v=6">
+    <link rel="stylesheet" href="css/utilities.css?v=6">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -333,13 +333,24 @@
                 <div id="contabilidadPage" class="page">
                     <div class="card">
                         <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
-                            <h2 class="card-title">Contabilidad - Documentos</h2>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <span onclick="toggleContabilidadNav()" title="Navegación" style="font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">☰</span>
+                                <h2 class="card-title">Contabilidad - Documentos</h2>
+                            </div>
                             <div style="display:flex; align-items:center; gap:0.4rem;">
                                 <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--primary); font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</span>
                                 <span id="contabilidadAddBtn" onclick="showAddCarpetaModal()" title="Agregar mes" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
                             </div>
                         </div>
-                        <div style="padding:1rem;">
+                        <div style="padding:1rem; position:relative;">
+                            <!-- Sidebar Navigation -->
+                            <div id="contabilidadNavSidebar" style="display:none; position:absolute; top:0; left:0; width:280px; background:white; border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 16px rgba(0,0,0,0.15); z-index:50; max-height:70vh; overflow-y:auto; padding:0.5rem 0;">
+                                <div style="padding:0.3rem 0.8rem; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); margin-bottom:0.25rem;">
+                                    <strong style="font-size:0.85rem; color:var(--primary);">Navegación</strong>
+                                    <span onclick="toggleContabilidadNav()" style="cursor:pointer; font-size:1.1rem; color:var(--text-light);">✕</span>
+                                </div>
+                                <div id="contabilidadNavTree"></div>
+                            </div>
                             <!-- Google Drive Connection -->
                             <div id="gdriveConnectBar" style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; padding:0.6rem 0.8rem; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
                                 <span style="font-size:1.2rem;">🔗</span>
@@ -1242,24 +1253,24 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v5 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=5"></script>
-    <script src="js/google-drive.js?v=5"></script>
-    <script src="js/database/db-core.js?v=5"></script>
-    <script src="js/database/db-inquilinos.js?v=5"></script>
-    <script src="js/database/db-proveedores.js?v=5"></script>
-    <script src="js/database/db-facturas.js?v=5"></script>
-    <script src="js/database/db-fetch-docs.js?v=5"></script>
-    <script src="js/ui/navigation.js?v=5"></script>
-    <script src="js/ui/tables.js?v=5"></script>
-    <script src="js/ui/inquilinos-ui.js?v=5"></script>
-    <script src="js/ui/proveedores-ui.js?v=5"></script>
-    <script src="js/ui/admin-ui.js?v=5"></script>
-    <script src="js/ui/numeros-ui.js?v=5"></script>
-    <script src="js/modals/modals.js?v=5"></script>
-    <script src="js/modals/inquilino-modals.js?v=5"></script>
-    <script src="js/modals/proveedor-modals.js?v=5"></script>
-    <script src="js/main.js?v=5"></script>
+    <script>console.log('%c ESWU v6 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=6"></script>
+    <script src="js/google-drive.js?v=6"></script>
+    <script src="js/database/db-core.js?v=6"></script>
+    <script src="js/database/db-inquilinos.js?v=6"></script>
+    <script src="js/database/db-proveedores.js?v=6"></script>
+    <script src="js/database/db-facturas.js?v=6"></script>
+    <script src="js/database/db-fetch-docs.js?v=6"></script>
+    <script src="js/ui/navigation.js?v=6"></script>
+    <script src="js/ui/tables.js?v=6"></script>
+    <script src="js/ui/inquilinos-ui.js?v=6"></script>
+    <script src="js/ui/proveedores-ui.js?v=6"></script>
+    <script src="js/ui/admin-ui.js?v=6"></script>
+    <script src="js/ui/numeros-ui.js?v=6"></script>
+    <script src="js/modals/modals.js?v=6"></script>
+    <script src="js/modals/inquilino-modals.js?v=6"></script>
+    <script src="js/modals/proveedor-modals.js?v=6"></script>
+    <script src="js/main.js?v=6"></script>
 </body>
 </html>
 
