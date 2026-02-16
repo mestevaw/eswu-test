@@ -700,6 +700,8 @@ async function loadContabilidadCarpetas() {
         if (error) throw error;
         contabilidadCarpetas = data || [];
         renderContabilidadContent();
+        // Check if next year needs creation (Nov+)
+        setTimeout(checkAutoCreateNextYear, 2000);
     } catch (e) {
         console.error('Error cargando contabilidad:', e);
     }
@@ -895,7 +897,7 @@ async function navigateToDriveFolder(folderId) {
                 const size = formatFileSize(f.size);
                 const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
                 html += `
-                    <div onclick="window.open('${f.webViewLink}', '_blank')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                    <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')"  style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                         <span style="font-size:1.1rem;">${icon}</span>
                         <div style="flex:1; min-width:0;">
                             <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
@@ -1003,7 +1005,7 @@ async function searchContabilidadDocs() {
             const size = formatFileSize(f.size);
             const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
             html += `
-                <div onclick="window.open('${f.webViewLink}', '_blank')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
+                <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')"  style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                     <span style="font-size:1.1rem;">${icon}</span>
                     <div style="flex:1; min-width:0;">
                         <div style="font-size:0.88rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.name}</div>
@@ -1020,6 +1022,271 @@ async function searchContabilidadDocs() {
         contentDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:2rem;">Error: ${e.message}</p>`;
     }
 }
+
+// ============================================
+// HAMBURGER NAV SIDEBAR
+// ============================================
+
+function toggleContabilidadNav() {
+    const sidebar = document.getElementById('contabilidadNavSidebar');
+    if (sidebar.style.display === 'none') {
+        buildContabilidadNavTree();
+        sidebar.style.display = 'block';
+    } else {
+        sidebar.style.display = 'none';
+    }
+}
+
+async function buildContabilidadNavTree() {
+    const treeDiv = document.getElementById('contabilidadNavTree');
+    const connected = isGoogleConnected();
+    const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    
+    const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
+    
+    let html = '';
+    
+    anios.forEach(anio => {
+        const meses = contabilidadCarpetas.filter(c => c.anio === anio).sort((a, b) => a.mes - b.mes);
+        html += `<div style="padding:0.25rem 0;">`;
+        html += `<div onclick="toggleNavYear(this)" style="padding:0.3rem 0.8rem; cursor:pointer; font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'"><span class="nav-arrow" style="font-size:0.7rem; transition:transform 0.2s;">▶</span> ${anio}</div>`;
+        html += `<div class="nav-year-content" style="display:none; padding-left:1rem;">`;
+        
+        meses.forEach(c => {
+            const mesNum = String(c.mes).padStart(2, '0');
+            const mesNombre = mesesNombres[c.mes];
+            const folderId = extractFolderId(c.google_drive_url);
+            
+            if (connected && folderId) {
+                html += `<div style="padding:0.15rem 0;">`;
+                html += `<div onclick="toggleNavMonth(this, '${folderId}')" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.3rem; transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'"><span class="nav-arrow" style="font-size:0.65rem; transition:transform 0.2s;">▶</span> ${mesNum}. ${mesNombre}</div>`;
+                html += `<div class="nav-month-content" style="display:none; padding-left:1rem;" data-folder-id="${folderId}"></div>`;
+                html += `</div>`;
+            } else {
+                html += `<div onclick="window.open('${c.google_drive_url}', '_blank'); toggleContabilidadNav();" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.85rem; color:var(--text); transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">📁 ${mesNum}. ${mesNombre}</div>`;
+            }
+        });
+        
+        html += `</div></div>`;
+    });
+    
+    // Add "Crear estructura" button at bottom
+    html += `<div style="border-top:1px solid var(--border); margin-top:0.5rem; padding:0.5rem 0.8rem;">`;
+    html += `<button onclick="showCrearEstructuraAnio()" style="width:100%; padding:0.4rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">📁 Crear estructura de año</button>`;
+    html += `</div>`;
+    
+    treeDiv.innerHTML = html;
+}
+
+function toggleNavYear(el) {
+    const content = el.nextElementSibling;
+    const arrow = el.querySelector('.nav-arrow');
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+    } else {
+        content.style.display = 'none';
+        arrow.style.transform = '';
+    }
+}
+
+async function toggleNavMonth(el, folderId) {
+    const content = el.nextElementSibling;
+    const arrow = el.querySelector('.nav-arrow');
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        arrow.style.transform = 'rotate(90deg)';
+        
+        // Load subfolders if not loaded yet
+        if (!content.dataset.loaded) {
+            content.innerHTML = '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--text-light);">Cargando...</div>';
+            try {
+                const { folders } = await listDriveFolder(folderId);
+                content.innerHTML = folders.map(f => 
+                    `<div onclick="event.stopPropagation(); navGoToFolder('${f.name.replace(/'/g, "\\'")}', '${f.id}'); toggleContabilidadNav();" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.82rem; color:var(--text); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">📁 ${f.name}</div>`
+                ).join('') || '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--text-light);">Vacío</div>';
+                content.dataset.loaded = 'true';
+            } catch (e) {
+                content.innerHTML = '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--danger);">Error</div>';
+            }
+        }
+    } else {
+        content.style.display = 'none';
+        arrow.style.transform = '';
+    }
+}
+
+function navGoToFolder(name, folderId) {
+    // Navigate directly to a subfolder from the nav tree
+    contabilidadNavStack = [{ label: name, folderId: null }];
+    currentDriveFolderId = folderId;
+    renderBreadcrumb();
+    navigateToDriveFolder(folderId);
+}
+
+// ============================================
+// CREATE YEAR STRUCTURE IN GOOGLE DRIVE
+// ============================================
+
+var SUBCARPETAS_MES = [
+    'Evidencias para materialidad',
+    'Facturas emitidas',
+    'Facturas proveedores',
+    'Pagos proveedores',
+    'Repse empresas',
+    'Reportes financieros'
+];
+
+var MESES_NOMBRES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+function showCrearEstructuraAnio() {
+    toggleContabilidadNav();
+    
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    // Find the parent folder (Inmobiliaris ESWU)
+    // We need any existing year folder to find its parent
+    const anyCarpeta = contabilidadCarpetas[0];
+    if (!anyCarpeta) {
+        alert('Primero agrega al menos un mes manualmente para que el sistema conozca la carpeta raíz.');
+        return;
+    }
+    
+    const anioActual = new Date().getFullYear();
+    const anioSiguiente = anioActual + 1;
+    const anio = prompt('¿Qué año quieres crear? (ej: ' + anioSiguiente + ')', anioSiguiente);
+    
+    if (!anio || isNaN(anio)) return;
+    
+    const existe = contabilidadCarpetas.some(c => c.anio === parseInt(anio));
+    if (existe) {
+        if (!confirm('Ya existen carpetas para ' + anio + '. ¿Quieres crear los meses faltantes?')) return;
+    }
+    
+    crearEstructuraAnio(parseInt(anio));
+}
+
+async function crearEstructuraAnio(anio) {
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    showLoading();
+    
+    try {
+        // Find parent folder ID from an existing year folder
+        const anyCarpeta = contabilidadCarpetas[0];
+        const existingFolderId = extractFolderId(anyCarpeta.google_drive_url);
+        
+        // Get parent of existing month folder (which is the year folder)
+        // Then get parent of year folder (which is the root)
+        // We need to find the root "Inmobiliaris ESWU" folder
+        const existingInfo = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFolderId}?fields=parents&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        const existingData = await existingInfo.json();
+        const yearFolderParent = existingData.parents ? existingData.parents[0] : null;
+        
+        if (!yearFolderParent) {
+            throw new Error('No se pudo encontrar la carpeta padre');
+        }
+        
+        // Get parent of year folder (root Inmobiliaris ESWU)
+        const yearFolderInfo = await fetch(`https://www.googleapis.com/drive/v3/files/${yearFolderParent}?fields=parents&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        const yearFolderData = await yearFolderInfo.json();
+        const rootFolderId = yearFolderData.parents ? yearFolderData.parents[0] : yearFolderParent;
+        
+        // Check if year folder already exists
+        const yearQuery = `name = '${anio}' and '${rootFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+        const yearSearch = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(yearQuery)}&fields=files(id,name)&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        const yearSearchData = await yearSearch.json();
+        
+        var yearFolder;
+        if (yearSearchData.files && yearSearchData.files.length > 0) {
+            yearFolder = yearSearchData.files[0];
+            console.log('Carpeta año existente:', yearFolder.name);
+        } else {
+            yearFolder = await createDriveFolder(String(anio), rootFolderId);
+            console.log('Carpeta año creada:', yearFolder.name);
+        }
+        
+        // Determine which months to create
+        const existingMeses = contabilidadCarpetas.filter(c => c.anio === anio).map(c => c.mes);
+        
+        for (var mes = 1; mes <= 12; mes++) {
+            if (existingMeses.includes(mes)) {
+                console.log('Mes ' + mes + ' ya existe, saltando');
+                continue;
+            }
+            
+            var mesNum = String(mes).padStart(2, '0');
+            var mesNombre = MESES_NOMBRES[mes].toUpperCase();
+            var monthFolderName = mesNum + '. ' + mesNombre;
+            
+            // Create month folder
+            var monthFolder = await createDriveFolder(monthFolderName, yearFolder.id);
+            console.log('Creado:', monthFolderName);
+            
+            // Create subcarpetas
+            for (var s = 0; s < SUBCARPETAS_MES.length; s++) {
+                await createDriveFolder(SUBCARPETAS_MES[s], monthFolder.id);
+            }
+            
+            // Save to Supabase
+            var driveUrl = 'https://drive.google.com/drive/folders/' + monthFolder.id;
+            var { error } = await supabaseClient
+                .from('contabilidad_carpetas')
+                .insert([{
+                    anio: anio,
+                    mes: mes,
+                    nombre_mes: MESES_NOMBRES[mes],
+                    google_drive_url: driveUrl
+                }]);
+            
+            if (error) console.error('Error guardando mes ' + mes + ':', error);
+        }
+        
+        alert('✅ Estructura de ' + anio + ' creada exitosamente');
+        await loadContabilidadCarpetas();
+        
+    } catch (e) {
+        console.error('Error creando estructura:', e);
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// AUTO-CHECK: CREATE NEXT YEAR (NOV 1)
+// ============================================
+
+function checkAutoCreateNextYear() {
+    var today = new Date();
+    if (today.getMonth() >= 10) { // November = 10 (0-indexed)
+        var nextYear = today.getFullYear() + 1;
+        var exists = contabilidadCarpetas.some(c => c.anio === nextYear);
+        if (!exists && isGoogleConnected()) {
+            var msg = 'Es noviembre y aún no existe la estructura de ' + nextYear + ' en Google Drive. ¿Deseas crearla ahora?';
+            if (confirm(msg)) {
+                crearEstructuraAnio(nextYear);
+            }
+        }
+    }
+}
+
+// ============================================
+// CARPETA CRUD
+// ============================================
 
 function showAddCarpetaModal() {
     editingCarpetaId = null;
