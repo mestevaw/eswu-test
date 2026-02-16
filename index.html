@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v4 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v5 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=4">
-    <link rel="stylesheet" href="css/layout.css?v=4">
-    <link rel="stylesheet" href="css/components.css?v=4">
-    <link rel="stylesheet" href="css/modals.css?v=4">
-    <link rel="stylesheet" href="css/tables.css?v=4">
-    <link rel="stylesheet" href="css/pages.css?v=4">
-    <link rel="stylesheet" href="css/utilities.css?v=4">
+    <link rel="stylesheet" href="css/base.css?v=5">
+    <link rel="stylesheet" href="css/layout.css?v=5">
+    <link rel="stylesheet" href="css/components.css?v=5">
+    <link rel="stylesheet" href="css/modals.css?v=5">
+    <link rel="stylesheet" href="css/tables.css?v=5">
+    <link rel="stylesheet" href="css/pages.css?v=5">
+    <link rel="stylesheet" href="css/utilities.css?v=5">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -332,15 +332,33 @@
                 <!-- Contabilidad Page -->
                 <div id="contabilidadPage" class="page">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
                             <h2 class="card-title">Contabilidad - Documentos</h2>
-                            <span id="contabilidadAddBtn" onclick="showAddCarpetaModal()" title="Agregar carpeta" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                            <div style="display:flex; align-items:center; gap:0.4rem;">
+                                <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--primary); font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</span>
+                                <span id="contabilidadAddBtn" onclick="showAddCarpetaModal()" title="Agregar mes" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                            </div>
                         </div>
                         <div style="padding:1rem;">
+                            <!-- Google Drive Connection -->
+                            <div id="gdriveConnectBar" style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; padding:0.6rem 0.8rem; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px;">
+                                <span style="font-size:1.2rem;">🔗</span>
+                                <span style="flex:1; font-size:0.9rem; color:var(--text);">Conecta con Google Drive para ver y subir documentos</span>
+                                <button onclick="googleSignIn()" style="padding:0.4rem 0.8rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">Conectar</button>
+                            </div>
+                            <!-- Search bar (hidden until connected) -->
+                            <div id="contabilidadSearchBar" style="display:none; margin-bottom:1rem;">
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="contabilidadSearchInput" placeholder="Buscar documento por nombre..." style="flex:1; padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;" onkeypress="if(event.key==='Enter') searchContabilidadDocs()">
+                                    <button onclick="searchContabilidadDocs()" style="padding:0.4rem 0.6rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.9rem;">🔍</button>
+                                </div>
+                            </div>
+                            <!-- Breadcrumb -->
+                            <div id="contabilidadBreadcrumb" style="display:none; margin-bottom:0.75rem; font-size:0.85rem;"></div>
                             <!-- Años -->
                             <div id="contabilidadAnios" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
-                            <!-- Meses del año seleccionado -->
-                            <div id="contabilidadMeses"></div>
+                            <!-- Content area (months, subfolders, files) -->
+                            <div id="contabilidadContent"></div>
                         </div>
                     </div>
                 </div>
@@ -1221,25 +1239,27 @@
     
     <!-- SheetJS para exportar Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v4 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=4"></script>
-    <script src="js/database/db-core.js?v=4"></script>
-    <script src="js/database/db-inquilinos.js?v=4"></script>
-    <script src="js/database/db-proveedores.js?v=4"></script>
-    <script src="js/database/db-facturas.js?v=4"></script>
-    <script src="js/database/db-fetch-docs.js?v=4"></script>
-    <script src="js/ui/navigation.js?v=4"></script>
-    <script src="js/ui/tables.js?v=4"></script>
-    <script src="js/ui/inquilinos-ui.js?v=4"></script>
-    <script src="js/ui/proveedores-ui.js?v=4"></script>
-    <script src="js/ui/admin-ui.js?v=4"></script>
-    <script src="js/ui/numeros-ui.js?v=4"></script>
-    <script src="js/modals/modals.js?v=4"></script>
-    <script src="js/modals/inquilino-modals.js?v=4"></script>
-    <script src="js/modals/proveedor-modals.js?v=4"></script>
-    <script src="js/main.js?v=4"></script>
+    <script>console.log('%c ESWU v5 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=5"></script>
+    <script src="js/google-drive.js?v=5"></script>
+    <script src="js/database/db-core.js?v=5"></script>
+    <script src="js/database/db-inquilinos.js?v=5"></script>
+    <script src="js/database/db-proveedores.js?v=5"></script>
+    <script src="js/database/db-facturas.js?v=5"></script>
+    <script src="js/database/db-fetch-docs.js?v=5"></script>
+    <script src="js/ui/navigation.js?v=5"></script>
+    <script src="js/ui/tables.js?v=5"></script>
+    <script src="js/ui/inquilinos-ui.js?v=5"></script>
+    <script src="js/ui/proveedores-ui.js?v=5"></script>
+    <script src="js/ui/admin-ui.js?v=5"></script>
+    <script src="js/ui/numeros-ui.js?v=5"></script>
+    <script src="js/modals/modals.js?v=5"></script>
+    <script src="js/modals/inquilino-modals.js?v=5"></script>
+    <script src="js/modals/proveedor-modals.js?v=5"></script>
+    <script src="js/main.js?v=5"></script>
 </body>
 </html>
 
