@@ -386,12 +386,6 @@ function renderBancosTable() {
     const tbody = document.getElementById('bancosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
-    // Show vincular button for nivel 1 always
-    var vincBtn = document.getElementById('bancoVincularBtn');
-    if (vincBtn) {
-        vincBtn.style.display = (currentUser && currentUser.nivel === 1) ? 'inline' : 'none';
-    }
-    
     var mesesNombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     
     // Sort by año desc, mes desc
@@ -416,10 +410,10 @@ function renderBancosTable() {
         
         tbody.innerHTML += `
             <tr ${clickAction} style="${rowStyle}">
+                <td style="font-size:0.85rem; word-break:break-word;">${nombre}</td>
                 <td>${anio}</td>
                 <td>${mes}</td>
                 <td>${tipo}</td>
-                <td style="font-size:0.85rem; word-break:break-word;">${nombre}</td>
             </tr>
         `;
     });
