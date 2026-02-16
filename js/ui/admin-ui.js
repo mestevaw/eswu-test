@@ -607,7 +607,7 @@ async function vincularGuardarMes(anio, mes, fileIdsStr) {
                 mes: mes,
                 fecha_subida: new Date().toISOString().split('T')[0],
                 archivo_pdf: '',
-                usuario_subio: (currentUser && currentUser.nombre) || ''
+                usuario_subio: (currentUser ? currentUser.nombre : '') || 'Sistema'
             };
             console.log('   Datos a insertar:', JSON.stringify(insertData));
             var { error: insertError } = await supabaseClient
