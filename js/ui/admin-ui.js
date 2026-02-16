@@ -791,7 +791,10 @@ function renderContabilidadYearsAndMonths() {
     
     // Add import link at bottom (only for nivel 1 admin when connected)
     if (connected && currentUser && currentUser.nivel === 1) {
-        contentDiv.innerHTML += '<div style="margin-top:1rem; text-align:center;"><span onclick="importarAniosExistentes()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
+        contentDiv.innerHTML += '<div style="margin-top:1rem; text-align:center; display:flex; flex-direction:column; gap:0.4rem; align-items:center;">'
+            + '<span onclick="importarAniosExistentes()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span>'
+            + '<span onclick="sincronizarIndiceCompleto()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">🔄 Sincronizar índice de documentos</span>'
+            + '</div>';
     }
 }
 
@@ -1400,6 +1403,91 @@ async function importarAniosExistentes() {
     } catch (e) {
         console.error('Error importando:', e);
         alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// SYNC FULL DOCUMENT INDEX
+// ============================================
+
+async function sincronizarIndiceCompleto() {
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    if (!confirm('Esto escaneará todas las carpetas en Drive y registrará los documentos en el índice de búsqueda. Puede tomar unos minutos. ¿Continuar?')) return;
+    
+    showLoading();
+    var totalIndexed = 0;
+    var totalSkipped = 0;
+    
+    try {
+        for (var c = 0; c < contabilidadCarpetas.length; c++) {
+            var carpeta = contabilidadCarpetas[c];
+            var monthFolderId = extractFolderId(carpeta.google_drive_url);
+            if (!monthFolderId) continue;
+            
+            var anio = carpeta.anio;
+            var mesNum = carpeta.mes;
+            var mesNombre = MESES_NOMBRES[mesNum] || '';
+            
+            console.log('📁 Escaneando ' + anio + ' ' + mesNombre + '...');
+            
+            // List subfolders in month
+            var { folders: subfolders } = await listDriveFolder(monthFolderId);
+            
+            for (var s = 0; s < subfolders.length; s++) {
+                var sub = subfolders[s];
+                
+                // List files in subfolder
+                var { files } = await listDriveFolder(sub.id);
+                
+                for (var f = 0; f < files.length; f++) {
+                    var file = files[f];
+                    if (file.mimeType === 'application/vnd.google-apps.folder') continue;
+                    
+                    // Check if already indexed
+                    var { data: existing } = await supabaseClient
+                        .from('contabilidad_documentos')
+                        .select('id')
+                        .eq('google_drive_file_id', file.id)
+                        .limit(1);
+                    
+                    if (existing && existing.length > 0) {
+                        totalSkipped++;
+                        continue;
+                    }
+                    
+                    // Index it
+                    var { error } = await supabaseClient
+                        .from('contabilidad_documentos')
+                        .insert([{
+                            nombre: file.name,
+                            anio: anio,
+                            mes: mesNum,
+                            subcarpeta: sub.name,
+                            google_drive_file_id: file.id,
+                            size_bytes: parseInt(file.size) || 0,
+                            mime_type: file.mimeType || ''
+                        }]);
+                    
+                    if (!error) {
+                        totalIndexed++;
+                    } else {
+                        console.error('Error indexando:', file.name, error);
+                    }
+                }
+            }
+        }
+        
+        alert('✅ Sincronización completada!\n\n' + totalIndexed + ' documentos indexados\n' + totalSkipped + ' ya existían');
+        
+    } catch (e) {
+        console.error('Error sincronizando:', e);
+        alert('Error: ' + e.message + '\n\nSe indexaron ' + totalIndexed + ' documentos antes del error.');
     } finally {
         hideLoading();
     }
