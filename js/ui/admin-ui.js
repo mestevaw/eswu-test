@@ -734,8 +734,12 @@ function renderContabilidadYearsAndMonths() {
     const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
     
     if (anios.length === 0) {
-        aniosDiv.innerHTML = '<p style="color:var(--text-light);">No hay carpetas. Usa el + para agregar un mes.</p>';
-        contentDiv.innerHTML = '';
+        aniosDiv.innerHTML = '';
+        var emptyHtml = '<p style="color:var(--text-light);">No hay carpetas registradas.</p>';
+        if (isGoogleConnected()) {
+            emptyHtml += '<div style="margin-top:0.5rem;"><span onclick="importarAniosExistentes()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
+        }
+        contentDiv.innerHTML = emptyHtml;
         return;
     }
     
@@ -771,19 +775,20 @@ function renderContabilidadYearsAndMonths() {
                 : `onclick="window.open('${c.google_drive_url}', '_blank')"`;
             
             return `
-                <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
-                    <div ${clickAction} style="flex:1; display:flex; align-items:center; gap:0.5rem;">
-                        <span style="font-size:1.3rem;">📁</span>
-                        <div>
-                            <div style="font-weight:600; font-size:0.95rem;">${mesNum}. ${mesNombre}</div>
-                            <div style="font-size:0.7rem; color:var(--text-light);">${connected ? 'Ver contenido' : 'Abrir en Drive'}</div>
-                        </div>
+                <div ${clickAction} style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.12)'" onmouseout="this.style.boxShadow='none'">
+                    <span style="font-size:1.3rem;">📁</span>
+                    <div>
+                        <div style="font-weight:600; font-size:0.95rem;">${mesNum}. ${mesNombre}</div>
+                        <div style="font-size:0.7rem; color:var(--text-light);">${connected ? 'Ver contenido' : 'Abrir en Drive'}</div>
                     </div>
-                    <span onclick="event.stopPropagation(); editCarpetaContabilidad(${c.id})" title="Editar" style="cursor:pointer; font-size:0.9rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
-                    <span onclick="event.stopPropagation(); deleteCarpetaContabilidad(${c.id}, '${mesNombre} ${c.anio}')" title="Eliminar" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
                 </div>
             `;
         }).join('') + '</div>';
+    
+    // Add import link at bottom (only when connected)
+    if (connected) {
+        contentDiv.innerHTML += '<div style="margin-top:1rem; text-align:center;"><span onclick="importarAniosExistentes()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
+    }
 }
 
 function selectContabilidadAnio(anio) {
@@ -811,6 +816,10 @@ function openDriveSubfolder(name, folderId) {
     navigateToDriveFolder(folderId);
 }
 
+function contabilidadGoHome() {
+    navigateBackTo(-1);
+}
+
 function navigateBackTo(index) {
     if (index < 0) {
         // Go back to years/months view
@@ -818,7 +827,10 @@ function navigateBackTo(index) {
         currentDriveFolderId = null;
         document.getElementById('contabilidadBreadcrumb').style.display = 'none';
         document.getElementById('contabilidadUploadBtn').style.display = 'none';
+        document.getElementById('contabilidadHomeBtn').style.display = 'none';
         document.getElementById('contabilidadAnios').style.display = 'flex';
+        // Clear search
+        document.getElementById('contabilidadSearchInput').value = '';
         renderContabilidadYearsAndMonths();
         return;
     }
@@ -867,11 +879,14 @@ async function navigateToDriveFolder(folderId) {
     const contentDiv = document.getElementById('contabilidadContent');
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">⏳ Cargando...</p>';
     
-    // Show upload button when inside a folder
-    document.getElementById('contabilidadUploadBtn').style.display = 'inline';
+    // Show home button when navigating
+    document.getElementById('contabilidadHomeBtn').style.display = 'inline';
     
     try {
         const { folders, files } = await listDriveFolder(folderId);
+        
+        // Only show upload when there are NO subfolders (final folder)
+        document.getElementById('contabilidadUploadBtn').style.display = folders.length === 0 ? 'inline' : 'none';
         
         let html = '';
         
@@ -990,6 +1005,7 @@ async function searchContabilidadDocs() {
     document.getElementById('contabilidadBreadcrumb').style.display = 'block';
     document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;">📁 Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
     document.getElementById('contabilidadUploadBtn').style.display = 'none';
+    document.getElementById('contabilidadHomeBtn').style.display = 'inline';
     
     try {
         const files = await searchDriveFiles(term);
@@ -1024,109 +1040,6 @@ async function searchContabilidadDocs() {
 }
 
 // ============================================
-// HAMBURGER NAV SIDEBAR
-// ============================================
-
-function toggleContabilidadNav() {
-    const sidebar = document.getElementById('contabilidadNavSidebar');
-    if (sidebar.style.display === 'none') {
-        buildContabilidadNavTree();
-        sidebar.style.display = 'block';
-    } else {
-        sidebar.style.display = 'none';
-    }
-}
-
-async function buildContabilidadNavTree() {
-    const treeDiv = document.getElementById('contabilidadNavTree');
-    const connected = isGoogleConnected();
-    const mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    
-    const anios = [...new Set(contabilidadCarpetas.map(c => c.anio))].sort((a, b) => b - a);
-    
-    let html = '';
-    
-    anios.forEach(anio => {
-        const meses = contabilidadCarpetas.filter(c => c.anio === anio).sort((a, b) => a.mes - b.mes);
-        html += `<div style="padding:0.25rem 0;">`;
-        html += `<div onclick="toggleNavYear(this)" style="padding:0.3rem 0.8rem; cursor:pointer; font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:0.3rem; transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'"><span class="nav-arrow" style="font-size:0.7rem; transition:transform 0.2s;">▶</span> ${anio}</div>`;
-        html += `<div class="nav-year-content" style="display:none; padding-left:1rem;">`;
-        
-        meses.forEach(c => {
-            const mesNum = String(c.mes).padStart(2, '0');
-            const mesNombre = mesesNombres[c.mes];
-            const folderId = extractFolderId(c.google_drive_url);
-            
-            if (connected && folderId) {
-                html += `<div style="padding:0.15rem 0;">`;
-                html += `<div onclick="toggleNavMonth(this, '${folderId}')" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:0.3rem; transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'"><span class="nav-arrow" style="font-size:0.65rem; transition:transform 0.2s;">▶</span> ${mesNum}. ${mesNombre}</div>`;
-                html += `<div class="nav-month-content" style="display:none; padding-left:1rem;" data-folder-id="${folderId}"></div>`;
-                html += `</div>`;
-            } else {
-                html += `<div onclick="window.open('${c.google_drive_url}', '_blank'); toggleContabilidadNav();" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.85rem; color:var(--text); transition:background 0.15s;" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">📁 ${mesNum}. ${mesNombre}</div>`;
-            }
-        });
-        
-        html += `</div></div>`;
-    });
-    
-    // Add "Crear estructura" button at bottom
-    html += `<div style="border-top:1px solid var(--border); margin-top:0.5rem; padding:0.5rem 0.8rem; display:flex; flex-direction:column; gap:0.4rem;">`;
-    html += `<button onclick="showCrearEstructuraAnio()" style="width:100%; padding:0.4rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">📁 Crear estructura de año</button>`;
-    html += `<button onclick="importarAniosExistentes()" style="width:100%; padding:0.4rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">📥 Importar años existentes de Drive</button>`;
-    html += `</div>`;
-    
-    treeDiv.innerHTML = html;
-}
-
-function toggleNavYear(el) {
-    const content = el.nextElementSibling;
-    const arrow = el.querySelector('.nav-arrow');
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        arrow.style.transform = 'rotate(90deg)';
-    } else {
-        content.style.display = 'none';
-        arrow.style.transform = '';
-    }
-}
-
-async function toggleNavMonth(el, folderId) {
-    const content = el.nextElementSibling;
-    const arrow = el.querySelector('.nav-arrow');
-    
-    if (content.style.display === 'none') {
-        content.style.display = 'block';
-        arrow.style.transform = 'rotate(90deg)';
-        
-        // Load subfolders if not loaded yet
-        if (!content.dataset.loaded) {
-            content.innerHTML = '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--text-light);">Cargando...</div>';
-            try {
-                const { folders } = await listDriveFolder(folderId);
-                content.innerHTML = folders.map(f => 
-                    `<div onclick="event.stopPropagation(); navGoToFolder('${f.name.replace(/'/g, "\\'")}', '${f.id}'); toggleContabilidadNav();" style="padding:0.25rem 0.5rem; cursor:pointer; font-size:0.82rem; color:var(--text); transition:background 0.15s;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">📁 ${f.name}</div>`
-                ).join('') || '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--text-light);">Vacío</div>';
-                content.dataset.loaded = 'true';
-            } catch (e) {
-                content.innerHTML = '<div style="padding:0.25rem 0.5rem; font-size:0.8rem; color:var(--danger);">Error</div>';
-            }
-        }
-    } else {
-        content.style.display = 'none';
-        arrow.style.transform = '';
-    }
-}
-
-function navGoToFolder(name, folderId) {
-    // Navigate directly to a subfolder from the nav tree
-    contabilidadNavStack = [{ label: name, folderId: null }];
-    currentDriveFolderId = folderId;
-    renderBreadcrumb();
-    navigateToDriveFolder(folderId);
-}
-
-// ============================================
 // CREATE YEAR STRUCTURE IN GOOGLE DRIVE
 // ============================================
 
@@ -1142,8 +1055,6 @@ var SUBCARPETAS_MES = [
 var MESES_NOMBRES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 function showCrearEstructuraAnio() {
-    toggleContabilidadNav();
-    
     if (!isGoogleConnected()) {
         alert('Conecta con Google Drive primero');
         return;
@@ -1277,10 +1188,8 @@ function checkAutoCreateNextYear() {
         var nextYear = today.getFullYear() + 1;
         var exists = contabilidadCarpetas.some(c => c.anio === nextYear);
         if (!exists && isGoogleConnected()) {
-            var msg = 'Es noviembre y aún no existe la estructura de ' + nextYear + ' en Google Drive. ¿Deseas crearla ahora?';
-            if (confirm(msg)) {
-                crearEstructuraAnio(nextYear);
-            }
+            console.log('📁 Auto-creando estructura para ' + nextYear + '...');
+            crearEstructuraAnio(nextYear);
         }
     }
 }
@@ -1290,8 +1199,6 @@ function checkAutoCreateNextYear() {
 // ============================================
 
 async function importarAniosExistentes() {
-    toggleContabilidadNav();
-    
     if (!isGoogleConnected()) {
         alert('Conecta con Google Drive primero');
         return;
