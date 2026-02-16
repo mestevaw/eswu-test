@@ -97,6 +97,36 @@ async function listDriveFolder(folderId) {
 }
 
 // ============================================
+// DRIVE API - CREATE FOLDER
+// ============================================
+
+async function createDriveFolder(name, parentFolderId) {
+    if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
+    
+    const metadata = {
+        name: name,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentFolderId]
+    };
+    
+    const response = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink', {
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + gdriveAccessToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(metadata)
+    });
+    
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error?.message || 'Error creando carpeta');
+    }
+    
+    return await response.json();
+}
+
+// ============================================
 // DRIVE API - UPLOAD FILE
 // ============================================
 
@@ -157,10 +187,64 @@ async function searchDriveFiles(searchTerm, rootFolderIds) {
 
 function extractFolderId(url) {
     if (!url) return null;
-    // Handles: https://drive.google.com/drive/folders/FOLDER_ID
-    // And: https://drive.google.com/drive/folders/FOLDER_ID?...
     const match = url.match(/folders\/([a-zA-Z0-9_-]+)/);
     return match ? match[1] : null;
+}
+
+// ============================================
+// HELPER - Extract file ID from URL
+// ============================================
+
+function extractFileId(url) {
+    if (!url) return null;
+    const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+}
+
+// ============================================
+// HELPER - Get Google Drive preview URL
+// ============================================
+
+function getGooglePreviewUrl(fileId) {
+    return `https://drive.google.com/file/d/${fileId}/preview`;
+}
+
+// ============================================
+// INLINE VIEWER - View Drive file in app
+// ============================================
+
+function viewDriveFileInline(fileId, fileName) {
+    const previewUrl = getGooglePreviewUrl(fileId);
+    
+    // Reuse the existing PDF viewer pattern
+    const viewer = document.getElementById('pdfViewerModal');
+    if (viewer) {
+        document.getElementById('pdfViewerTitle').textContent = fileName || 'Documento';
+        const container = document.getElementById('pdfViewerContainer');
+        container.innerHTML = `<iframe src="${previewUrl}" style="width:100%; height:100%; border:none;" allow="autoplay"></iframe>`;
+        viewer.classList.add('active');
+        return;
+    }
+    
+    // Fallback: create simple fullscreen viewer
+    const overlay = document.createElement('div');
+    overlay.id = 'driveViewerOverlay';
+    overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:white; z-index:9999; display:flex; flex-direction:column;';
+    
+    overlay.innerHTML = `
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; background:var(--primary); color:white; flex-shrink:0;">
+            <span style="font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${fileName || 'Documento'}</span>
+            <button onclick="closeDriveViewer()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">✕</button>
+        </div>
+        <iframe src="${previewUrl}" style="flex:1; border:none;" allow="autoplay"></iframe>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function closeDriveViewer() {
+    const overlay = document.getElementById('driveViewerOverlay');
+    if (overlay) overlay.remove();
 }
 
 // ============================================
