@@ -136,6 +136,15 @@ async function initializeApp() {
             console.log('Google Drive init diferido');
         }
         
+        // Pre-load contabilidad carpetas (needed for bancos upload to Drive)
+        try {
+            if (typeof loadContabilidadCarpetas === 'function') {
+                loadContabilidadCarpetas();
+            }
+        } catch (e) {
+            console.log('Contabilidad carpetas diferidas');
+        }
+        
     } catch (error) {
         console.error('❌ Error inicializando app:', error);
         alert('Error cargando datos: ' + error.message);
@@ -945,21 +954,53 @@ async function saveBancoDoc(event) {
     
     try {
         const tipo = document.getElementById('bancoTipo').value;
+        const anio = parseInt(document.getElementById('bancoAnio').value);
+        const mes = parseInt(document.getElementById('bancoMes').value);
         const file = document.getElementById('bancoDocumento').files[0];
         
         if (!file) {
             throw new Error('Seleccione un archivo PDF');
         }
         
-        const pdfBase64 = await fileToBase64(file);
+        var docData = {
+            tipo: tipo,
+            anio: anio,
+            mes: mes,
+            nombre_archivo: file.name,
+            fecha_subida: new Date().toISOString().split('T')[0],
+            usuario_subio: currentUser ? currentUser.nombre : 'Sistema'
+        };
+        
+        // Upload to Drive if connected
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+            // Find the Reportes Financieros folder for this month
+            var carpeta = contabilidadCarpetas.find(c => c.anio === anio && c.mes === mes);
+            if (carpeta) {
+                var monthFolderId = extractFolderId(carpeta.google_drive_url);
+                if (monthFolderId) {
+                    var { folders } = await listDriveFolder(monthFolderId);
+                    var reportes = folders.find(f => f.name.toLowerCase().includes('reporte'));
+                    if (reportes) {
+                        var result = await uploadFileToDrive(file, reportes.id);
+                        docData.google_drive_file_id = result.id;
+                    }
+                }
+            }
+            
+            // If no folder found, upload to root Inmobiliaris ESWU
+            if (!docData.google_drive_file_id) {
+                console.log('⚠️ No se encontró carpeta Reportes Financieros para ' + anio + '/' + mes + ', subiendo a raíz');
+                // Still save without drive link, user can vincular later
+            }
+        }
+        
+        if (!docData.google_drive_file_id) {
+            docData.archivo_pdf = '';
+        }
         
         const { error } = await supabaseClient
             .from('bancos_documentos')
-            .insert([{
-                tipo: tipo,
-                archivo_pdf: pdfBase64,
-                fecha_subida: new Date().toISOString().split('T')[0]
-            }]);
+            .insert([docData]);
         
         if (error) throw error;
         
