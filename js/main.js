@@ -822,7 +822,7 @@ async function loadBancosDocumentos() {
     try {
         const { data, error } = await supabaseClient
             .from('bancos_documentos')
-            .select('id, tipo, fecha_subida')
+            .select('id, tipo, fecha_subida, google_drive_file_id, nombre_archivo, anio, mes')
             .order('fecha_subida', { ascending: false })
             .limit(100);
         
