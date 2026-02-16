@@ -1071,8 +1071,9 @@ async function buildContabilidadNavTree() {
     });
     
     // Add "Crear estructura" button at bottom
-    html += `<div style="border-top:1px solid var(--border); margin-top:0.5rem; padding:0.5rem 0.8rem;">`;
+    html += `<div style="border-top:1px solid var(--border); margin-top:0.5rem; padding:0.5rem 0.8rem; display:flex; flex-direction:column; gap:0.4rem;">`;
     html += `<button onclick="showCrearEstructuraAnio()" style="width:100%; padding:0.4rem; background:var(--success); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">📁 Crear estructura de año</button>`;
+    html += `<button onclick="importarAniosExistentes()" style="width:100%; padding:0.4rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">📥 Importar años existentes de Drive</button>`;
     html += `</div>`;
     
     treeDiv.innerHTML = html;
@@ -1281,6 +1282,117 @@ function checkAutoCreateNextYear() {
                 crearEstructuraAnio(nextYear);
             }
         }
+    }
+}
+
+// ============================================
+// IMPORT EXISTING YEARS FROM GOOGLE DRIVE
+// ============================================
+
+async function importarAniosExistentes() {
+    toggleContabilidadNav();
+    
+    if (!isGoogleConnected()) {
+        alert('Conecta con Google Drive primero');
+        return;
+    }
+    
+    if (contabilidadCarpetas.length === 0) {
+        alert('Primero agrega al menos un mes manualmente (con el +) para que el sistema conozca la carpeta raíz en Drive.');
+        return;
+    }
+    
+    if (!confirm('Esto escaneará tu Google Drive y registrará todos los años/meses que encuentre. ¿Continuar?')) return;
+    
+    showLoading();
+    
+    try {
+        // Step 1: Find the root folder (parent of the year folders)
+        // Get an existing month folder → its parent is the year → its parent is the root
+        var anyCarpeta = contabilidadCarpetas[0];
+        var monthFolderId = extractFolderId(anyCarpeta.google_drive_url);
+        
+        // Get month folder's parent (year folder)
+        var monthInfo = await fetch(`https://www.googleapis.com/drive/v3/files/${monthFolderId}?fields=parents&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var monthData = await monthInfo.json();
+        var yearFolderId = monthData.parents ? monthData.parents[0] : null;
+        
+        if (!yearFolderId) throw new Error('No se pudo encontrar la carpeta del año');
+        
+        // Get year folder's parent (root: Inmobiliaris ESWU)
+        var yearInfo = await fetch(`https://www.googleapis.com/drive/v3/files/${yearFolderId}?fields=parents&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var yearData = await yearInfo.json();
+        var rootFolderId = yearData.parents ? yearData.parents[0] : null;
+        
+        if (!rootFolderId) throw new Error('No se pudo encontrar la carpeta raíz');
+        
+        console.log('Carpeta raíz encontrada:', rootFolderId);
+        
+        // Step 2: List all year folders in root
+        var { folders: yearFolders } = await listDriveFolder(rootFolderId);
+        var yearFoldersFiltered = yearFolders.filter(f => /^\d{4}$/.test(f.name));
+        
+        console.log('Años encontrados:', yearFoldersFiltered.map(f => f.name));
+        
+        var totalImported = 0;
+        var totalSkipped = 0;
+        
+        // Step 3: For each year, list month folders
+        for (var y = 0; y < yearFoldersFiltered.length; y++) {
+            var yearFolder = yearFoldersFiltered[y];
+            var anio = parseInt(yearFolder.name);
+            
+            var { folders: monthFolders } = await listDriveFolder(yearFolder.id);
+            
+            for (var m = 0; m < monthFolders.length; m++) {
+                var mFolder = monthFolders[m];
+                
+                // Parse month number from folder name (e.g., "01. ENERO" → 1)
+                var mesMatch = mFolder.name.match(/^(\d{1,2})/);
+                if (!mesMatch) continue;
+                
+                var mesNum = parseInt(mesMatch[1]);
+                if (mesNum < 1 || mesNum > 12) continue;
+                
+                // Check if already exists in Supabase
+                var exists = contabilidadCarpetas.some(c => c.anio === anio && c.mes === mesNum);
+                if (exists) {
+                    totalSkipped++;
+                    continue;
+                }
+                
+                // Register in Supabase
+                var driveUrl = 'https://drive.google.com/drive/folders/' + mFolder.id;
+                var { error } = await supabaseClient
+                    .from('contabilidad_carpetas')
+                    .insert([{
+                        anio: anio,
+                        mes: mesNum,
+                        nombre_mes: MESES_NOMBRES[mesNum],
+                        google_drive_url: driveUrl
+                    }]);
+                
+                if (error) {
+                    console.error('Error registrando ' + anio + '/' + mesNum + ':', error);
+                } else {
+                    totalImported++;
+                    console.log('✅ Registrado:', anio, MESES_NOMBRES[mesNum]);
+                }
+            }
+        }
+        
+        alert('✅ Importación completada!\n\n' + totalImported + ' meses importados\n' + totalSkipped + ' ya existían (saltados)');
+        await loadContabilidadCarpetas();
+        
+    } catch (e) {
+        console.error('Error importando:', e);
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
     }
 }
 
