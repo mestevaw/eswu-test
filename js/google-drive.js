@@ -197,26 +197,34 @@ async function searchDriveFiles(searchTerm, rootFolderIds) {
     const data = await response.json();
     var files = data.files || [];
     
-    // Resolve parent paths (subfolder → month → year)
-    var folderCache = {};
+    // Resolve paths in 3 parallel batches (subfolder → month → year)
+    var cache = {};
+    
+    // Batch 1: Get all unique parent IDs (subfolder level)
+    var parentIds = [...new Set(files.map(f => f.parents && f.parents[0]).filter(Boolean))];
+    await fetchFoldersBatch(parentIds, cache);
+    
+    // Batch 2: Get month level (parents of subfolders)
+    var monthIds = [...new Set(parentIds.map(id => cache[id] && cache[id].parents && cache[id].parents[0]).filter(Boolean))];
+    await fetchFoldersBatch(monthIds, cache);
+    
+    // Batch 3: Get year level (parents of months)
+    var yearIds = [...new Set(monthIds.map(id => cache[id] && cache[id].parents && cache[id].parents[0]).filter(Boolean))];
+    await fetchFoldersBatch(yearIds, cache);
+    
+    // Assign resolved paths to files
     for (var i = 0; i < files.length; i++) {
         var f = files[i];
-        if (f.parents && f.parents[0]) {
-            try {
-                var subfolder = await getDriveFolderName(f.parents[0], folderCache);
-                f._subfolder = subfolder.name || '';
-                
-                if (subfolder.parents && subfolder.parents[0]) {
-                    var month = await getDriveFolderName(subfolder.parents[0], folderCache);
-                    f._month = month.name || '';
-                    
-                    if (month.parents && month.parents[0]) {
-                        var year = await getDriveFolderName(month.parents[0], folderCache);
-                        f._year = year.name || '';
-                    }
-                }
-            } catch (e) {
-                // Path resolution failed, leave blank
+        var parentId = f.parents && f.parents[0];
+        if (!parentId || !cache[parentId]) continue;
+        
+        f._subfolder = cache[parentId].name || '';
+        var monthId = cache[parentId].parents && cache[parentId].parents[0];
+        if (monthId && cache[monthId]) {
+            f._month = cache[monthId].name || '';
+            var yearId = cache[monthId].parents && cache[monthId].parents[0];
+            if (yearId && cache[yearId]) {
+                f._year = cache[yearId].name || '';
             }
         }
     }
@@ -224,18 +232,18 @@ async function searchDriveFiles(searchTerm, rootFolderIds) {
     return files;
 }
 
-async function getDriveFolderName(folderId, cache) {
-    if (cache[folderId]) return cache[folderId];
-    
-    var response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name,parents&key=${GOOGLE_API_KEY}`, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    
-    if (!response.ok) return { name: '', parents: [] };
-    
-    var data = await response.json();
-    cache[folderId] = data;
-    return data;
+async function fetchFoldersBatch(ids, cache) {
+    if (!ids.length) return;
+    // Fetch all in parallel
+    var promises = ids.filter(id => !cache[id]).map(id =>
+        fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name,parents&key=${GOOGLE_API_KEY}`, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        })
+        .then(r => r.ok ? r.json() : { name: '', parents: [] })
+        .then(data => { cache[id] = data; })
+        .catch(() => { cache[id] = { name: '', parents: [] }; })
+    );
+    await Promise.all(promises);
 }
 
 // ============================================
