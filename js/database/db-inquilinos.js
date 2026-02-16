@@ -9,12 +9,12 @@ async function loadInquilinos() {
         // SELECT sin campos pesados (contrato_file, pago_file, archivo_pdf)
         const { data, error } = await supabaseClient
             .from('inquilinos')
-            .select('id, nombre, clabe, rfc, m2, renta, fecha_inicio, fecha_vencimiento, notas, numero_despacho, contrato_activo, fecha_terminacion, pagos_inquilinos(id, inquilino_id, fecha, monto, completo), inquilinos_documentos(id, inquilino_id, nombre_documento, fecha_guardado, usuario_guardo), inquilinos_contactos(*)')
+            .select('id, nombre, clabe, rfc, m2, renta, fecha_inicio, fecha_vencimiento, notas, numero_despacho, contrato_activo, fecha_terminacion, google_drive_folder_id, contrato_drive_file_id, pagos_inquilinos(id, inquilino_id, fecha, monto, completo), inquilinos_documentos(id, inquilino_id, nombre_documento, fecha_guardado, usuario_guardo, google_drive_file_id), inquilinos_contactos(*)')
             .order('nombre');
         
         if (error) throw error;
         
-        // Verificar cuáles tienen contrato (sin cargar el PDF)
+        // Verificar cuáles tienen contrato base64 (sin cargar el PDF)
         const { data: conContrato } = await supabaseClient
             .from('inquilinos')
             .select('id')
@@ -41,7 +41,9 @@ async function loadInquilinos() {
             numero_despacho: inq.numero_despacho,
             contrato_activo: inq.contrato_activo,
             fecha_terminacion: inq.fecha_terminacion,
-            has_contrato: contratoSet.has(inq.id),
+            google_drive_folder_id: inq.google_drive_folder_id || '',
+            contrato_drive_file_id: inq.contrato_drive_file_id || '',
+            has_contrato: contratoSet.has(inq.id) || !!(inq.contrato_drive_file_id && inq.contrato_drive_file_id !== ''),
             contactos: inq.inquilinos_contactos ? inq.inquilinos_contactos.map(c => ({
                 id: c.id,
                 nombre: c.nombre,
@@ -59,7 +61,8 @@ async function loadInquilinos() {
                 id: d.id,
                 nombre: d.nombre_documento,
                 fecha: d.fecha_guardado,
-                usuario: d.usuario_guardo
+                usuario: d.usuario_guardo,
+                google_drive_file_id: d.google_drive_file_id || ''
             })).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')) : []
         }));
         
@@ -76,14 +79,10 @@ async function saveInquilino(event) {
     
     try {
         const contratoFile = document.getElementById('inquilinoContrato').files[0];
-        let contratoURL = null;
-        
-        if (contratoFile) {
-            contratoURL = await fileToBase64(contratoFile);
-        }
+        const nombre = document.getElementById('inquilinoNombre').value;
         
         const inquilinoData = {
-            nombre: document.getElementById('inquilinoNombre').value,
+            nombre: nombre,
             clabe: document.getElementById('inquilinoClabe').value || null,
             rfc: document.getElementById('inquilinoRFC').value || null,
             m2: document.getElementById('inquilinoM2').value || null,
@@ -93,10 +92,6 @@ async function saveInquilino(event) {
             fecha_vencimiento: document.getElementById('inquilinoFechaVenc').value,
             notas: document.getElementById('inquilinoNotas').value || null
         };
-        
-        if (contratoURL) {
-            inquilinoData.contrato_file = contratoURL;
-        }
         
         let inquilinoId;
         
@@ -122,6 +117,55 @@ async function saveInquilino(event) {
             
             if (error) throw error;
             inquilinoId = data[0].id;
+            
+            // Create Drive folder for new inquilino
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                try {
+                    var folderId = await getOrCreateInquilinoFolder(nombre);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ google_drive_folder_id: folderId })
+                        .eq('id', inquilinoId);
+                    console.log('✅ Carpeta Drive creada para', nombre);
+                } catch (driveErr) {
+                    console.error('⚠️ No se pudo crear carpeta Drive:', driveErr);
+                }
+            }
+        }
+        
+        // Upload contrato to Drive if provided
+        if (contratoFile) {
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                // Get or find the inquilino's Drive folder
+                var inqFolderId = null;
+                try {
+                    inqFolderId = await getOrCreateInquilinoFolder(nombre);
+                } catch (e) {
+                    console.error('⚠️ No se encontró carpeta Drive, guardando base64');
+                }
+                
+                if (inqFolderId) {
+                    var result = await uploadFileToDrive(contratoFile, inqFolderId);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ contrato_drive_file_id: result.id, google_drive_folder_id: inqFolderId })
+                        .eq('id', inquilinoId);
+                } else {
+                    // Fallback to base64
+                    var contratoURL = await fileToBase64(contratoFile);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ contrato_file: contratoURL })
+                        .eq('id', inquilinoId);
+                }
+            } else {
+                // No Drive, use base64
+                var contratoURL = await fileToBase64(contratoFile);
+                await supabaseClient
+                    .from('inquilinos')
+                    .update({ contrato_file: contratoURL })
+                    .eq('id', inquilinoId);
+            }
         }
         
         if (tempInquilinoContactos.length > 0) {
@@ -214,17 +258,51 @@ async function saveDocumentoAdicional(event) {
             throw new Error('Seleccione un archivo PDF');
         }
         
-        const pdfBase64 = await fileToBase64(file);
+        if (!nombre) {
+            throw new Error('Ingresa el nombre del documento');
+        }
+        
+        var docData = {
+            inquilino_id: currentInquilinoId,
+            nombre_documento: nombre,
+            fecha_guardado: new Date().toISOString().split('T')[0],
+            usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
+        };
+        
+        // Upload to Drive if connected
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+            var inq = inquilinos.find(i => i.id === currentInquilinoId);
+            var folderId = inq ? inq.google_drive_folder_id : '';
+            
+            // Get or create folder if not stored
+            if (!folderId && inq) {
+                try {
+                    folderId = await getOrCreateInquilinoFolder(inq.nombre);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ google_drive_folder_id: folderId })
+                        .eq('id', currentInquilinoId);
+                } catch (e) {
+                    console.error('⚠️ No se encontró carpeta Drive');
+                }
+            }
+            
+            if (folderId) {
+                var result = await uploadFileToDrive(file, folderId);
+                docData.google_drive_file_id = result.id;
+                docData.archivo_pdf = '';
+            } else {
+                // Fallback base64
+                docData.archivo_pdf = await fileToBase64(file);
+            }
+        } else {
+            // No Drive, use base64
+            docData.archivo_pdf = await fileToBase64(file);
+        }
         
         const { error } = await supabaseClient
             .from('inquilinos_documentos')
-            .insert([{
-                inquilino_id: currentInquilinoId,
-                nombre_documento: nombre,
-                archivo_pdf: pdfBase64,
-                fecha_guardado: new Date().toISOString().split('T')[0],
-                usuario_guardo: currentUser.nombre
-            }]);
+            .insert([docData]);
         
         if (error) throw error;
         
