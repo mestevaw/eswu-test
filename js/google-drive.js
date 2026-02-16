@@ -6,6 +6,7 @@
 var gdriveAccessToken = null;
 var gdriveTokenClient = null;
 var gdriveInitialized = false;
+var gdriveAutoConnectAttempted = false;
 
 // ============================================
 // INITIALIZATION
@@ -22,19 +23,37 @@ function initGoogleDrive() {
         });
         gdriveInitialized = true;
         console.log('✅ Google Drive API inicializada');
+        
+        // Try silent auto-connect if previously connected
+        if (!gdriveAutoConnectAttempted && localStorage.getItem('gdrive_was_connected') === 'true') {
+            gdriveAutoConnectAttempted = true;
+            tryAutoConnect();
+        }
     } catch (e) {
         console.error('Error inicializando Google Drive:', e);
     }
 }
 
+function tryAutoConnect() {
+    try {
+        gdriveTokenClient.requestAccessToken({ prompt: '' });
+    } catch (e) {
+        console.log('Auto-connect silencioso no disponible');
+    }
+}
+
 function handleGoogleAuthResponse(response) {
     if (response.error) {
-        console.error('Google Auth error:', response.error);
-        alert('Error al conectar con Google: ' + response.error);
+        if (response.error === 'user_denied' || response.error === 'access_denied') {
+            console.log('Google: acceso denegado o cancelado');
+        } else {
+            console.error('Google Auth error:', response.error);
+        }
         return;
     }
     
     gdriveAccessToken = response.access_token;
+    localStorage.setItem('gdrive_was_connected', 'true');
     console.log('✅ Google Drive conectado');
     
     // Refresh contabilidad view
@@ -49,14 +68,13 @@ function googleSignIn() {
     }
     
     if (gdriveAccessToken) {
-        // Already signed in, just refresh
         if (typeof renderContabilidadContent === 'function') {
             renderContabilidadContent();
         }
         return;
     }
     
-    gdriveTokenClient.requestAccessToken();
+    gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
 }
 
 function isGoogleConnected() {
@@ -164,7 +182,6 @@ async function uploadFileToDrive(file, folderId) {
 async function searchDriveFiles(searchTerm, rootFolderIds) {
     if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
     
-    // Search across all known folders
     const query = `name contains '${searchTerm.replace(/'/g, "\\'")}' and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,webViewLink,parents)&orderBy=modifiedTime desc&pageSize=50&key=${GOOGLE_API_KEY}`;
     
@@ -178,7 +195,47 @@ async function searchDriveFiles(searchTerm, rootFolderIds) {
     }
     
     const data = await response.json();
-    return data.files || [];
+    var files = data.files || [];
+    
+    // Resolve parent paths (subfolder → month → year)
+    var folderCache = {};
+    for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        if (f.parents && f.parents[0]) {
+            try {
+                var subfolder = await getDriveFolderName(f.parents[0], folderCache);
+                f._subfolder = subfolder.name || '';
+                
+                if (subfolder.parents && subfolder.parents[0]) {
+                    var month = await getDriveFolderName(subfolder.parents[0], folderCache);
+                    f._month = month.name || '';
+                    
+                    if (month.parents && month.parents[0]) {
+                        var year = await getDriveFolderName(month.parents[0], folderCache);
+                        f._year = year.name || '';
+                    }
+                }
+            } catch (e) {
+                // Path resolution failed, leave blank
+            }
+        }
+    }
+    
+    return files;
+}
+
+async function getDriveFolderName(folderId, cache) {
+    if (cache[folderId]) return cache[folderId];
+    
+    var response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name,parents&key=${GOOGLE_API_KEY}`, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    
+    if (!response.ok) return { name: '', parents: [] };
+    
+    var data = await response.json();
+    cache[folderId] = data;
+    return data;
 }
 
 // ============================================
