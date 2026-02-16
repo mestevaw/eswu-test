@@ -386,10 +386,10 @@ function renderBancosTable() {
     const tbody = document.getElementById('bancosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
-    // Show vincular button only for nivel 1 when connected
+    // Show vincular button for nivel 1 always
     var vincBtn = document.getElementById('bancoVincularBtn');
     if (vincBtn) {
-        vincBtn.style.display = (currentUser && currentUser.nivel === 1 && isGoogleConnected()) ? 'inline' : 'none';
+        vincBtn.style.display = (currentUser && currentUser.nivel === 1) ? 'inline' : 'none';
     }
     
     var mesesNombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -438,9 +438,18 @@ var vinculacionMeses = [];
 var vinculacionIndex = 0;
 
 async function iniciarVinculacionBancos() {
+    // Init Google Drive if not yet
+    if (!gdriveInitialized) initGoogleDrive();
+    
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        // Trigger sign-in, user will need to click 🔗 again after connecting
+        googleSignIn();
         return;
+    }
+    
+    // Make sure contabilidad carpetas are loaded
+    if (!contabilidadCarpetas || contabilidadCarpetas.length === 0) {
+        await loadContabilidadCarpetas();
     }
     
     // Build list of all months that have "Reportes financieros" subfolder
