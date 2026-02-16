@@ -599,19 +599,30 @@ async function vincularGuardarMes(anio, mes, fileIdsStr) {
             
             // Save to Supabase
             console.log('💾 Guardando:', tipo, fileData.name, 'anio=' + anio, 'mes=' + mes);
+            var insertData = {
+                tipo: tipo,
+                google_drive_file_id: fid,
+                nombre_archivo: fileData.name || '',
+                anio: anio,
+                mes: mes,
+                fecha_subida: new Date().toISOString().split('T')[0],
+                archivo_pdf: '',
+                usuario_subio: (currentUser && currentUser.nombre) || ''
+            };
+            console.log('   Datos a insertar:', JSON.stringify(insertData));
             var { error: insertError } = await supabaseClient
                 .from('bancos_documentos')
-                .insert([{
-                    tipo: tipo,
-                    google_drive_file_id: fid,
-                    nombre_archivo: fileData.name || '',
-                    anio: anio,
-                    mes: mes,
-                    fecha_subida: new Date().toISOString().split('T')[0]
-                }]);
+                .insert([insertData]);
             
             if (insertError) {
                 console.error('❌ Error insert:', insertError);
+                console.error('   Mensaje:', insertError.message);
+                console.error('   Detalle:', insertError.details);
+                console.error('   Hint:', insertError.hint);
+                console.error('   Code:', insertError.code);
+                alert('Error guardando: ' + (insertError.message || JSON.stringify(insertError)) + '\n\nVinculación detenida.');
+                hideLoading();
+                return;
             } else {
                 console.log('✅ Guardado OK');
             }
