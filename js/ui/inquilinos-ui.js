@@ -385,9 +385,15 @@ function showInquilinoDetail(id) {
         // CONTRATO DE RENTA (con + o ♻ para cargar/recargar)
         const contratoSection = document.getElementById('contratoOriginalSection');
         if (inq.has_contrato) {
+            var contratoClickAction = '';
+            if (inq.contrato_drive_file_id) {
+                contratoClickAction = 'viewDriveFileInline(\'' + inq.contrato_drive_file_id + '\', \'Contrato Renta\')';
+            } else {
+                contratoClickAction = 'fetchAndViewContrato(' + inq.id + ')';
+            }
             contratoSection.innerHTML = `
                 <div style="background:#e8edf3; border-radius:6px; padding:0.4rem 0.4rem; display:flex; align-items:center; gap:0.2rem; height:100%;">
-                    <div onclick="fetchAndViewContrato(${inq.id})" style="cursor:pointer; display:flex; align-items:center; gap:0.2rem; flex:1;">
+                    <div onclick="${contratoClickAction}" style="cursor:pointer; display:flex; align-items:center; gap:0.2rem; flex:1;">
                         <span style="font-size:1rem;">📄</span>
                         <div style="font-size:0.6rem; color:var(--text-light); text-transform:uppercase; font-weight:700;">Contrato Renta</div>
                     </div>
@@ -416,11 +422,17 @@ function showInquilinoDetail(id) {
         if (inq.documentos && inq.documentos.length > 0) {
             const docRows = inq.documentos.map(d => {
                 const safeNombre = (d.nombre || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                var docClickAction = '';
+                if (d.google_drive_file_id) {
+                    docClickAction = "viewDriveFileInline('" + d.google_drive_file_id + "', '" + safeNombre + "')";
+                } else {
+                    docClickAction = "fetchAndViewDocInquilino(" + d.id + ")";
+                }
                 return `
                     <tr class="doc-item">
-                        <td onclick="fetchAndViewDocInquilino(${d.id})" style="cursor:pointer;">${d.nombre}</td>
-                        <td onclick="fetchAndViewDocInquilino(${d.id})" style="cursor:pointer;">${formatDate(d.fecha)}</td>
-                        <td onclick="fetchAndViewDocInquilino(${d.id})" style="cursor:pointer;">${d.usuario}</td>
+                        <td onclick="${docClickAction}" style="cursor:pointer;">${d.nombre}</td>
+                        <td onclick="${docClickAction}" style="cursor:pointer;">${formatDate(d.fecha)}</td>
+                        <td onclick="${docClickAction}" style="cursor:pointer;">${d.usuario}</td>
                         <td style="white-space:nowrap;">
                             <span onclick="event.stopPropagation(); openEditDocInquilinoModal(${d.id}, '${safeNombre}')" title="Modificar datos documento" style="cursor:pointer; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
                             <span onclick="event.stopPropagation(); deleteDocInquilinoConConfirm(${d.id}, '${safeNombre}')" title="Eliminar documento" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1.1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
@@ -590,7 +602,7 @@ async function deleteContratoOriginalConfirm(inquilinoId) {
     try {
         const { error } = await supabaseClient
             .from('inquilinos')
-            .update({ contrato_file: null })
+            .update({ contrato_file: null, contrato_drive_file_id: '' })
             .eq('id', inquilinoId);
         if (error) throw error;
         await loadInquilinos();
@@ -693,12 +705,30 @@ async function saveContratoRenta() {
     if (!file) { alert('Selecciona un PDF'); return; }
     showLoading();
     try {
-        const pdfBase64 = await fileToBase64(file);
-        const { error } = await supabaseClient
-            .from('inquilinos')
-            .update({ contrato_file: pdfBase64 })
-            .eq('id', currentInquilinoId);
-        if (error) throw error;
+        var inq = inquilinos.find(i => i.id === currentInquilinoId);
+        
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected() && inq) {
+            // Upload to Drive
+            var folderId = inq.google_drive_folder_id;
+            if (!folderId) {
+                folderId = await getOrCreateInquilinoFolder(inq.nombre);
+            }
+            var result = await uploadFileToDrive(file, folderId);
+            const { error } = await supabaseClient
+                .from('inquilinos')
+                .update({ contrato_drive_file_id: result.id, google_drive_folder_id: folderId })
+                .eq('id', currentInquilinoId);
+            if (error) throw error;
+        } else {
+            // Fallback base64
+            const pdfBase64 = await fileToBase64(file);
+            const { error } = await supabaseClient
+                .from('inquilinos')
+                .update({ contrato_file: pdfBase64 })
+                .eq('id', currentInquilinoId);
+            if (error) throw error;
+        }
+        
         await loadInquilinos();
         closeModal('cargarContratoModal');
         showInquilinoDetail(currentInquilinoId);
@@ -739,17 +769,26 @@ async function processEditDocAsContrato() {
     if (!editingDocId) return;
     showLoading();
     try {
+        // Check if doc has Drive file_id
         const { data, error } = await supabaseClient
             .from('inquilinos_documentos')
-            .select('archivo_pdf')
+            .select('archivo_pdf, google_drive_file_id')
             .eq('id', editingDocId)
             .single();
         
         if (error) throw error;
         
+        // Update inquilino with contrato reference
+        var updateData = {};
+        if (data.google_drive_file_id) {
+            updateData.contrato_drive_file_id = data.google_drive_file_id;
+        } else {
+            updateData.contrato_file = data.archivo_pdf;
+        }
+        
         const { error: updateError } = await supabaseClient
             .from('inquilinos')
-            .update({ contrato_file: data.archivo_pdf })
+            .update(updateData)
             .eq('id', currentInquilinoId);
         
         if (updateError) throw updateError;
