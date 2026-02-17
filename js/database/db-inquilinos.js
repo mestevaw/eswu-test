@@ -398,4 +398,4 @@ function editInquilino() {
     document.getElementById('addInquilinoModal').classList.add('active');
 }
 
-console.log('✅ DB-INQUILINOS.JS cargado (optimizado)');
+console.log('✅ DB-INQUILINOS.JS v5 cargado');
