@@ -170,4 +170,4 @@ async function deleteFactura(facturaId) {
     }
 }
 
-console.log('✅ DB-FACTURAS.JS cargado (2026-02-12 19:00 CST)');
+console.log('✅ DB-FACTURAS.JS v5 cargado');
