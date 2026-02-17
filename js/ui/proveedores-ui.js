@@ -823,52 +823,120 @@ function exportFacturasPorPagarToExcel() {
 }
 
 // ============================================
-// VINCULAR PDF A FACTURA (desde ficha proveedor)
+// VINCULAR PDF A FACTURA (navegar Drive)
 // ============================================
 
 var linkFacturaId = null;
-var linkFacturaTipo = null; // 'documento' or 'pago'
+var linkFacturaTipo = null;
+var linkNavStack = []; // [{label, folderId}]
 
-function showLinkFacturaFileModal(facturaId, tipo) {
-    console.log('📎 showLinkFacturaFileModal called:', facturaId, tipo);
+async function showLinkFacturaFileModal(facturaId, tipo) {
     linkFacturaId = facturaId;
     linkFacturaTipo = tipo;
+    linkNavStack = [];
     
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
     document.getElementById('linkFacturaFileTitle').textContent = title;
-    document.getElementById('linkFacturaDriveUrl').value = '';
-    var modal = document.getElementById('linkFacturaFileModal');
-    modal.style.display = 'flex';
+    document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-light);">⏳ Cargando Drive...</p>';
+    document.getElementById('linkDriveBreadcrumb').innerHTML = '';
+    document.getElementById('linkFacturaFileModal').style.display = 'flex';
+    
+    // Find root folder
+    try {
+        var q = "name = 'Inmobiliaris ESWU' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var data = await resp.json();
+        
+        if (!data.files || data.files.length === 0) {
+            document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--danger);">No se encontró "Inmobiliaris ESWU" en Drive</p>';
+            return;
+        }
+        
+        var rootId = data.files[0].id;
+        linkNavStack = [{ label: 'Inmobiliaris ESWU', folderId: rootId }];
+        renderLinkBreadcrumb();
+        await renderLinkDriveFolder(rootId);
+    } catch (e) {
+        document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--danger);">Error: ' + e.message + '</p>';
+    }
 }
 
 function closeLinkModal() {
-    var modal = document.getElementById('linkFacturaFileModal');
-    modal.classList.remove('active');
-    modal.style.display = 'none';
+    document.getElementById('linkFacturaFileModal').style.display = 'none';
 }
 
-async function saveLinkFacturaFile() {
-    var url = (document.getElementById('linkFacturaDriveUrl').value || '').trim();
+async function linkNavOpenFolder(name, folderId) {
+    linkNavStack.push({ label: name, folderId: folderId });
+    renderLinkBreadcrumb();
+    await renderLinkDriveFolder(folderId);
+}
+
+function linkNavGoTo(index) {
+    linkNavStack = linkNavStack.slice(0, index + 1);
+    renderLinkBreadcrumb();
+    renderLinkDriveFolder(linkNavStack[index].folderId);
+}
+
+function renderLinkBreadcrumb() {
+    var html = linkNavStack.map(function(item, i) {
+        if (i < linkNavStack.length - 1) {
+            return '<span onclick="linkNavGoTo(' + i + ')" style="cursor:pointer; color:var(--primary); text-decoration:underline;">' + item.label + '</span>';
+        }
+        return '<strong>' + item.label + '</strong>';
+    }).join(' > ');
+    document.getElementById('linkDriveBreadcrumb').innerHTML = html;
+}
+
+async function renderLinkDriveFolder(folderId) {
+    var contentDiv = document.getElementById('linkDriveContent');
+    contentDiv.innerHTML = '<p style="text-align:center; padding:1rem; color:var(--text-light);">⏳</p>';
     
-    if (!url) {
-        alert('Pega la URL de Google Drive');
-        return;
+    try {
+        var { folders, files } = await listDriveFolder(folderId);
+        var html = '';
+        
+        if (folders.length > 0) {
+            folders.forEach(function(f) {
+                html += '<div onclick="linkNavOpenFolder(\'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'white\'">' +
+                    '<span style="font-size:1.2rem;">📁</span>' +
+                    '<span style="font-size:0.88rem; font-weight:500;">' + f.name + '</span>' +
+                    '</div>';
+            });
+        }
+        
+        if (files.length > 0) {
+            files.forEach(function(f, i) {
+                var isPdf = f.name.toLowerCase().endsWith('.pdf');
+                var bgColor = i % 2 === 0 ? 'white' : '#f7fafc';
+                if (isPdf) {
+                    html += '<div onclick="selectLinkFile(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0; background:' + bgColor + '; transition:background 0.15s;" onmouseover="this.style.background=\'#e6fffa\'" onmouseout="this.style.background=\'' + bgColor + '\'">' +
+                        '<span style="font-size:1.1rem;">📄</span>' +
+                        '<span style="font-size:0.85rem; flex:1; word-break:break-word;">' + f.name + '</span>' +
+                        '<span style="font-size:0.7rem; color:var(--success); font-weight:600;">Seleccionar</span>' +
+                        '</div>';
+                } else {
+                    html += '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; border-bottom:1px solid #f0f0f0; background:' + bgColor + '; opacity:0.5;">' +
+                        '<span style="font-size:1.1rem;">📎</span>' +
+                        '<span style="font-size:0.85rem; flex:1; word-break:break-word;">' + f.name + '</span>' +
+                        '</div>';
+                }
+            });
+        }
+        
+        if (folders.length === 0 && files.length === 0) {
+            html = '<p style="text-align:center; padding:2rem; color:var(--text-light);">📭 Carpeta vacía</p>';
+        }
+        
+        contentDiv.innerHTML = html;
+    } catch (e) {
+        contentDiv.innerHTML = '<p style="text-align:center; padding:1rem; color:var(--danger);">Error: ' + e.message + '</p>';
     }
-    
-    // Extract file ID from various Google Drive URL formats
-    var fileId = null;
-    var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
-    if (match) {
-        fileId = match[1];
-    } else {
-        match = url.match(/id=([a-zA-Z0-9_-]+)/);
-        if (match) fileId = match[1];
-    }
-    
-    if (!fileId) {
-        alert('No se pudo extraer el ID del archivo. Asegúrate de pegar un link de Google Drive válido.');
-        return;
-    }
+}
+
+async function selectLinkFile(fileId, fileName) {
+    if (!confirm('¿Vincular "' + fileName + '"?')) return;
     
     showLoading();
     try {
@@ -895,4 +963,4 @@ async function saveLinkFacturaFile() {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v15 cargado');
+console.log('✅ PROVEEDORES-UI.JS v19 cargado');
