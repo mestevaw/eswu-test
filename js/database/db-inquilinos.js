@@ -1,5 +1,5 @@
 /* ========================================
-   DB-INQUILINOS.JS - Database operations for inquilinos
+   DB-INQUILINOS.JS v1
    OPTIMIZADO: No carga PDFs en memoria
    Última actualización: 2026-02-12 13:30 CST
    ======================================== */
