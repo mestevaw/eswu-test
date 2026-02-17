@@ -1050,9 +1050,14 @@ async function mostrarVinculacionFacturasMes() {
     area.innerHTML = '<p style="text-align:center; color:var(--text-light);">Cargando archivos...</p>';
     
     try {
-        var { files } = await listDriveFolder(folderId);
+        var { files: allFiles } = await listDriveFolder(folderId);
         
-        if (!files || files.length === 0) {
+        // Filter to only PDFs
+        var files = (allFiles || []).filter(function(f) {
+            return f.name.toLowerCase().endsWith('.pdf');
+        });
+        
+        if (files.length === 0) {
             vinculacionFacturasIndex++;
             mostrarVinculacionFacturasMes();
             return;
@@ -1090,7 +1095,8 @@ async function mostrarVinculacionFacturasMes() {
         
         var filesHtml = files.map(function(file, idx) {
             return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid #eee; flex-wrap:wrap;">' +
-                '<div style="flex:1; min-width:200px; font-size:0.85rem; word-break:break-word;">' + file.name + '</div>' +
+                '<span onclick="viewDriveFileInline(\'' + file.id + '\', \'' + file.name.replace(/'/g, "\\'") + '\')" title="Previsualizar PDF" style="cursor:pointer; font-size:1rem;">👁</span>' +
+                '<div style="flex:1; min-width:150px; font-size:0.85rem; word-break:break-word;">' + file.name + '</div>' +
                 '<select id="vincFactFile_' + idx + '" data-file-id="' + file.id + '" data-file-name="' + file.name.replace(/"/g, '&quot;') + '" style="flex:1; min-width:200px; padding:0.3rem; border:1px solid var(--border); border-radius:4px; font-size:0.8rem;">' + options + '</select>' +
                 '</div>';
         }).join('');
@@ -1185,7 +1191,7 @@ async function guardarVinculacionFacturasMes() {
     mostrarVinculacionFacturasMes();
 }
 
-console.log('✅ ADMIN-UI.JS v2 cargado');
+console.log('✅ ADMIN-UI.JS v7 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
