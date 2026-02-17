@@ -1,5 +1,5 @@
 /* ========================================
-   MODALS.JS - Gestión de modales
+   MODALS.JS v1
    ======================================== */
 
 function closeModal(modalId) {
