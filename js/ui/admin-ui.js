@@ -1003,10 +1003,12 @@ async function iniciarVinculacionFacturas() {
         return;
     }
     
-    // Sort by year desc, month desc
+    // Sort by year desc, month desc (ensure numeric comparison)
     vinculacionFacturasData.sort((a, b) => {
-        if (b.anio !== a.anio) return b.anio - a.anio;
-        return b.mes - a.mes;
+        var ya = parseInt(a.anio) || 0, yb = parseInt(b.anio) || 0;
+        if (yb !== ya) return yb - ya;
+        var ma = parseInt(a.mes) || 0, mb = parseInt(b.mes) || 0;
+        return mb - ma;
     });
     
     if (vinculacionFacturasData.length === 0) {
@@ -1075,27 +1077,30 @@ async function mostrarVinculacionFacturasMes() {
                 var fDate = f.fecha ? f.fecha.substring(0, 7) : '';
                 todasFacturas.push({
                     id: f.id,
+                    proveedor: prov.nombre,
+                    numero: f.numero || 'S/N',
+                    fecha: fDate,
+                    monto: f.monto,
                     label: prov.nombre + ' — #' + (f.numero || 'S/N') + ' — ' + fDate + ' — $' + f.monto.toLocaleString('es-MX', {minimumFractionDigits:2}),
                     linked: alreadyLinked
                 });
             });
         });
         
-        // Sort alphabetically by label (proveedor name first)
+        // Sort alphabetically by proveedor name
         todasFacturas.sort((a, b) => a.label.localeCompare(b.label));
         
-        // Build dropdown options
-        var options = '<option value="">— Omitir —</option>';
-        todasFacturas.forEach(function(f) {
-            var check = f.linked ? ' ✅' : '';
-            options += '<option value="' + f.id + '">' + f.label + check + '</option>';
-        });
+        // Store globally for search filtering
+        window._vincFacturasOpciones = todasFacturas;
         
         var filesHtml = files.map(function(file, idx) {
             return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid #eee; flex-wrap:wrap;">' +
                 '<span onclick="viewDriveFileInline(\'' + file.id + '\', \'' + file.name.replace(/'/g, "\\'") + '\')" title="Previsualizar PDF" style="cursor:pointer; font-size:1rem;">👁</span>' +
                 '<div style="flex:1; min-width:150px; font-size:0.85rem; word-break:break-word;">' + file.name + '</div>' +
-                '<select id="vincFactFile_' + idx + '" data-file-id="' + file.id + '" data-file-name="' + file.name.replace(/"/g, '&quot;') + '" style="flex:1; min-width:200px; padding:0.3rem; border:1px solid var(--border); border-radius:4px; font-size:0.8rem;">' + options + '</select>' +
+                '<div style="flex:1; min-width:220px; position:relative;">' +
+                    '<input type="text" id="vincFactSearch_' + idx + '" data-file-id="' + file.id + '" data-file-name="' + file.name.replace(/"/g, '&quot;') + '" data-factura-id="" placeholder="Buscar proveedor, # o monto..." onfocus="showVincFactDropdown(' + idx + ')" oninput="filterVincFactDropdown(' + idx + ')" style="width:100%; padding:0.3rem 0.4rem; border:1px solid var(--border); border-radius:4px; font-size:0.8rem; box-sizing:border-box;">' +
+                    '<div id="vincFactDropdown_' + idx + '" style="display:none; position:absolute; top:100%; left:0; right:0; max-height:200px; overflow-y:auto; background:white; border:1px solid var(--border); border-radius:0 0 4px 4px; z-index:100; box-shadow:0 4px 12px rgba(0,0,0,0.15);"></div>' +
+                '</div>' +
                 '</div>';
         }).join('');
         
@@ -1119,6 +1124,57 @@ async function mostrarVinculacionFacturasMes() {
     }
 }
 
+function showVincFactDropdown(idx) {
+    filterVincFactDropdown(idx);
+    document.getElementById('vincFactDropdown_' + idx).style.display = 'block';
+}
+
+function filterVincFactDropdown(idx) {
+    var input = document.getElementById('vincFactSearch_' + idx);
+    var dropdown = document.getElementById('vincFactDropdown_' + idx);
+    var query = (input.value || '').toLowerCase().trim();
+    var opciones = window._vincFacturasOpciones || [];
+    
+    var filtered = opciones;
+    if (query) {
+        var terms = query.split(/\s+/);
+        filtered = opciones.filter(function(f) {
+            var searchText = f.label.toLowerCase();
+            return terms.every(function(t) { return searchText.indexOf(t) >= 0; });
+        });
+    }
+    
+    var html = '<div onclick="selectVincFact(' + idx + ', \'\', \'\')" style="padding:0.4rem 0.6rem; cursor:pointer; font-size:0.8rem; color:var(--text-light); border-bottom:1px solid #eee;" onmouseover="this.style.background=\'#f0f4f8\'" onmouseout="this.style.background=\'white\'">— Omitir —</div>';
+    
+    filtered.slice(0, 50).forEach(function(f) {
+        var check = f.linked ? ' ✅' : '';
+        var escapedLabel = f.label.replace(/'/g, "\\'");
+        html += '<div onclick="selectVincFact(' + idx + ', ' + f.id + ', \'' + escapedLabel + '\')" style="padding:0.4rem 0.6rem; cursor:pointer; font-size:0.8rem; border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background=\'#f0f4f8\'" onmouseout="this.style.background=\'white\'">' + f.label + check + '</div>';
+    });
+    
+    if (filtered.length > 50) {
+        html += '<div style="padding:0.4rem 0.6rem; font-size:0.75rem; color:var(--text-light);">... ' + (filtered.length - 50) + ' más. Escribe para filtrar.</div>';
+    }
+    
+    dropdown.innerHTML = html;
+    dropdown.style.display = 'block';
+}
+
+function selectVincFact(idx, facturaId, label) {
+    var input = document.getElementById('vincFactSearch_' + idx);
+    input.value = label;
+    input.dataset.facturaId = facturaId || '';
+    document.getElementById('vincFactDropdown_' + idx).style.display = 'none';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.id || !e.target.id.startsWith('vincFactSearch_')) {
+        var dropdowns = document.querySelectorAll('[id^="vincFactDropdown_"]');
+        dropdowns.forEach(function(d) { d.style.display = 'none'; });
+    }
+});
+
 function saltarMesFacturas() {
     vinculacionFacturasIndex++;
     mostrarVinculacionFacturasMes();
@@ -1131,15 +1187,15 @@ function cancelarVinculacionFacturas() {
 }
 
 async function guardarVinculacionFacturasMes() {
-    var selects = document.querySelectorAll('[id^="vincFactFile_"]');
+    var inputs = document.querySelectorAll('[id^="vincFactSearch_"]');
     var toSave = [];
     
-    selects.forEach(function(sel) {
-        if (sel.value) {
+    inputs.forEach(function(input) {
+        if (input.dataset.facturaId) {
             toSave.push({
-                facturaId: parseInt(sel.value),
-                fileId: sel.dataset.fileId,
-                fileName: sel.dataset.fileName
+                facturaId: parseInt(input.dataset.facturaId),
+                fileId: input.dataset.fileId,
+                fileName: input.dataset.fileName
             });
         }
     });
@@ -1189,7 +1245,7 @@ async function guardarVinculacionFacturasMes() {
     mostrarVinculacionFacturasMes();
 }
 
-console.log('✅ ADMIN-UI.JS v9 cargado');
+console.log('✅ ADMIN-UI.JS v10 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
