@@ -562,21 +562,21 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 
 async function showForgotPasswordDialog() {
-    var nombre = prompt('Ingresa tu nombre de usuario:');
-    if (!nombre || !nombre.trim()) return;
+    var email = prompt('Ingresa tu correo electrónico:');
+    if (!email || !email.trim()) return;
     
-    nombre = nombre.trim();
+    email = email.trim().toLowerCase();
     
     try {
         var { data, error } = await supabaseClient
             .from('usuarios')
             .select('id, nombre, email')
-            .eq('nombre', nombre)
+            .eq('email', email)
             .eq('activo', true)
             .single();
         
         if (error || !data) {
-            alert('No se encontró un usuario activo con ese nombre.');
+            alert('No se encontró un usuario activo con ese correo.');
             return;
         }
         
@@ -594,14 +594,14 @@ async function showForgotPasswordDialog() {
             return;
         }
         
-        alert('Tu nuevo password temporal es:\n\n' + tempPass + '\n\nCámbialo después de iniciar sesión.');
+        alert('Hola ' + data.nombre + ', tu nuevo password temporal es:\n\n' + tempPass + '\n\nCámbialo después de iniciar sesión.');
         
     } catch (e) {
         alert('Error: ' + e.message);
     }
 }
 
-console.log('✅ MAIN.JS v11 cargado');
+console.log('✅ MAIN.JS v14 cargado');
 
 // ============================================
 // ELIMINAR PROVEEDORES MIGRADOS
