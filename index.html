@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v16 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v20 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=16">
-    <link rel="stylesheet" href="css/layout.css?v=16">
-    <link rel="stylesheet" href="css/components.css?v=16">
-    <link rel="stylesheet" href="css/modals.css?v=16">
-    <link rel="stylesheet" href="css/tables.css?v=16">
-    <link rel="stylesheet" href="css/pages.css?v=16">
-    <link rel="stylesheet" href="css/utilities.css?v=16">
+    <link rel="stylesheet" href="css/base.css?v=20">
+    <link rel="stylesheet" href="css/layout.css?v=20">
+    <link rel="stylesheet" href="css/components.css?v=20">
+    <link rel="stylesheet" href="css/modals.css?v=20">
+    <link rel="stylesheet" href="css/tables.css?v=20">
+    <link rel="stylesheet" href="css/pages.css?v=20">
+    <link rel="stylesheet" href="css/utilities.css?v=20">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -1247,21 +1247,15 @@
     </div>
 
     <!-- PDF Viewer Overlay (mobile-compatible) -->
-    <!-- Modal: Vincular archivo a factura -->
+    <!-- Modal: Navegar Drive para vincular PDF -->
     <div id="linkFacturaFileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
-        <div style="background:white; border-radius:8px; max-width:420px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem; border-bottom:1px solid #e2e8f0;">
-                <h3 id="linkFacturaFileTitle" style="margin:0; font-size:1.15rem; font-weight:700;">Vincular PDF</h3>
-                <div style="display:flex; gap:0.6rem; align-items:center;">
-                    <span onclick="saveLinkFacturaFile()" title="Guardar" style="cursor:pointer; font-size:1.5rem;">🖫</span>
-                    <span onclick="closeLinkModal()" title="Cerrar" style="cursor:pointer; font-size:1.5rem; color:#e53e3e; font-weight:700;">✕</span>
-                </div>
+        <div style="background:white; border-radius:8px; max-width:500px; width:95%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1.2rem; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+                <h3 id="linkFacturaFileTitle" style="margin:0; font-size:1rem; font-weight:700;">Vincular PDF</h3>
+                <span onclick="closeLinkModal()" title="Cerrar" style="cursor:pointer; font-size:1.4rem; color:#e53e3e; font-weight:700;">✕</span>
             </div>
-            <div style="padding:1.2rem;">
-                <label style="font-size:0.85rem; font-weight:600; color:#4a5568;">URL de Google Drive <span style="color:#e53e3e;">*</span></label>
-                <input type="text" id="linkFacturaDriveUrl" placeholder="Pega aquí el link de Google Drive" style="margin-top:0.4rem; width:100%; padding:0.6rem 0.75rem; border:1px solid #e2e8f0; border-radius:6px; font-size:0.9rem; background:#f7fafc; box-sizing:border-box;">
-                <p style="margin-top:0.4rem; font-size:0.75rem; color:#a0aec0;">Click derecho en el archivo → "Obtener enlace" → pega aquí</p>
-            </div>
+            <div id="linkDriveBreadcrumb" style="padding:0.4rem 1rem; font-size:0.8rem; color:var(--text-light); border-bottom:1px solid #f0f0f0; flex-shrink:0;"></div>
+            <div id="linkDriveContent" style="padding:0.5rem; overflow-y:auto; flex:1;"></div>
         </div>
     </div>
 
@@ -1280,24 +1274,24 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v16 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=16"></script>
-    <script src="js/google-drive.js?v=16"></script>
-    <script src="js/database/db-core.js?v=16"></script>
-    <script src="js/database/db-inquilinos.js?v=16"></script>
-    <script src="js/database/db-proveedores.js?v=16"></script>
-    <script src="js/database/db-facturas.js?v=16"></script>
-    <script src="js/database/db-fetch-docs.js?v=16"></script>
-    <script src="js/ui/navigation.js?v=16"></script>
-    <script src="js/ui/tables.js?v=16"></script>
-    <script src="js/ui/inquilinos-ui.js?v=16"></script>
-    <script src="js/ui/proveedores-ui.js?v=16"></script>
-    <script src="js/ui/admin-ui.js?v=16"></script>
-    <script src="js/ui/numeros-ui.js?v=16"></script>
-    <script src="js/modals/modals.js?v=16"></script>
-    <script src="js/modals/inquilino-modals.js?v=16"></script>
-    <script src="js/modals/proveedor-modals.js?v=16"></script>
-    <script src="js/main.js?v=16"></script>
+    <script>console.log('%c ESWU v20 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=20"></script>
+    <script src="js/google-drive.js?v=20"></script>
+    <script src="js/database/db-core.js?v=20"></script>
+    <script src="js/database/db-inquilinos.js?v=20"></script>
+    <script src="js/database/db-proveedores.js?v=20"></script>
+    <script src="js/database/db-facturas.js?v=20"></script>
+    <script src="js/database/db-fetch-docs.js?v=20"></script>
+    <script src="js/ui/navigation.js?v=20"></script>
+    <script src="js/ui/tables.js?v=20"></script>
+    <script src="js/ui/inquilinos-ui.js?v=20"></script>
+    <script src="js/ui/proveedores-ui.js?v=20"></script>
+    <script src="js/ui/admin-ui.js?v=20"></script>
+    <script src="js/ui/numeros-ui.js?v=20"></script>
+    <script src="js/modals/modals.js?v=20"></script>
+    <script src="js/modals/inquilino-modals.js?v=20"></script>
+    <script src="js/modals/proveedor-modals.js?v=20"></script>
+    <script src="js/main.js?v=20"></script>
 </body>
 </html>
 
