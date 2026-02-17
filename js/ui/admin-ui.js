@@ -1010,9 +1010,11 @@ async function iniciarVinculacionFacturas() {
     });
     
     if (vinculacionFacturasData.length === 0) {
-        area.innerHTML = '<p style="text-align:center; color:var(--danger);">No se encontraron carpetas de Facturas/Pagos en Drive</p>';
+        area.innerHTML = '<p style="text-align:center; color:var(--danger);">No se encontraron carpetas de Facturas Recibidas / Pagos Proveedores en Drive</p>';
         return;
     }
+    
+    console.log('🔗 Orden de meses:', vinculacionFacturasData.map(d => d.anio + '/' + d.mes).join(', '));
     
     mostrarVinculacionFacturasMes();
 }
@@ -1063,32 +1065,28 @@ async function mostrarVinculacionFacturasMes() {
             return;
         }
         
-        // Get all facturas for this month across all proveedores
-        var facturasDelMes = [];
+        // Get ALL facturas across all proveedores (not filtered by month)
+        var todasFacturas = [];
         proveedores.forEach(function(prov) {
             (prov.facturas || []).forEach(function(f) {
-                var fDate = new Date(f.fecha);
-                var fMonth = fDate.getMonth() + 1;
-                var fYear = fDate.getFullYear();
-                if (fYear === mesData.anio && fMonth === mesData.mes) {
-                    var alreadyLinked = (vinculacionFacturasMode === 'facturas') 
-                        ? !!(f.documento_drive_file_id)
-                        : !!(f.pago_drive_file_id);
-                    facturasDelMes.push({
-                        id: f.id,
-                        label: prov.nombre + ' — #' + (f.numero || 'S/N') + ' — $' + f.monto.toLocaleString('es-MX', {minimumFractionDigits:2}),
-                        linked: alreadyLinked
-                    });
-                }
+                var alreadyLinked = (vinculacionFacturasMode === 'facturas') 
+                    ? !!(f.documento_drive_file_id)
+                    : !!(f.pago_drive_file_id);
+                var fDate = f.fecha ? f.fecha.substring(0, 7) : '';
+                todasFacturas.push({
+                    id: f.id,
+                    label: prov.nombre + ' — #' + (f.numero || 'S/N') + ' — ' + fDate + ' — $' + f.monto.toLocaleString('es-MX', {minimumFractionDigits:2}),
+                    linked: alreadyLinked
+                });
             });
         });
         
-        // Sort facturas alphabetically by label
-        facturasDelMes.sort((a, b) => a.label.localeCompare(b.label));
+        // Sort alphabetically by label (proveedor name first)
+        todasFacturas.sort((a, b) => a.label.localeCompare(b.label));
         
         // Build dropdown options
         var options = '<option value="">— Omitir —</option>';
-        facturasDelMes.forEach(function(f) {
+        todasFacturas.forEach(function(f) {
             var check = f.linked ? ' ✅' : '';
             options += '<option value="' + f.id + '">' + f.label + check + '</option>';
         });
@@ -1191,7 +1189,7 @@ async function guardarVinculacionFacturasMes() {
     mostrarVinculacionFacturasMes();
 }
 
-console.log('✅ ADMIN-UI.JS v8 cargado');
+console.log('✅ ADMIN-UI.JS v9 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
