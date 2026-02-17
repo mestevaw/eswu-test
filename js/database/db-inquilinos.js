@@ -140,6 +140,11 @@ async function saveInquilino(event) {
         await loadInquilinos();
         closeModal('addInquilinoModal');
         isEditMode = false;
+        
+        if (currentSubContext === 'inquilinos-list') {
+            renderInquilinosTable();
+        }
+        
         showInquilinoDetail(inquilinoId);
         
     } catch (error) {
