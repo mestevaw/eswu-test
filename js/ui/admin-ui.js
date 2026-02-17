@@ -395,7 +395,7 @@ function renderBancosTable() {
     });
     
     var lastMonth = null;
-    var shadeToggle = false;
+    var shadeToggle = true; // start true so first toggle makes it false = white
     
     sorted.forEach(b => {
         var anio = b.anio || '';
@@ -925,21 +925,29 @@ function showVincularBtn() {
 }
 
 async function iniciarVinculacionFacturas() {
+    console.log('🔗 Iniciando vinculación facturas...');
+    console.log('🔗 isGoogleConnected:', typeof isGoogleConnected === 'function' ? isGoogleConnected() : 'function not found');
+    
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        // Try to trigger sign-in and wait
         if (typeof googleSignIn === 'function') {
+            console.log('🔗 Solicitando sign-in...');
             googleSignIn();
             // Wait up to 30 seconds for user to complete sign-in
             for (var w = 0; w < 60; w++) {
                 await new Promise(r => setTimeout(r, 500));
-                if (isGoogleConnected()) break;
+                if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                    console.log('🔗 Conectado después de', (w+1)*0.5, 'seg');
+                    break;
+                }
             }
         }
-        if (!isGoogleConnected()) {
+        if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
             alert('No se pudo conectar a Google Drive. Intenta de nuevo.');
             return;
         }
     }
+    
+    console.log('🔗 Drive conectado, cargando carpetas...');
     
     // Make sure carpetas are loaded
     if (!contabilidadCarpetas || contabilidadCarpetas.length === 0) {
@@ -948,14 +956,22 @@ async function iniciarVinculacionFacturas() {
         }
     }
     
+    console.log('🔗 Carpetas:', contabilidadCarpetas ? contabilidadCarpetas.length : 0);
+    
     vinculacionFacturasMode = 'facturas';
     vinculacionFacturasIndex = 0;
     vinculacionFacturasData = [];
     
     var area = document.getElementById('facturasVinculacionArea');
+    if (!area) {
+        alert('Error: no se encontró el área de vinculación');
+        return;
+    }
     area.style.display = 'block';
     area.innerHTML = '<p style="text-align:center; color:var(--text-light);">Escaneando carpetas en Drive...</p>';
+    area.scrollIntoView({ behavior: 'smooth' });
     
+    try {
     // Scan all months for "Facturas Proveedores" subfolders
     for (var i = 0; i < contabilidadCarpetas.length; i++) {
         var carpeta = contabilidadCarpetas[i];
@@ -974,10 +990,17 @@ async function iniciarVinculacionFacturas() {
                     facturasFolderId: facturasFolder ? facturasFolder.id : null,
                     pagosFolderId: pagosFolder ? pagosFolder.id : null
                 });
+                console.log('🔗 Encontrado:', carpeta.anio + '/' + carpeta.mes, 
+                    facturasFolder ? 'Facturas:✅' : '', pagosFolder ? 'Pagos:✅' : '');
             }
         } catch (e) {
             console.log('Error escaneando', carpeta.anio, carpeta.mes, e);
         }
+    }
+    } catch (outerErr) {
+        console.error('🔗 Error general:', outerErr);
+        area.innerHTML = '<p style="color:var(--danger);">Error: ' + outerErr.message + '</p>';
+        return;
     }
     
     // Sort by year desc, month desc
