@@ -808,4 +808,4 @@ function exportFacturasPorPagarToExcel() {
     XLSX.writeFile(wb, `Facturas_Por_Pagar_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-console.log('✅ PROVEEDORES-UI.JS cargado (2026-02-12 20:00 CST)');
+console.log('✅ PROVEEDORES-UI.JS v5 cargado');
