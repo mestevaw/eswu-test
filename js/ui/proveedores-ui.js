@@ -837,7 +837,16 @@ function showLinkFacturaFileModal(facturaId, tipo) {
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
     document.getElementById('linkFacturaFileTitle').textContent = title;
     document.getElementById('linkFacturaFileInput').value = '';
-    document.getElementById('linkFacturaFileModal').classList.add('active');
+    var modal = document.getElementById('linkFacturaFileModal');
+    modal.classList.add('active');
+    modal.style.display = 'flex';
+    console.log('📎 Modal display set to flex');
+}
+
+function closeLinkModal() {
+    var modal = document.getElementById('linkFacturaFileModal');
+    modal.classList.remove('active');
+    modal.style.display = 'none';
 }
 
 async function saveLinkFacturaFile() {
@@ -884,7 +893,7 @@ async function saveLinkFacturaFile() {
         if (error) throw error;
         
         await loadProveedores();
-        closeModal('linkFacturaFileModal');
+        closeLinkModal();
         showProveedorDetail(currentProveedorId);
         
     } catch (e) {
@@ -895,4 +904,4 @@ async function saveLinkFacturaFile() {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v11 cargado');
+console.log('✅ PROVEEDORES-UI.JS v14 cargado');
