@@ -179,7 +179,8 @@ async function saveInquilino(event) {
             numero_despacho: document.getElementById('inquilinoDespacho').value || null,
             renta: parseFloat(document.getElementById('inquilinoRenta').value),
             fecha_inicio: document.getElementById('inquilinoFechaInicio').value,
-            fecha_vencimiento: document.getElementById('inquilinoFechaVenc').value
+            fecha_vencimiento: document.getElementById('inquilinoFechaVenc').value,
+            notas: document.getElementById('inquilinoNotas').value || null
         };
         
         let inquilinoId;
