@@ -1,5 +1,5 @@
 /* ========================================
-   ADMIN-UI.JS - Admin Interface Functions
+   ADMIN-UI.JS v1
    Última actualización: 2026-02-12 19:30 CST
    ======================================== */
 
