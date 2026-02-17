@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v2 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v3 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=2">
-    <link rel="stylesheet" href="css/layout.css?v=2">
-    <link rel="stylesheet" href="css/components.css?v=2">
-    <link rel="stylesheet" href="css/modals.css?v=2">
-    <link rel="stylesheet" href="css/tables.css?v=2">
-    <link rel="stylesheet" href="css/pages.css?v=2">
-    <link rel="stylesheet" href="css/utilities.css?v=2">
+    <link rel="stylesheet" href="css/base.css?v=3">
+    <link rel="stylesheet" href="css/layout.css?v=3">
+    <link rel="stylesheet" href="css/components.css?v=3">
+    <link rel="stylesheet" href="css/modals.css?v=3">
+    <link rel="stylesheet" href="css/tables.css?v=3">
+    <link rel="stylesheet" href="css/pages.css?v=3">
+    <link rel="stylesheet" href="css/utilities.css?v=3">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -251,7 +251,10 @@
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">Facturas Pagadas</h2>
-                            <span onclick="exportFacturasPagadasToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
+                            <div style="display:flex; gap:0.4rem; align-items:center;">
+                                <span id="facturaVincularBtn" onclick="iniciarVinculacionFacturas()" title="Vincular PDFs desde Drive" style="display:none; font-size:1.2rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🔗</span>
+                                <span onclick="exportFacturasPagadasToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
+                            </div>
                         </div>
                         <div style="padding: 1.5rem;">
                             <div class="filter-section">
@@ -276,6 +279,8 @@
                                     <tbody></tbody>
                                 </table>
                             </div>
+                            <!-- Vinculación facturas area -->
+                            <div id="facturasVinculacionArea" style="display:none; padding:0.5rem 0; border-top:1px solid var(--border);"></div>
                         </div>
                     </div>
                 </div>
@@ -1259,24 +1264,24 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v2 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=2"></script>
-    <script src="js/google-drive.js?v=2"></script>
-    <script src="js/database/db-core.js?v=2"></script>
-    <script src="js/database/db-inquilinos.js?v=2"></script>
-    <script src="js/database/db-proveedores.js?v=2"></script>
-    <script src="js/database/db-facturas.js?v=2"></script>
-    <script src="js/database/db-fetch-docs.js?v=2"></script>
-    <script src="js/ui/navigation.js?v=2"></script>
-    <script src="js/ui/tables.js?v=2"></script>
-    <script src="js/ui/inquilinos-ui.js?v=2"></script>
-    <script src="js/ui/proveedores-ui.js?v=2"></script>
-    <script src="js/ui/admin-ui.js?v=2"></script>
-    <script src="js/ui/numeros-ui.js?v=2"></script>
-    <script src="js/modals/modals.js?v=2"></script>
-    <script src="js/modals/inquilino-modals.js?v=2"></script>
-    <script src="js/modals/proveedor-modals.js?v=2"></script>
-    <script src="js/main.js?v=2"></script>
+    <script>console.log('%c ESWU v3 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=3"></script>
+    <script src="js/google-drive.js?v=3"></script>
+    <script src="js/database/db-core.js?v=3"></script>
+    <script src="js/database/db-inquilinos.js?v=3"></script>
+    <script src="js/database/db-proveedores.js?v=3"></script>
+    <script src="js/database/db-facturas.js?v=3"></script>
+    <script src="js/database/db-fetch-docs.js?v=3"></script>
+    <script src="js/ui/navigation.js?v=3"></script>
+    <script src="js/ui/tables.js?v=3"></script>
+    <script src="js/ui/inquilinos-ui.js?v=3"></script>
+    <script src="js/ui/proveedores-ui.js?v=3"></script>
+    <script src="js/ui/admin-ui.js?v=3"></script>
+    <script src="js/ui/numeros-ui.js?v=3"></script>
+    <script src="js/modals/modals.js?v=3"></script>
+    <script src="js/modals/inquilino-modals.js?v=3"></script>
+    <script src="js/modals/proveedor-modals.js?v=3"></script>
+    <script src="js/main.js?v=3"></script>
 </body>
 </html>
 
