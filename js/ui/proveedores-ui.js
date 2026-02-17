@@ -218,11 +218,20 @@ function renderProveedoresFacturasPagadas() {
         
         var shortName = f.proveedor.length > 50 ? f.proveedor.substring(0, 47) + '...' : f.proveedor;
         row.innerHTML = `
-            <td style="font-size:0.82rem; max-width:180px; word-break:break-word;" title="${f.proveedor}">${shortName}</td>
-            <td style="white-space:nowrap; font-size:0.82rem;">${docIcon}<strong>${f.numero}</strong></td>
-            <td style="white-space:nowrap; font-size:0.82rem;">${pagoIcon}${formatDate(f.fecha)}</td>
-            <td class="currency" style="font-size:0.82rem; white-space:nowrap;">${formatCurrency(f.monto)}</td>
+            <td style="max-width:180px; word-break:break-word;" title="${f.proveedor}">${shortName}</td>
+            <td style="white-space:nowrap; text-align:right; padding-right:0.2rem;">${docIcon}<strong>${f.numero}</strong></td>
+            <td style="white-space:nowrap;">${pagoIcon}${formatDate(f.fecha)}</td>
+            <td class="currency" style="white-space:nowrap;">${formatCurrency(f.monto)}</td>
         `;
+        row.style.cursor = 'pointer';
+        row.onclick = (() => {
+            var pid = f.proveedorId;
+            return () => {
+                currentProveedorId = pid;
+                window.facturaActionContext = 'standalone-pagadas';
+                showProveedorDetail(pid);
+            };
+        })();
     });
     
     if (pagadas.length === 0) {
@@ -295,10 +304,13 @@ function renderProveedoresFacturasPorPagar() {
         `;
         
         row.style.cursor = 'pointer';
-        if (f.has_documento) {
-            row.title = 'Ver PDF';
-            row.onclick = () => viewFacturaDoc(f.factId, 'documento');
-        }
+        row.onclick = ((provId) => {
+            return () => {
+                currentProveedorId = provId;
+                window.facturaActionContext = 'standalone-porpagar';
+                showProveedorDetail(provId);
+            };
+        })(f.provId);
     });
     
     if (porPagar.length === 0) {
