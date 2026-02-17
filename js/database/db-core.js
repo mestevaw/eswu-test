@@ -1,13 +1,15 @@
 /* ========================================
-   DB-CORE.JS - Funciones básicas de DB
+   DB-CORE.JS - Funciones básicas compartidas
    ======================================== */
 
 function showLoading() {
-    document.getElementById('loadingOverlay').classList.remove('hidden');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.remove('hidden');
 }
 
 function hideLoading() {
-    document.getElementById('loadingOverlay').classList.add('hidden');
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) overlay.classList.add('hidden');
 }
 
 function showLoadingBanner(mensaje) {
