@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <!-- ============================================
-     ESWU v14 — Cambiar el número ↓ al desplegar nueva versión
+     ESWU v15 — Cambiar el número ↓ al desplegar nueva versión
      ============================================ -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
-    <link rel="stylesheet" href="css/base.css?v=14">
-    <link rel="stylesheet" href="css/layout.css?v=14">
-    <link rel="stylesheet" href="css/components.css?v=14">
-    <link rel="stylesheet" href="css/modals.css?v=14">
-    <link rel="stylesheet" href="css/tables.css?v=14">
-    <link rel="stylesheet" href="css/pages.css?v=14">
-    <link rel="stylesheet" href="css/utilities.css?v=14">
+    <link rel="stylesheet" href="css/base.css?v=15">
+    <link rel="stylesheet" href="css/layout.css?v=15">
+    <link rel="stylesheet" href="css/components.css?v=15">
+    <link rel="stylesheet" href="css/modals.css?v=15">
+    <link rel="stylesheet" href="css/tables.css?v=15">
+    <link rel="stylesheet" href="css/pages.css?v=15">
+    <link rel="stylesheet" href="css/utilities.css?v=15">
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -1248,20 +1248,18 @@
 
     <!-- PDF Viewer Overlay (mobile-compatible) -->
     <!-- Modal: Vincular archivo a factura -->
-    <div id="linkFacturaFileModal" class="modal-overlay" style="z-index:10000; display:none;">
-        <div class="modal" style="max-width:400px;">
-            <div class="modal-header">
-                <h3 id="linkFacturaFileTitle">Vincular PDF</h3>
-                <div style="display:flex; gap:0.3rem;">
+    <div id="linkFacturaFileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:white; border-radius:8px; max-width:400px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem; border-bottom:1px solid #e2e8f0;">
+                <h3 id="linkFacturaFileTitle" style="margin:0; font-size:1.1rem;">Vincular PDF</h3>
+                <div style="display:flex; gap:0.5rem;">
                     <span onclick="saveLinkFacturaFile()" title="Guardar" style="cursor:pointer; font-size:1.3rem;">💾</span>
-                    <span onclick="closeLinkModal()" title="Cerrar" style="cursor:pointer; font-size:1.3rem;">✕</span>
+                    <span onclick="closeLinkModal()" title="Cerrar" style="cursor:pointer; font-size:1.3rem; color:#e53e3e; font-weight:700;">✕</span>
                 </div>
             </div>
-            <div class="modal-body" style="padding:1rem;">
-                <div style="margin-bottom:0.75rem;">
-                    <label style="font-size:0.85rem; font-weight:600;">Seleccionar PDF:</label>
-                    <input type="file" id="linkFacturaFileInput" accept=".pdf" style="margin-top:0.3rem; font-size:0.85rem; width:100%;">
-                </div>
+            <div style="padding:1.2rem;">
+                <label style="font-size:0.85rem; font-weight:600;">Seleccionar PDF:</label>
+                <input type="file" id="linkFacturaFileInput" accept=".pdf" style="margin-top:0.4rem; font-size:0.85rem; width:100%;">
             </div>
         </div>
     </div>
@@ -1281,24 +1279,24 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
-    <script>console.log('%c ESWU v14 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
-    <script src="js/config.js?v=14"></script>
-    <script src="js/google-drive.js?v=14"></script>
-    <script src="js/database/db-core.js?v=14"></script>
-    <script src="js/database/db-inquilinos.js?v=14"></script>
-    <script src="js/database/db-proveedores.js?v=14"></script>
-    <script src="js/database/db-facturas.js?v=14"></script>
-    <script src="js/database/db-fetch-docs.js?v=14"></script>
-    <script src="js/ui/navigation.js?v=14"></script>
-    <script src="js/ui/tables.js?v=14"></script>
-    <script src="js/ui/inquilinos-ui.js?v=14"></script>
-    <script src="js/ui/proveedores-ui.js?v=14"></script>
-    <script src="js/ui/admin-ui.js?v=14"></script>
-    <script src="js/ui/numeros-ui.js?v=14"></script>
-    <script src="js/modals/modals.js?v=14"></script>
-    <script src="js/modals/inquilino-modals.js?v=14"></script>
-    <script src="js/modals/proveedor-modals.js?v=14"></script>
-    <script src="js/main.js?v=14"></script>
+    <script>console.log('%c ESWU v15 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <script src="js/config.js?v=15"></script>
+    <script src="js/google-drive.js?v=15"></script>
+    <script src="js/database/db-core.js?v=15"></script>
+    <script src="js/database/db-inquilinos.js?v=15"></script>
+    <script src="js/database/db-proveedores.js?v=15"></script>
+    <script src="js/database/db-facturas.js?v=15"></script>
+    <script src="js/database/db-fetch-docs.js?v=15"></script>
+    <script src="js/ui/navigation.js?v=15"></script>
+    <script src="js/ui/tables.js?v=15"></script>
+    <script src="js/ui/inquilinos-ui.js?v=15"></script>
+    <script src="js/ui/proveedores-ui.js?v=15"></script>
+    <script src="js/ui/admin-ui.js?v=15"></script>
+    <script src="js/ui/numeros-ui.js?v=15"></script>
+    <script src="js/modals/modals.js?v=15"></script>
+    <script src="js/modals/inquilino-modals.js?v=15"></script>
+    <script src="js/modals/proveedor-modals.js?v=15"></script>
+    <script src="js/main.js?v=15"></script>
 </body>
 </html>
 
