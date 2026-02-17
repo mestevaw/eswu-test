@@ -65,35 +65,4 @@ function renderContactosList(contactos, containerId, deleteCallback, editCallbac
     `).join('');
 }
 
-function showRegistrarPagoModal() {
-    document.getElementById('registrarPagoModal').classList.add('active');
-}
-
-function toggleMontoInput() {
-    const completo = document.getElementById('pagoCompleto').value;
-    const montoGroup = document.getElementById('pagoMontoGroup');
-    
-    if (completo === 'no') {
-        montoGroup.classList.remove('hidden');
-        document.getElementById('pagoMonto').required = true;
-    } else {
-        montoGroup.classList.add('hidden');
-        document.getElementById('pagoMonto').required = false;
-    }
-}
-
-function showAgregarDocumentoModal() {
-    document.getElementById('nuevoDocNombre').value = '';
-    document.getElementById('nuevoDocPDF').value = '';
-    document.getElementById('nuevoDocPDFFileName').textContent = '';
-    document.getElementById('agregarDocumentoModal').classList.add('active');
-}
-
-function viewContrato() {
-    const inq = inquilinos.find(i => i.id === currentInquilinoId);
-    if (inq && inq.contrato_file) {
-        openPDFViewer(inq.contrato_file);
-    }
-}
-
 console.log('✅ INQUILINO-MODALS.JS cargado');
