@@ -836,11 +836,9 @@ function showLinkFacturaFileModal(facturaId, tipo) {
     
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
     document.getElementById('linkFacturaFileTitle').textContent = title;
-    document.getElementById('linkFacturaFileInput').value = '';
+    document.getElementById('linkFacturaDriveUrl').value = '';
     var modal = document.getElementById('linkFacturaFileModal');
-    modal.classList.add('active');
     modal.style.display = 'flex';
-    console.log('📎 Modal display set to flex');
 }
 
 function closeLinkModal() {
@@ -850,40 +848,33 @@ function closeLinkModal() {
 }
 
 async function saveLinkFacturaFile() {
-    var fileInput = document.getElementById('linkFacturaFileInput');
-    var file = fileInput.files[0];
+    var url = (document.getElementById('linkFacturaDriveUrl').value || '').trim();
     
-    if (!file) {
-        alert('Selecciona un archivo PDF');
+    if (!url) {
+        alert('Pega la URL de Google Drive');
+        return;
+    }
+    
+    // Extract file ID from various Google Drive URL formats
+    var fileId = null;
+    var match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+        fileId = match[1];
+    } else {
+        match = url.match(/id=([a-zA-Z0-9_-]+)/);
+        if (match) fileId = match[1];
+    }
+    
+    if (!fileId) {
+        alert('No se pudo extraer el ID del archivo. Asegúrate de pegar un link de Google Drive válido.');
         return;
     }
     
     showLoading();
     try {
-        var prov = proveedores.find(p => p.id === currentProveedorId);
-        if (!prov) throw new Error('Proveedor no encontrado');
-        
-        var updateData = {};
         var column = (linkFacturaTipo === 'pago') ? 'pago_drive_file_id' : 'documento_drive_file_id';
-        var filenameColumn = (linkFacturaTipo === 'pago') ? 'pago_filename' : 'documento_filename';
-        
-        if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
-            var folderId = prov.google_drive_folder_id;
-            if (!folderId) {
-                folderId = await getOrCreateProveedorFolder(prov.nombre);
-                await supabaseClient.from('proveedores')
-                    .update({ google_drive_folder_id: folderId })
-                    .eq('id', currentProveedorId);
-            }
-            var result = await uploadFileToDrive(file, folderId);
-            updateData[column] = result.id;
-            updateData[filenameColumn] = file.name;
-        } else {
-            // Fallback base64
-            var base64Column = (linkFacturaTipo === 'pago') ? 'pago_file' : 'documento_file';
-            updateData[base64Column] = await fileToBase64(file);
-            updateData[filenameColumn] = file.name;
-        }
+        var updateData = {};
+        updateData[column] = fileId;
         
         var { error } = await supabaseClient
             .from('facturas')
@@ -904,4 +895,4 @@ async function saveLinkFacturaFile() {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v14 cargado');
+console.log('✅ PROVEEDORES-UI.JS v15 cargado');
