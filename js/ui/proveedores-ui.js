@@ -216,11 +216,12 @@ function renderProveedoresFacturasPagadas() {
             ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'pago')" title="Ver comprobante PDF" style="cursor:pointer; margin-right:0.3rem; font-size:0.9rem;">📄</span>`
             : '';
         
+        var shortName = f.proveedor.length > 50 ? f.proveedor.substring(0, 47) + '...' : f.proveedor;
         row.innerHTML = `
-            <td>${f.proveedor}</td>
-            <td>${docIcon}<strong>${f.numero}</strong></td>
-            <td>${pagoIcon}${formatDate(f.fecha)}</td>
-            <td class="currency">${formatCurrency(f.monto)}</td>
+            <td style="font-size:0.82rem; max-width:180px; word-break:break-word;" title="${f.proveedor}">${shortName}</td>
+            <td style="white-space:nowrap; font-size:0.82rem;">${docIcon}<strong>${f.numero}</strong></td>
+            <td style="white-space:nowrap; font-size:0.82rem;">${pagoIcon}${formatDate(f.fecha)}</td>
+            <td class="currency" style="font-size:0.82rem; white-space:nowrap;">${formatCurrency(f.monto)}</td>
         `;
     });
     
