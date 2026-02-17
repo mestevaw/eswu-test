@@ -1,27 +1,24 @@
 /* ========================================
-   DB-PROVEEDORES.JS - Database operations for proveedores
+   DB-PROVEEDORES.JS v2
    OPTIMIZADO: No carga PDFs en memoria
-   Última actualización: 2026-02-12 13:30 CST
    ======================================== */
 
 async function loadProveedores() {
     try {
-        // SELECT sin campos pesados (documento_file, pago_file, archivo_pdf)
         const { data, error } = await supabaseClient
             .from('proveedores')
-            .select('id, nombre, servicio, clabe, rfc, notas, facturas(id, proveedor_id, numero, fecha, vencimiento, monto, iva, fecha_pago), proveedores_documentos(id, proveedor_id, nombre_documento, fecha_guardado, usuario_guardo), proveedores_contactos(*)')
+            .select('id, nombre, servicio, clabe, rfc, notas, google_drive_folder_id, facturas(id, proveedor_id, numero, fecha, vencimiento, monto, iva, fecha_pago, documento_drive_file_id, pago_drive_file_id), proveedores_documentos(id, proveedor_id, nombre_documento, fecha_guardado, usuario_guardo, google_drive_file_id), proveedores_contactos(*)')
             .order('nombre');
         
         if (error) throw error;
         
-        // Verificar cuáles facturas tienen documento (sin cargar el PDF)
+        // Verificar cuáles facturas tienen documento base64 (sin cargar)
         const { data: conDocumento } = await supabaseClient
             .from('facturas')
             .select('id')
             .not('documento_file', 'is', null);
         const docSet = new Set((conDocumento || []).map(f => f.id));
         
-        // Verificar cuáles facturas tienen comprobante de pago (sin cargar el PDF)
         const { data: conPago } = await supabaseClient
             .from('facturas')
             .select('id')
@@ -35,6 +32,7 @@ async function loadProveedores() {
             clabe: prov.clabe,
             rfc: prov.rfc,
             notas: prov.notas,
+            google_drive_folder_id: prov.google_drive_folder_id || '',
             contactos: prov.proveedores_contactos ? prov.proveedores_contactos.map(c => ({
                 id: c.id,
                 nombre: c.nombre,
@@ -49,14 +47,17 @@ async function loadProveedores() {
                 monto: parseFloat(f.monto),
                 iva: parseFloat(f.iva || 0),
                 fecha_pago: f.fecha_pago,
-                has_documento: docSet.has(f.id),
-                has_pago: pagoSet.has(f.id)
+                documento_drive_file_id: f.documento_drive_file_id || '',
+                pago_drive_file_id: f.pago_drive_file_id || '',
+                has_documento: docSet.has(f.id) || !!(f.documento_drive_file_id),
+                has_pago: pagoSet.has(f.id) || !!(f.pago_drive_file_id)
             })).sort((a, b) => new Date(b.fecha) - new Date(a.fecha)) : [],
             documentos: prov.proveedores_documentos ? prov.proveedores_documentos.map(d => ({
                 id: d.id,
                 nombre: d.nombre_documento,
                 fecha: d.fecha_guardado,
-                usuario: d.usuario_guardo
+                usuario: d.usuario_guardo,
+                google_drive_file_id: d.google_drive_file_id || ''
             })).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')) : []
         }));
         
@@ -73,11 +74,9 @@ async function saveProveedor(event) {
     
     try {
         const docFile = document.getElementById('proveedorDocAdicional').files[0];
-        let docURL = null;
         let docNombre = null;
         
         if (docFile) {
-            docURL = await fileToBase64(docFile);
             docNombre = document.getElementById('proveedorNombreDoc').value;
         }
         
@@ -90,6 +89,7 @@ async function saveProveedor(event) {
         };
         
         let proveedorId;
+        var nombre = proveedorData.nombre;
         
         if (isEditMode && currentProveedorId) {
             const { error } = await supabaseClient
@@ -113,14 +113,26 @@ async function saveProveedor(event) {
             
             if (error) throw error;
             proveedorId = data[0].id;
+            
+            // Create Drive folder for new proveedor
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                try {
+                    var folderId = await getOrCreateProveedorFolder(nombre);
+                    await supabaseClient
+                        .from('proveedores')
+                        .update({ google_drive_folder_id: folderId })
+                        .eq('id', proveedorId);
+                } catch (driveErr) {
+                    console.error('⚠️ No se pudo crear carpeta Drive:', driveErr);
+                }
+            }
         }
         
-        // Recoger contacto inline (primer contacto)
+        // Contactos
         const inlineNombre = document.getElementById('proveedorContactoNombreInline').value.trim();
         const inlineTel = document.getElementById('proveedorContactoTelInline').value.trim();
         const inlineEmail = document.getElementById('proveedorContactoEmailInline').value.trim();
         
-        // Si hay nombre inline, actualizar/agregar como primer contacto
         if (inlineNombre) {
             const inlineContacto = { nombre: inlineNombre, telefono: inlineTel, email: inlineEmail };
             if (tempProveedorContactos.length > 0) {
@@ -145,17 +157,32 @@ async function saveProveedor(event) {
             if (contactosError) throw contactosError;
         }
         
-        if (docURL && docNombre) {
+        // Upload doc to Drive if provided
+        if (docFile && docNombre) {
+            var docData = {
+                proveedor_id: proveedorId,
+                nombre_documento: docNombre,
+                fecha_guardado: new Date().toISOString().split('T')[0],
+                usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
+            };
+            
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                try {
+                    var folderId = await getOrCreateProveedorFolder(nombre);
+                    var result = await uploadFileToDrive(docFile, folderId);
+                    docData.google_drive_file_id = result.id;
+                    docData.archivo_pdf = '';
+                } catch (e) {
+                    console.error('⚠️ Drive upload failed, using base64');
+                    docData.archivo_pdf = await fileToBase64(docFile);
+                }
+            } else {
+                docData.archivo_pdf = await fileToBase64(docFile);
+            }
+            
             const { error: docError } = await supabaseClient
                 .from('proveedores_documentos')
-                .insert([{
-                    proveedor_id: proveedorId,
-                    nombre_documento: docNombre,
-                    archivo_pdf: docURL,
-                    fecha_guardado: new Date().toISOString().split('T')[0],
-                    usuario_guardo: currentUser.nombre
-                }]);
-            
+                .insert([docData]);
             if (docError) throw docError;
         }
         
