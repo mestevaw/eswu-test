@@ -358,4 +358,35 @@ async function getOrCreateInquilinoFolder(inquilinoNombre) {
     return await createDriveFolder(inquilinoNombre, inquilinosParentId);
 }
 
-console.log('✅ GOOGLE-DRIVE.JS cargado');
+// ============================================
+// PROVEEDORES - Drive folder management
+// ============================================
+
+async function getOrCreateProveedorFolder(proveedorNombre) {
+    var q = "name = 'Proveedores' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    
+    if (!data.files || data.files.length === 0) {
+        throw new Error('No se encontró la carpeta "Proveedores" en Google Drive');
+    }
+    
+    var proveedoresParentId = data.files[0].id;
+    
+    var safeName = proveedorNombre.replace(/'/g, "\\'");
+    var q2 = "'" + proveedoresParentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp2 = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q2) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data2 = await resp2.json();
+    
+    if (data2.files && data2.files.length > 0) {
+        return data2.files[0].id;
+    }
+    
+    return await createDriveFolder(proveedorNombre, proveedoresParentId);
+}
+
+console.log('✅ GOOGLE-DRIVE.JS v2 cargado');
