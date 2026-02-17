@@ -557,7 +557,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('✅ MAIN.JS cargado (2026-02-12 18:00 CST) - sin duplicados');
+// ============================================
+// OLVIDÉ MI PASSWORD
+// ============================================
+
+async function showForgotPasswordDialog() {
+    var nombre = prompt('Ingresa tu nombre de usuario:');
+    if (!nombre || !nombre.trim()) return;
+    
+    nombre = nombre.trim();
+    
+    try {
+        var { data, error } = await supabaseClient
+            .from('usuarios')
+            .select('id, nombre, email')
+            .eq('nombre', nombre)
+            .eq('activo', true)
+            .single();
+        
+        if (error || !data) {
+            alert('No se encontró un usuario activo con ese nombre.');
+            return;
+        }
+        
+        // Generate temp password
+        var tempPass = 'temp' + Math.floor(1000 + Math.random() * 9000);
+        
+        // Update in DB
+        var { error: updateErr } = await supabaseClient
+            .from('usuarios')
+            .update({ password: tempPass })
+            .eq('id', data.id);
+        
+        if (updateErr) {
+            alert('Error al restablecer: ' + updateErr.message);
+            return;
+        }
+        
+        alert('Tu nuevo password temporal es:\n\n' + tempPass + '\n\nCámbialo después de iniciar sesión.');
+        
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+console.log('✅ MAIN.JS v11 cargado');
 
 // ============================================
 // ELIMINAR PROVEEDORES MIGRADOS
