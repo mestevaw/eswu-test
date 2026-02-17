@@ -1,6 +1,11 @@
 /* ========================================
    INQUILINO-MODALS.JS
+   Modals de contactos, pagos y documentos
    ======================================== */
+
+// ============================================
+// CONTACTOS
+// ============================================
 
 function showAddContactoInquilinoModal() {
     document.getElementById('contactoInquilinoForm').reset();
@@ -63,6 +68,56 @@ function renderContactosList(contactos, containerId, deleteCallback, editCallbac
             <span onclick="${deleteCallback}(${idx})" title="Eliminar" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
         </div>
     `).join('');
+}
+
+// ============================================
+// REGISTRAR PAGO
+// ============================================
+
+function showRegistrarPagoModal() {
+    delete window.pagoMesContext;
+    document.getElementById('pagoFecha').value = '';
+    document.getElementById('pagoCompleto').value = 'si';
+    document.getElementById('pagoMontoGroup').classList.add('hidden');
+    document.getElementById('pagoPDF').value = '';
+    document.getElementById('registrarPagoModal').classList.add('active');
+}
+
+function toggleMontoInput() {
+    const completo = document.getElementById('pagoCompleto').value;
+    const montoGroup = document.getElementById('pagoMontoGroup');
+    
+    if (completo === 'no') {
+        montoGroup.classList.remove('hidden');
+        document.getElementById('pagoMonto').required = true;
+    } else {
+        montoGroup.classList.add('hidden');
+        document.getElementById('pagoMonto').required = false;
+    }
+}
+
+// ============================================
+// AGREGAR DOCUMENTO
+// ============================================
+
+function showAgregarDocumentoModal() {
+    document.getElementById('nuevoDocNombre').value = '';
+    document.getElementById('nuevoDocPDF').value = '';
+    const fn = document.getElementById('nuevoDocPDFFileName');
+    if (fn) fn.textContent = '';
+    
+    // Mostrar/ocultar pregunta de contrato original
+    const inq = inquilinos.find(i => i.id === currentInquilinoId);
+    const pregunta = document.getElementById('nuevoDocContratoQuestion');
+    if (inq && !inq.has_contrato) {
+        pregunta.classList.remove('hidden');
+        const radios = document.querySelectorAll('input[name="esContratoNuevoDoc"]');
+        radios.forEach(r => r.checked = (r.value === 'no'));
+    } else {
+        pregunta.classList.add('hidden');
+    }
+    
+    document.getElementById('agregarDocumentoModal').classList.add('active');
 }
 
 console.log('✅ INQUILINO-MODALS.JS cargado');
