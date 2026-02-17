@@ -93,8 +93,7 @@ async function saveInquilino(event) {
             numero_despacho: document.getElementById('inquilinoDespacho').value || null,
             renta: parseFloat(document.getElementById('inquilinoRenta').value),
             fecha_inicio: document.getElementById('inquilinoFechaInicio').value,
-            fecha_vencimiento: document.getElementById('inquilinoFechaVenc').value,
-            notas: document.getElementById('inquilinoNotas').value || null
+            fecha_vencimiento: document.getElementById('inquilinoFechaVenc').value
         };
         
         let inquilinoId;
@@ -335,7 +334,6 @@ function editInquilino() {
     document.getElementById('inquilinoRenta').value = inq.renta;
     document.getElementById('inquilinoFechaInicio').value = inq.fecha_inicio;
     document.getElementById('inquilinoFechaVenc').value = inq.fecha_vencimiento;
-    document.getElementById('inquilinoNotas').value = inq.notas || '';
     
     renderContactosList(tempInquilinoContactos, 'inquilinoContactosList', 'deleteInquilinoContacto', 'showEditContactoInquilinoModal');
     
