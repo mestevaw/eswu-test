@@ -156,9 +156,6 @@ function filtrarProveedores(query) {
 }
 
 function renderProveedoresFacturasPagadas() {
-    // Show vincular button for nivel 1
-    if (typeof showVincularBtn === 'function') showVincularBtn();
-    
     const tbody = document.getElementById('proveedoresFacturasPagadasTable').querySelector('tbody');
     tbody.innerHTML = '';
     
@@ -404,16 +401,24 @@ function showProveedorDetail(id) {
     let totalPagadas = 0;
     
     if (facturasPagadas.length > 0) {
+        var isNivel1 = currentUser && currentUser.nivel === 1;
         const rows = facturasPagadas.map(f => {
             totalPagadas += f.monto;
             
-            // Icono 📄 clickeable si hay PDF, gris si no hay
-            const docIcon = f.has_documento 
-                ? `<span onclick="fetchAndViewFactura(${f.id}, 'documento')" title="Ver factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`
-                : '';
-            const pagoIcon = f.has_pago
-                ? `<span onclick="fetchAndViewFactura(${f.id}, 'pago')" title="Ver comprobante PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`
-                : '';
+            // Icono 📄 clickeable si hay PDF, 📎 para vincular si nivel 1
+            var docIcon = '';
+            if (f.has_documento) {
+                docIcon = `<span onclick="viewFacturaDoc(${f.id}, 'documento')" title="Ver factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
+            } else if (isNivel1) {
+                docIcon = `<span onclick="showLinkFacturaFileModal(${f.id}, 'documento')" title="Vincular factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
+            }
+            
+            var pagoIcon = '';
+            if (f.has_pago) {
+                pagoIcon = `<span onclick="viewFacturaDoc(${f.id}, 'pago')" title="Ver comprobante PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
+            } else if (isNivel1) {
+                pagoIcon = `<span onclick="showLinkFacturaFileModal(${f.id}, 'pago')" title="Vincular pago PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
+            }
             
             return `<tr>
                 <td style="padding:0.4rem 0.5rem;">${docIcon}<strong>${f.numero || 'S/N'}</strong> del ${formatDate(f.fecha)}</td>
@@ -443,10 +448,19 @@ function showProveedorDetail(id) {
     let totalPorPagar = 0;
     
     if (facturasPorPagar.length > 0) {
+        var isNivel1pp = currentUser && currentUser.nivel === 1;
         facturasPorPagarDiv.innerHTML = facturasPorPagar.map(f => {
             totalPorPagar += f.monto;
-            const clickPDF = f.has_documento ? `onclick="fetchAndViewFactura(${f.id}, 'documento')" title="Ver PDF"` : '';
-            const cursorPDF = f.has_documento ? 'cursor:pointer;' : '';
+            var clickPDF = '';
+            var cursorPDF = '';
+            if (f.has_documento) {
+                clickPDF = `onclick="viewFacturaDoc(${f.id}, 'documento')" title="Ver PDF"`;
+                cursorPDF = 'cursor:pointer;';
+            }
+            var linkIcon = '';
+            if (!f.has_documento && isNivel1pp) {
+                linkIcon = `<span onclick="event.stopPropagation(); showLinkFacturaFileModal(${f.id}, 'documento')" title="Vincular factura PDF" style="cursor:pointer; font-size:0.9rem; opacity:0.5; margin-right:0.3rem;">📎</span>`;
+            }
             const escapedNumero = (f.numero || 'S/N').replace(/'/g, "\\'");
             
             return `
@@ -458,7 +472,7 @@ function showProveedorDetail(id) {
                     </div>
                     <div style="display:flex; align-items:stretch;">
                         <div ${clickPDF} style="flex:1; background:var(--bg); border-radius:6px 0 0 6px; padding:0.75rem; ${cursorPDF} transition:background 0.2s;" onmouseover="if(this.getAttribute('onclick'))this.style.background='#dbeafe'" onmouseout="this.style.background='var(--bg)'">
-                            <div><strong>Factura ${f.numero || 'S/N'}</strong> del ${formatDate(f.fecha)}</div>
+                            <div><strong>${linkIcon}Factura ${f.numero || 'S/N'}</strong> del ${formatDate(f.fecha)}</div>
                             <div style="margin-top:0.25rem; color:var(--text-light);">A ser pagada el <strong>${formatDate(f.vencimiento)}</strong></div>
                         </div>
                         <div style="display:flex; align-items:flex-end; padding:0.75rem; min-width:120px; justify-content:flex-end;">
@@ -808,4 +822,76 @@ function exportFacturasPorPagarToExcel() {
     XLSX.writeFile(wb, `Facturas_Por_Pagar_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-console.log('✅ PROVEEDORES-UI.JS v5 cargado');
+// ============================================
+// VINCULAR PDF A FACTURA (desde ficha proveedor)
+// ============================================
+
+var linkFacturaId = null;
+var linkFacturaTipo = null; // 'documento' or 'pago'
+
+function showLinkFacturaFileModal(facturaId, tipo) {
+    linkFacturaId = facturaId;
+    linkFacturaTipo = tipo;
+    
+    var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
+    document.getElementById('linkFacturaFileTitle').textContent = title;
+    document.getElementById('linkFacturaFileInput').value = '';
+    document.getElementById('linkFacturaFileModal').classList.add('active');
+}
+
+async function saveLinkFacturaFile() {
+    var fileInput = document.getElementById('linkFacturaFileInput');
+    var file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Selecciona un archivo PDF');
+        return;
+    }
+    
+    showLoading();
+    try {
+        var prov = proveedores.find(p => p.id === currentProveedorId);
+        if (!prov) throw new Error('Proveedor no encontrado');
+        
+        var updateData = {};
+        var column = (linkFacturaTipo === 'pago') ? 'pago_drive_file_id' : 'documento_drive_file_id';
+        var filenameColumn = (linkFacturaTipo === 'pago') ? 'pago_filename' : 'documento_filename';
+        
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+            var folderId = prov.google_drive_folder_id;
+            if (!folderId) {
+                folderId = await getOrCreateProveedorFolder(prov.nombre);
+                await supabaseClient.from('proveedores')
+                    .update({ google_drive_folder_id: folderId })
+                    .eq('id', currentProveedorId);
+            }
+            var result = await uploadFileToDrive(file, folderId);
+            updateData[column] = result.id;
+            updateData[filenameColumn] = file.name;
+        } else {
+            // Fallback base64
+            var base64Column = (linkFacturaTipo === 'pago') ? 'pago_file' : 'documento_file';
+            updateData[base64Column] = await fileToBase64(file);
+            updateData[filenameColumn] = file.name;
+        }
+        
+        var { error } = await supabaseClient
+            .from('facturas')
+            .update(updateData)
+            .eq('id', linkFacturaId);
+        
+        if (error) throw error;
+        
+        await loadProveedores();
+        closeModal('linkFacturaFileModal');
+        showProveedorDetail(currentProveedorId);
+        
+    } catch (e) {
+        console.error('Error vinculando:', e);
+        alert('❌ Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+console.log('✅ PROVEEDORES-UI.JS v10 cargado');
