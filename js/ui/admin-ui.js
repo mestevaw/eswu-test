@@ -980,8 +980,8 @@ async function iniciarVinculacionFacturas() {
         
         try {
             var { folders } = await listDriveFolder(monthFolderId);
-            var facturasFolder = folders.find(f => f.name.toLowerCase().includes('factura'));
-            var pagosFolder = folders.find(f => f.name.toLowerCase().includes('pago'));
+            var facturasFolder = folders.find(f => f.name.toLowerCase().includes('recibida'));
+            var pagosFolder = folders.find(f => f.name.toLowerCase().includes('pago') && f.name.toLowerCase().includes('proveedor'));
             
             if (facturasFolder || pagosFolder) {
                 vinculacionFacturasData.push({
@@ -991,7 +991,7 @@ async function iniciarVinculacionFacturas() {
                     pagosFolderId: pagosFolder ? pagosFolder.id : null
                 });
                 console.log('🔗 Encontrado:', carpeta.anio + '/' + carpeta.mes, 
-                    facturasFolder ? 'Facturas:✅' : '', pagosFolder ? 'Pagos:✅' : '');
+                    facturasFolder ? 'Recibidas:✅' : '', pagosFolder ? 'Pagos:✅' : '');
             }
         } catch (e) {
             console.log('Error escaneando', carpeta.anio, carpeta.mes, e);
@@ -1045,7 +1045,7 @@ async function mostrarVinculacionFacturasMes() {
     }
     
     var mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    var titulo = (vinculacionFacturasMode === 'facturas') ? 'Facturas Proveedores' : 'Pagos Proveedores';
+    var titulo = (vinculacionFacturasMode === 'facturas') ? 'Facturas Recibidas' : 'Pagos Proveedores';
     
     area.innerHTML = '<p style="text-align:center; color:var(--text-light);">Cargando archivos...</p>';
     
@@ -1191,7 +1191,7 @@ async function guardarVinculacionFacturasMes() {
     mostrarVinculacionFacturasMes();
 }
 
-console.log('✅ ADMIN-UI.JS v7 cargado');
+console.log('✅ ADMIN-UI.JS v8 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
