@@ -156,6 +156,9 @@ function filtrarProveedores(query) {
 }
 
 function renderProveedoresFacturasPagadas() {
+    // Show vincular button for nivel 1
+    if (typeof showVincularBtn === 'function') showVincularBtn();
+    
     const tbody = document.getElementById('proveedoresFacturasPagadasTable').querySelector('tbody');
     tbody.innerHTML = '';
     
