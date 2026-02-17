@@ -180,4 +180,4 @@ async function fetchActivoFotos(activoId) {
     }
 }
 
-console.log('✅ DB-FETCH-DOCS.JS cargado (2026-02-12 17:00 CST)');
+console.log('✅ DB-FETCH-DOCS.JS v5 cargado');
