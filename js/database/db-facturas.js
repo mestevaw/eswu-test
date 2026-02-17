@@ -1,6 +1,5 @@
 /* ========================================
-   DB-FACTURAS.JS - Database operations for facturas
-   Última actualización: 2026-02-12 19:00 CST
+   DB-FACTURAS.JS v2
    ======================================== */
 
 // Función auxiliar: navegar al lugar correcto después de una acción
@@ -28,11 +27,6 @@ async function saveFactura(event) {
     
     try {
         const docFile = document.getElementById('facturaDocumento').files[0];
-        let docURL = null;
-        
-        if (docFile) {
-            docURL = await fileToBase64(docFile);
-        }
         
         const facturaData = {
             proveedor_id: currentProveedorId,
@@ -43,8 +37,29 @@ async function saveFactura(event) {
             iva: parseFloat(document.getElementById('facturaIVA').value) || 0
         };
         
-        if (docURL) {
-            facturaData.documento_file = docURL;
+        // Upload doc to Drive if provided
+        if (docFile) {
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                var prov = proveedores.find(p => p.id === currentProveedorId);
+                if (prov) {
+                    try {
+                        var folderId = prov.google_drive_folder_id;
+                        if (!folderId) {
+                            folderId = await getOrCreateProveedorFolder(prov.nombre);
+                            await supabaseClient.from('proveedores')
+                                .update({ google_drive_folder_id: folderId })
+                                .eq('id', currentProveedorId);
+                        }
+                        var result = await uploadFileToDrive(docFile, folderId);
+                        facturaData.documento_drive_file_id = result.id;
+                    } catch (e) {
+                        console.error('⚠️ Drive upload failed, using base64');
+                        facturaData.documento_file = await fileToBase64(docFile);
+                    }
+                }
+            } else {
+                facturaData.documento_file = await fileToBase64(docFile);
+            }
         }
         
         if (window.isEditingFactura && currentFacturaId) {
@@ -56,7 +71,7 @@ async function saveFactura(event) {
             
             if (error) throw error;
         } else {
-            if (!docURL) facturaData.documento_file = null;
+            if (!docFile) facturaData.documento_file = null;
             
             const { error } = await supabaseClient
                 .from('facturas')
@@ -91,7 +106,27 @@ async function savePagoFactura(event) {
         const updateData = { fecha_pago: fechaPago };
         
         if (pagoFile) {
-            updateData.pago_file = await fileToBase64(pagoFile);
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                var prov = proveedores.find(p => p.id === currentProveedorId);
+                if (prov) {
+                    try {
+                        var folderId = prov.google_drive_folder_id;
+                        if (!folderId) {
+                            folderId = await getOrCreateProveedorFolder(prov.nombre);
+                            await supabaseClient.from('proveedores')
+                                .update({ google_drive_folder_id: folderId })
+                                .eq('id', currentProveedorId);
+                        }
+                        var result = await uploadFileToDrive(pagoFile, folderId);
+                        updateData.pago_drive_file_id = result.id;
+                    } catch (e) {
+                        console.error('⚠️ Drive upload failed, using base64');
+                        updateData.pago_file = await fileToBase64(pagoFile);
+                    }
+                }
+            } else {
+                updateData.pago_file = await fileToBase64(pagoFile);
+            }
         }
         
         const { error } = await supabaseClient
