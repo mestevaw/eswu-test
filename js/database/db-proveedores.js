@@ -258,4 +258,4 @@ function editProveedor() {
     document.getElementById('addProveedorModal').classList.add('active');
 }
 
-console.log('✅ DB-PROVEEDORES.JS cargado (optimizado)');
+console.log('✅ DB-PROVEEDORES.JS v5 cargado');
