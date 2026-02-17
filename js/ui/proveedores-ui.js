@@ -408,16 +408,16 @@ function showProveedorDetail(id) {
             // Icono 📄 clickeable si hay PDF, 📎 para vincular si nivel 1
             var docIcon = '';
             if (f.has_documento) {
-                docIcon = `<span onclick="viewFacturaDoc(${f.id}, 'documento')" title="Ver factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
+                docIcon = `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.id}, 'documento')" title="Ver factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
             } else if (isNivel1) {
-                docIcon = `<span onclick="showLinkFacturaFileModal(${f.id}, 'documento')" title="Vincular factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
+                docIcon = `<span onclick="event.stopPropagation(); showLinkFacturaFileModal(${f.id}, 'documento')" title="Vincular factura PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
             }
             
             var pagoIcon = '';
             if (f.has_pago) {
-                pagoIcon = `<span onclick="viewFacturaDoc(${f.id}, 'pago')" title="Ver comprobante PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
+                pagoIcon = `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.id}, 'pago')" title="Ver comprobante PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem;">📄</span>`;
             } else if (isNivel1) {
-                pagoIcon = `<span onclick="showLinkFacturaFileModal(${f.id}, 'pago')" title="Vincular pago PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
+                pagoIcon = `<span onclick="event.stopPropagation(); showLinkFacturaFileModal(${f.id}, 'pago')" title="Vincular pago PDF" style="cursor:pointer; margin-right:0.35rem; font-size:0.9rem; opacity:0.5;">📎</span>`;
             }
             
             return `<tr>
@@ -830,6 +830,7 @@ var linkFacturaId = null;
 var linkFacturaTipo = null; // 'documento' or 'pago'
 
 function showLinkFacturaFileModal(facturaId, tipo) {
+    console.log('📎 showLinkFacturaFileModal called:', facturaId, tipo);
     linkFacturaId = facturaId;
     linkFacturaTipo = tipo;
     
@@ -894,4 +895,4 @@ async function saveLinkFacturaFile() {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v10 cargado');
+console.log('✅ PROVEEDORES-UI.JS v11 cargado');
