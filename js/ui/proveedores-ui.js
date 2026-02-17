@@ -823,12 +823,12 @@ function exportFacturasPorPagarToExcel() {
 }
 
 // ============================================
-// VINCULAR PDF A FACTURA (navegar Drive)
+// VINCULAR PDF A FACTURA (navegar Drive del mes)
 // ============================================
 
 var linkFacturaId = null;
 var linkFacturaTipo = null;
-var linkNavStack = []; // [{label, folderId}]
+var linkNavStack = [];
 
 async function showLinkFacturaFileModal(facturaId, tipo) {
     linkFacturaId = facturaId;
@@ -837,29 +837,79 @@ async function showLinkFacturaFileModal(facturaId, tipo) {
     
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
     document.getElementById('linkFacturaFileTitle').textContent = title;
-    document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-light);">⏳ Cargando Drive...</p>';
+    document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-light);">⏳ Buscando carpeta...</p>';
     document.getElementById('linkDriveBreadcrumb').innerHTML = '';
     document.getElementById('linkFacturaFileModal').style.display = 'flex';
     
-    // Find root folder
+    // Find factura date
+    var factura = null;
+    for (var p = 0; p < proveedores.length; p++) {
+        var facs = proveedores[p].facturas || [];
+        for (var i = 0; i < facs.length; i++) {
+            if (facs[i].id === facturaId) { factura = facs[i]; break; }
+        }
+        if (factura) break;
+    }
+    
+    if (!factura) {
+        document.getElementById('linkDriveContent').innerHTML = '<p style="color:var(--danger); text-align:center; padding:2rem;">Factura no encontrada</p>';
+        return;
+    }
+    
+    // Determine which date and subfolder name to look for
+    var dateStr = (tipo === 'pago') ? factura.fecha_pago : factura.fecha;
+    var subfolderSearch = (tipo === 'pago') ? 'pago' : 'recibida';
+    
+    if (!dateStr) {
+        document.getElementById('linkDriveContent').innerHTML = '<p style="color:var(--danger); text-align:center; padding:2rem;">La factura no tiene fecha de ' + (tipo === 'pago' ? 'pago' : 'emisión') + '</p>';
+        return;
+    }
+    
+    var d = new Date(dateStr);
+    var anio = d.getFullYear();
+    var mes = d.getMonth() + 1;
+    
+    // Find carpeta for this month
+    var carpeta = contabilidadCarpetas.find(function(c) {
+        return parseInt(c.anio) === anio && parseInt(c.mes) === mes;
+    });
+    
+    if (!carpeta || !carpeta.google_drive_url) {
+        document.getElementById('linkDriveContent').innerHTML = '<p style="color:var(--danger); text-align:center; padding:2rem;">No se encontró carpeta de contabilidad para ' + anio + '/' + mes + '</p>';
+        return;
+    }
+    
+    var monthFolderId = extractFolderId(carpeta.google_drive_url);
+    if (!monthFolderId) {
+        document.getElementById('linkDriveContent').innerHTML = '<p style="color:var(--danger); text-align:center; padding:2rem;">No se pudo obtener el folder ID del mes</p>';
+        return;
+    }
+    
     try {
-        var q = "name = 'Inmobiliaris ESWU' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-        var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        // List month subfolders to find Facturas Recibidas or Pagos Proveedores
+        var { folders } = await listDriveFolder(monthFolderId);
+        var targetFolder = folders.find(function(f) {
+            return f.name.toLowerCase().includes(subfolderSearch);
         });
-        var data = await resp.json();
         
-        if (!data.files || data.files.length === 0) {
-            document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--danger);">No se encontró "Inmobiliaris ESWU" en Drive</p>';
+        if (!targetFolder) {
+            // If not found, show all month subfolders for user to navigate
+            linkNavStack = [{ label: anio + '/' + mes, folderId: monthFolderId }];
+            renderLinkBreadcrumb();
+            await renderLinkDriveFolder(monthFolderId);
             return;
         }
         
-        var rootId = data.files[0].id;
-        linkNavStack = [{ label: 'Inmobiliaris ESWU', folderId: rootId }];
+        var mesesNombres = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        linkNavStack = [
+            { label: mesesNombres[mes] + ' ' + anio, folderId: monthFolderId },
+            { label: targetFolder.name, folderId: targetFolder.id }
+        ];
         renderLinkBreadcrumb();
-        await renderLinkDriveFolder(rootId);
+        await renderLinkDriveFolder(targetFolder.id);
+        
     } catch (e) {
-        document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--danger);">Error: ' + e.message + '</p>';
+        document.getElementById('linkDriveContent').innerHTML = '<p style="color:var(--danger); text-align:center; padding:2rem;">Error: ' + e.message + '</p>';
     }
 }
 
@@ -882,10 +932,10 @@ function linkNavGoTo(index) {
 function renderLinkBreadcrumb() {
     var html = linkNavStack.map(function(item, i) {
         if (i < linkNavStack.length - 1) {
-            return '<span onclick="linkNavGoTo(' + i + ')" style="cursor:pointer; color:var(--primary); text-decoration:underline;">' + item.label + '</span>';
+            return '<span onclick="linkNavGoTo(' + i + ')" style="cursor:pointer; color:var(--primary);">' + item.label + '</span>';
         }
         return '<strong>' + item.label + '</strong>';
-    }).join(' > ');
+    }).join(' › ');
     document.getElementById('linkDriveBreadcrumb').innerHTML = html;
 }
 
@@ -897,36 +947,26 @@ async function renderLinkDriveFolder(folderId) {
         var { folders, files } = await listDriveFolder(folderId);
         var html = '';
         
-        if (folders.length > 0) {
-            folders.forEach(function(f) {
-                html += '<div onclick="linkNavOpenFolder(\'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0; transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'white\'">' +
-                    '<span style="font-size:1.2rem;">📁</span>' +
-                    '<span style="font-size:0.88rem; font-weight:500;">' + f.name + '</span>' +
-                    '</div>';
-            });
-        }
+        folders.forEach(function(f) {
+            html += '<div onclick="linkNavOpenFolder(\'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'white\'">' +
+                '<span style="font-size:1.2rem;">📁</span>' +
+                '<span style="font-size:0.88rem; font-weight:500;">' + f.name + '</span></div>';
+        });
         
-        if (files.length > 0) {
-            files.forEach(function(f, i) {
-                var isPdf = f.name.toLowerCase().endsWith('.pdf');
-                var bgColor = i % 2 === 0 ? 'white' : '#f7fafc';
-                if (isPdf) {
-                    html += '<div onclick="selectLinkFile(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0; background:' + bgColor + '; transition:background 0.15s;" onmouseover="this.style.background=\'#e6fffa\'" onmouseout="this.style.background=\'' + bgColor + '\'">' +
-                        '<span style="font-size:1.1rem;">📄</span>' +
-                        '<span style="font-size:0.85rem; flex:1; word-break:break-word;">' + f.name + '</span>' +
-                        '<span style="font-size:0.7rem; color:var(--success); font-weight:600;">Seleccionar</span>' +
-                        '</div>';
-                } else {
-                    html += '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; border-bottom:1px solid #f0f0f0; background:' + bgColor + '; opacity:0.5;">' +
-                        '<span style="font-size:1.1rem;">📎</span>' +
-                        '<span style="font-size:0.85rem; flex:1; word-break:break-word;">' + f.name + '</span>' +
-                        '</div>';
-                }
-            });
-        }
+        // Only PDFs selectable
+        files.forEach(function(f, i) {
+            var isPdf = f.name.toLowerCase().endsWith('.pdf');
+            var bg = i % 2 === 0 ? 'white' : '#f7fafc';
+            if (isPdf) {
+                html += '<div onclick="selectLinkFile(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem 0.6rem; cursor:pointer; border-bottom:1px solid #f0f0f0; background:' + bg + ';" onmouseover="this.style.background=\'#e6fffa\'" onmouseout="this.style.background=\'' + bg + '\'">' +
+                    '<span style="font-size:1rem;">📄</span>' +
+                    '<span style="font-size:0.83rem; flex:1; word-break:break-word;">' + f.name + '</span>' +
+                    '<span style="font-size:0.7rem; color:var(--success); font-weight:600;">Seleccionar</span></div>';
+            }
+        });
         
-        if (folders.length === 0 && files.length === 0) {
-            html = '<p style="text-align:center; padding:2rem; color:var(--text-light);">📭 Carpeta vacía</p>';
+        if (!html) {
+            html = '<p style="text-align:center; padding:2rem; color:var(--text-light);">📭 No hay PDFs en esta carpeta</p>';
         }
         
         contentDiv.innerHTML = html;
@@ -963,4 +1003,4 @@ async function selectLinkFile(fileId, fileName) {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v19 cargado');
+console.log('✅ PROVEEDORES-UI.JS v20 cargado');
