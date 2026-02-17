@@ -1,27 +1,45 @@
 /* ========================================
-   PROVEEDORES UI - TODAS LAS FUNCIONES
-   Diseño restaurado sesiones 3-6 + optimización sesiones 7-8
-   Última actualización: 2026-02-12 20:00 CST
+   PROVEEDORES-UI.JS v2
    ======================================== */
 
 // ============================================
 // FUNCIONES AUXILIARES PARA VER DOCUMENTOS
 // ============================================
 
-function viewFacturaDoc(facturaIdOrArchivo, tipo) {
-    if (typeof facturaIdOrArchivo === 'number') {
-        fetchAndViewFactura(facturaIdOrArchivo, tipo || 'documento');
-    } else if (facturaIdOrArchivo) {
-        openPDFViewer(facturaIdOrArchivo);
+function viewFacturaDoc(facturaId, tipo) {
+    // Check if factura has Drive file ID in memory
+    for (var p = 0; p < proveedores.length; p++) {
+        var facs = proveedores[p].facturas || [];
+        for (var i = 0; i < facs.length; i++) {
+            if (facs[i].id === facturaId) {
+                var driveId = (tipo === 'pago') ? facs[i].pago_drive_file_id : facs[i].documento_drive_file_id;
+                if (driveId) {
+                    viewDriveFileInline(driveId, (tipo === 'pago' ? 'Comprobante Pago' : 'Factura'));
+                    return;
+                }
+            }
+        }
     }
+    // Fallback to base64 fetch
+    fetchAndViewFactura(facturaId, tipo || 'documento');
 }
 
-function viewDocumento(docIdOrArchivo) {
-    if (typeof docIdOrArchivo === 'number') {
-        fetchAndViewDocProveedor(docIdOrArchivo);
-    } else if (docIdOrArchivo) {
-        openPDFViewer(docIdOrArchivo);
+function viewDocumento(docId) {
+    // Check if doc has Drive file ID in memory
+    for (var p = 0; p < proveedores.length; p++) {
+        var docs = proveedores[p].documentos || [];
+        for (var i = 0; i < docs.length; i++) {
+            if (docs[i].id === docId) {
+                if (docs[i].google_drive_file_id) {
+                    var safeName = (docs[i].nombre || 'Documento').replace(/'/g, "\\'");
+                    viewDriveFileInline(docs[i].google_drive_file_id, safeName);
+                    return;
+                }
+            }
+        }
     }
+    // Fallback to base64 fetch
+    fetchAndViewDocProveedor(docId);
 }
 
 // ============================================
@@ -508,17 +526,39 @@ async function saveDocumentoProveedor(event) {
             throw new Error('Seleccione un archivo PDF');
         }
         
-        const pdfBase64 = await fileToBase64(file);
+        var docData = {
+            proveedor_id: currentProveedorId,
+            nombre_documento: nombre,
+            fecha_guardado: new Date().toISOString().split('T')[0],
+            usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
+        };
+        
+        if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+            var prov = proveedores.find(p => p.id === currentProveedorId);
+            if (prov) {
+                try {
+                    var folderId = prov.google_drive_folder_id;
+                    if (!folderId) {
+                        folderId = await getOrCreateProveedorFolder(prov.nombre);
+                        await supabaseClient.from('proveedores')
+                            .update({ google_drive_folder_id: folderId })
+                            .eq('id', currentProveedorId);
+                    }
+                    var result = await uploadFileToDrive(file, folderId);
+                    docData.google_drive_file_id = result.id;
+                    docData.archivo_pdf = '';
+                } catch (e) {
+                    console.error('⚠️ Drive upload failed, using base64');
+                    docData.archivo_pdf = await fileToBase64(file);
+                }
+            }
+        } else {
+            docData.archivo_pdf = await fileToBase64(file);
+        }
         
         const { error } = await supabaseClient
             .from('proveedores_documentos')
-            .insert([{
-                proveedor_id: currentProveedorId,
-                nombre_documento: nombre,
-                archivo_pdf: pdfBase64,
-                fecha_guardado: new Date().toISOString().split('T')[0],
-                usuario_guardo: currentUser.nombre
-            }]);
+            .insert([docData]);
         
         if (error) throw error;
         
@@ -612,14 +652,32 @@ function replaceProveedorDoc(docId) {
         if (!this.files[0]) return;
         showLoading();
         try {
-            const pdfBase64 = await fileToBase64(this.files[0]);
+            var updateData = {
+                fecha_guardado: new Date().toISOString().split('T')[0],
+                usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
+            };
+            
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                var prov = proveedores.find(p => p.id === currentProveedorId);
+                if (prov) {
+                    var folderId = prov.google_drive_folder_id;
+                    if (!folderId) {
+                        folderId = await getOrCreateProveedorFolder(prov.nombre);
+                        await supabaseClient.from('proveedores')
+                            .update({ google_drive_folder_id: folderId })
+                            .eq('id', currentProveedorId);
+                    }
+                    var result = await uploadFileToDrive(this.files[0], folderId);
+                    updateData.google_drive_file_id = result.id;
+                    updateData.archivo_pdf = '';
+                }
+            } else {
+                updateData.archivo_pdf = await fileToBase64(this.files[0]);
+            }
+            
             const { error } = await supabaseClient
                 .from('proveedores_documentos')
-                .update({
-                    archivo_pdf: pdfBase64,
-                    fecha_guardado: new Date().toISOString().split('T')[0],
-                    usuario_guardo: currentUser.nombre
-                })
+                .update(updateData)
                 .eq('id', docId);
             
             if (error) throw error;
