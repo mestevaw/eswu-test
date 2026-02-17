@@ -835,6 +835,13 @@ async function showLinkFacturaFileModal(facturaId, tipo) {
     linkFacturaTipo = tipo;
     linkNavStack = [];
     
+    // Ensure Drive is connected
+    if (!isGoogleConnected()) {
+        googleSignIn();
+        alert('Conéctate a Google Drive primero, luego intenta de nuevo.');
+        return;
+    }
+    
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
     document.getElementById('linkFacturaFileTitle').textContent = title;
     document.getElementById('linkDriveContent').innerHTML = '<p style="text-align:center; padding:2rem; color:var(--text-light);">⏳ Buscando carpeta...</p>';
@@ -1003,4 +1010,4 @@ async function selectLinkFile(fileId, fileName) {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v20 cargado');
+console.log('✅ PROVEEDORES-UI.JS v21 cargado');
