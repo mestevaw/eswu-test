@@ -394,13 +394,25 @@ function renderBancosTable() {
         return (b.mes || 0) - (a.mes || 0);
     });
     
+    var lastMonth = null;
+    var shadeToggle = false;
+    
     sorted.forEach(b => {
         var anio = b.anio || '';
         var mes = b.mes ? mesesNombres[b.mes] : '';
+        var monthKey = '' + (b.anio || 0) + '-' + (b.mes || 0);
         var tipo = b.tipo || 'Documento';
         var nombre = b.nombre_archivo || '—';
         var clickAction = '';
         var rowStyle = '';
+        
+        // Toggle shade when month changes
+        if (monthKey !== lastMonth) {
+            shadeToggle = !shadeToggle;
+            lastMonth = monthKey;
+        }
+        
+        var bgColor = shadeToggle ? 'background:#f0f4f8;' : '';
         
         if (b.google_drive_file_id) {
             var safeName = (b.nombre_archivo || tipo).replace(/'/g, "\\'");
@@ -409,7 +421,7 @@ function renderBancosTable() {
         }
         
         tbody.innerHTML += `
-            <tr ${clickAction} style="${rowStyle}">
+            <tr ${clickAction} style="${rowStyle}${bgColor}">
                 <td style="font-size:0.85rem; word-break:break-word;">${nombre}</td>
                 <td>${anio}</td>
                 <td>${mes}</td>
@@ -914,11 +926,17 @@ function showVincularBtn() {
 
 async function iniciarVinculacionFacturas() {
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        // Try to trigger sign-in and wait
         if (typeof googleSignIn === 'function') {
-            await googleSignIn();
+            googleSignIn();
+            // Wait up to 30 seconds for user to complete sign-in
+            for (var w = 0; w < 60; w++) {
+                await new Promise(r => setTimeout(r, 500));
+                if (isGoogleConnected()) break;
+            }
         }
         if (!isGoogleConnected()) {
-            alert('Necesitas conectar Google Drive primero');
+            alert('No se pudo conectar a Google Drive. Intenta de nuevo.');
             return;
         }
     }
