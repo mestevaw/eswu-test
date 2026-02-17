@@ -14,7 +14,8 @@ function showAddInquilinoModal() {
     document.getElementById('addInquilinoTitle').textContent = 'Agregar Inquilino';
     document.getElementById('inquilinoForm').reset();
     document.getElementById('inquilinoContactosList').innerHTML = '<p style="color:var(--text-light);font-size:0.875rem">No hay contactos agregados</p>';
-    document.getElementById('contratoFileName').textContent = '';
+    var cfn = document.getElementById('contratoFileName');
+    if (cfn) cfn.textContent = '';
     
     document.getElementById('addInquilinoModal').classList.add('active');
 }
