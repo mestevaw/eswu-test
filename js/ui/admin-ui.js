@@ -909,7 +909,7 @@ function agregarNuevaSemana() {
     agregarSemanaBitacora();
 }
 
-console.log('✅ ADMIN-UI.JS v11 cargado');
+console.log('✅ ADMIN-UI.JS v12 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
