@@ -897,7 +897,254 @@ function agregarNuevaSemana() {
     agregarSemanaBitacora();
 }
 
-console.log('✅ ADMIN-UI.JS cargado (2026-02-15)');
+// ============================================
+// VINCULACIÓN FACTURAS/PAGOS DESDE DRIVE
+// ============================================
+
+var vinculacionFacturasData = [];
+var vinculacionFacturasIndex = 0;
+var vinculacionFacturasMode = 'facturas'; // 'facturas' or 'pagos'
+
+function showVincularBtn() {
+    var btn = document.getElementById('facturaVincularBtn');
+    if (btn) {
+        btn.style.display = (currentUser && currentUser.nivel === 1) ? 'inline' : 'none';
+    }
+}
+
+async function iniciarVinculacionFacturas() {
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        if (typeof googleSignIn === 'function') {
+            await googleSignIn();
+        }
+        if (!isGoogleConnected()) {
+            alert('Necesitas conectar Google Drive primero');
+            return;
+        }
+    }
+    
+    // Make sure carpetas are loaded
+    if (!contabilidadCarpetas || contabilidadCarpetas.length === 0) {
+        if (typeof loadContabilidadCarpetas === 'function') {
+            await loadContabilidadCarpetas();
+        }
+    }
+    
+    vinculacionFacturasMode = 'facturas';
+    vinculacionFacturasIndex = 0;
+    vinculacionFacturasData = [];
+    
+    var area = document.getElementById('facturasVinculacionArea');
+    area.style.display = 'block';
+    area.innerHTML = '<p style="text-align:center; color:var(--text-light);">Escaneando carpetas en Drive...</p>';
+    
+    // Scan all months for "Facturas Proveedores" subfolders
+    for (var i = 0; i < contabilidadCarpetas.length; i++) {
+        var carpeta = contabilidadCarpetas[i];
+        var monthFolderId = extractFolderId(carpeta.google_drive_url);
+        if (!monthFolderId) continue;
+        
+        try {
+            var { folders } = await listDriveFolder(monthFolderId);
+            var facturasFolder = folders.find(f => f.name.toLowerCase().includes('factura'));
+            var pagosFolder = folders.find(f => f.name.toLowerCase().includes('pago'));
+            
+            if (facturasFolder || pagosFolder) {
+                vinculacionFacturasData.push({
+                    anio: carpeta.anio,
+                    mes: carpeta.mes,
+                    facturasFolderId: facturasFolder ? facturasFolder.id : null,
+                    pagosFolderId: pagosFolder ? pagosFolder.id : null
+                });
+            }
+        } catch (e) {
+            console.log('Error escaneando', carpeta.anio, carpeta.mes, e);
+        }
+    }
+    
+    // Sort by year desc, month desc
+    vinculacionFacturasData.sort((a, b) => {
+        if (b.anio !== a.anio) return b.anio - a.anio;
+        return b.mes - a.mes;
+    });
+    
+    if (vinculacionFacturasData.length === 0) {
+        area.innerHTML = '<p style="text-align:center; color:var(--danger);">No se encontraron carpetas de Facturas/Pagos en Drive</p>';
+        return;
+    }
+    
+    mostrarVinculacionFacturasMes();
+}
+
+async function mostrarVinculacionFacturasMes() {
+    var area = document.getElementById('facturasVinculacionArea');
+    
+    if (vinculacionFacturasIndex >= vinculacionFacturasData.length) {
+        if (vinculacionFacturasMode === 'facturas') {
+            // Switch to pagos mode
+            vinculacionFacturasMode = 'pagos';
+            vinculacionFacturasIndex = 0;
+            mostrarVinculacionFacturasMes();
+            return;
+        } else {
+            area.innerHTML = '<p style="text-align:center; color:var(--success); padding:1rem;">✅ Vinculación completada</p>';
+            await loadProveedores();
+            renderProveedoresFacturasPagadas();
+            return;
+        }
+    }
+    
+    var mesData = vinculacionFacturasData[vinculacionFacturasIndex];
+    var folderId = (vinculacionFacturasMode === 'facturas') ? mesData.facturasFolderId : mesData.pagosFolderId;
+    
+    if (!folderId) {
+        vinculacionFacturasIndex++;
+        mostrarVinculacionFacturasMes();
+        return;
+    }
+    
+    var mesesNombres = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    var titulo = (vinculacionFacturasMode === 'facturas') ? 'Facturas Proveedores' : 'Pagos Proveedores';
+    
+    area.innerHTML = '<p style="text-align:center; color:var(--text-light);">Cargando archivos...</p>';
+    
+    try {
+        var { files } = await listDriveFolder(folderId);
+        
+        if (!files || files.length === 0) {
+            vinculacionFacturasIndex++;
+            mostrarVinculacionFacturasMes();
+            return;
+        }
+        
+        // Get all facturas for this month across all proveedores
+        var facturasDelMes = [];
+        proveedores.forEach(function(prov) {
+            (prov.facturas || []).forEach(function(f) {
+                var fDate = new Date(f.fecha);
+                var fMonth = fDate.getMonth() + 1;
+                var fYear = fDate.getFullYear();
+                if (fYear === mesData.anio && fMonth === mesData.mes) {
+                    var alreadyLinked = (vinculacionFacturasMode === 'facturas') 
+                        ? !!(f.documento_drive_file_id)
+                        : !!(f.pago_drive_file_id);
+                    facturasDelMes.push({
+                        id: f.id,
+                        label: prov.nombre + ' — #' + (f.numero || 'S/N') + ' — $' + f.monto.toLocaleString('es-MX', {minimumFractionDigits:2}),
+                        linked: alreadyLinked
+                    });
+                }
+            });
+        });
+        
+        // Sort facturas alphabetically by label
+        facturasDelMes.sort((a, b) => a.label.localeCompare(b.label));
+        
+        // Build dropdown options
+        var options = '<option value="">— Omitir —</option>';
+        facturasDelMes.forEach(function(f) {
+            var check = f.linked ? ' ✅' : '';
+            options += '<option value="' + f.id + '">' + f.label + check + '</option>';
+        });
+        
+        var filesHtml = files.map(function(file, idx) {
+            return '<div style="display:flex; align-items:center; gap:0.5rem; padding:0.4rem 0; border-bottom:1px solid #eee; flex-wrap:wrap;">' +
+                '<div style="flex:1; min-width:200px; font-size:0.85rem; word-break:break-word;">' + file.name + '</div>' +
+                '<select id="vincFactFile_' + idx + '" data-file-id="' + file.id + '" data-file-name="' + file.name.replace(/"/g, '&quot;') + '" style="flex:1; min-width:200px; padding:0.3rem; border:1px solid var(--border); border-radius:4px; font-size:0.8rem;">' + options + '</select>' +
+                '</div>';
+        }).join('');
+        
+        area.innerHTML = 
+            '<div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0; flex-wrap:wrap; gap:0.3rem;">' +
+                '<div style="font-weight:600;">📁 ' + mesesNombres[mesData.mes] + ' ' + mesData.anio + ' — ' + titulo + '</div>' +
+                '<div style="font-size:0.85rem; color:var(--text-light);">' + (vinculacionFacturasIndex + 1) + ' de ' + vinculacionFacturasData.length + '</div>' +
+            '</div>' +
+            '<div style="max-height:400px; overflow-y:auto;">' + filesHtml + '</div>' +
+            '<div style="display:flex; gap:0.5rem; padding:0.5rem 0; justify-content:space-between;">' +
+                '<button onclick="cancelarVinculacionFacturas()" style="padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer;">Cancelar</button>' +
+                '<div style="display:flex; gap:0.5rem;">' +
+                    '<button onclick="saltarMesFacturas()" style="padding:0.4rem 0.8rem; border:1px solid var(--border); border-radius:4px; background:white; cursor:pointer;">Saltar mes ▶</button>' +
+                    '<button onclick="guardarVinculacionFacturasMes()" style="padding:0.4rem 0.8rem; border:none; border-radius:4px; background:var(--success); color:white; cursor:pointer; font-weight:600;">💾 Guardar y siguiente</button>' +
+                '</div>' +
+            '</div>';
+            
+    } catch (e) {
+        console.error('Error loading folder:', e);
+        area.innerHTML = '<p style="color:var(--danger);">Error: ' + e.message + '</p>';
+    }
+}
+
+function saltarMesFacturas() {
+    vinculacionFacturasIndex++;
+    mostrarVinculacionFacturasMes();
+}
+
+function cancelarVinculacionFacturas() {
+    var area = document.getElementById('facturasVinculacionArea');
+    area.style.display = 'none';
+    area.innerHTML = '';
+}
+
+async function guardarVinculacionFacturasMes() {
+    var selects = document.querySelectorAll('[id^="vincFactFile_"]');
+    var toSave = [];
+    
+    selects.forEach(function(sel) {
+        if (sel.value) {
+            toSave.push({
+                facturaId: parseInt(sel.value),
+                fileId: sel.dataset.fileId,
+                fileName: sel.dataset.fileName
+            });
+        }
+    });
+    
+    if (toSave.length === 0) {
+        vinculacionFacturasIndex++;
+        mostrarVinculacionFacturasMes();
+        return;
+    }
+    
+    var area = document.getElementById('facturasVinculacionArea');
+    var column = (vinculacionFacturasMode === 'facturas') ? 'documento_drive_file_id' : 'pago_drive_file_id';
+    var filenameColumn = (vinculacionFacturasMode === 'facturas') ? 'documento_filename' : 'pago_filename';
+    
+    var saved = 0;
+    var errors = [];
+    
+    for (var i = 0; i < toSave.length; i++) {
+        var item = toSave[i];
+        var updateData = {};
+        updateData[column] = item.fileId;
+        updateData[filenameColumn] = item.fileName;
+        
+        console.log('💾 Guardando:', vinculacionFacturasMode, 'factura_id=' + item.facturaId, 'file=' + item.fileName);
+        
+        var { error } = await supabaseClient
+            .from('facturas')
+            .update(updateData)
+            .eq('id', item.facturaId);
+        
+        if (error) {
+            console.error('❌ Error:', error);
+            errors.push(item.fileName + ': ' + error.message);
+        } else {
+            saved++;
+        }
+    }
+    
+    if (errors.length > 0) {
+        alert('⚠️ ' + saved + ' guardados, ' + errors.length + ' errores:\n' + errors.join('\n'));
+    }
+    
+    console.log('✅ Vinculados ' + saved + ' ' + vinculacionFacturasMode);
+    
+    vinculacionFacturasIndex++;
+    await loadProveedores();
+    mostrarVinculacionFacturasMes();
+}
+
+console.log('✅ ADMIN-UI.JS v2 cargado');
 
 // ============================================
 // CONTABILIDAD - DOCUMENTOS
