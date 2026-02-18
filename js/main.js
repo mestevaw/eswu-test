@@ -104,6 +104,15 @@ async function initializeApp() {
         
         console.log('✅ App inicializada correctamente');
         
+        // Init mensajería
+        try {
+            if (typeof initMensajes === 'function') {
+                await initMensajes();
+            }
+        } catch (e) {
+            console.log('Mensajes init diferido');
+        }
+        
         // Initialize Google Drive (non-blocking)
         try {
             if (typeof initGoogleDrive === 'function') {
