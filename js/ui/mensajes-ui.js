@@ -112,7 +112,7 @@ function renderMensajesView(container) {
     
     // Botón de nuevo mensaje
     let html = `<div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem;">
-        <button onclick="showNuevoMensajeModal()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">✉️ Nuevo Mensaje</button>
+        <span onclick="showNuevoMensajeModal()" title="Nuevo Mensaje" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
     </div>`;
     
     if (mensajes.length === 0) {
@@ -258,8 +258,32 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     
     document.getElementById('mensajeAsunto').value = asuntoPrefill || '';
     document.getElementById('mensajeContenido').value = '';
+    document.getElementById('mensajeRefTipo').value = '';
+    document.getElementById('mensajeRefId').value = '';
     
     document.getElementById('nuevoMensajeModal').classList.add('active');
+}
+
+// Abrir nuevo mensaje desde ficha de inquilino o proveedor
+function showNuevoMensajeFicha(tipo) {
+    var nombre = '';
+    var id = null;
+    
+    if (tipo === 'inquilino' && currentInquilinoId) {
+        var inq = inquilinos.find(i => i.id === currentInquilinoId);
+        nombre = inq ? inq.nombre : '';
+        id = currentInquilinoId;
+    } else if (tipo === 'proveedor' && currentProveedorId) {
+        var prov = proveedores.find(p => p.id === currentProveedorId);
+        nombre = prov ? prov.nombre : '';
+        id = currentProveedorId;
+    }
+    
+    showNuevoMensajeModal(null, nombre);
+    
+    // Marcar referencia
+    document.getElementById('mensajeRefTipo').value = tipo;
+    document.getElementById('mensajeRefId').value = id || '';
 }
 
 async function submitNuevoMensaje(event) {
@@ -268,16 +292,24 @@ async function submitNuevoMensaje(event) {
     const para = document.getElementById('mensajeDestinatario').value;
     const asunto = document.getElementById('mensajeAsunto').value;
     const contenido = document.getElementById('mensajeContenido').value;
+    const refTipo = document.getElementById('mensajeRefTipo').value;
+    const refId = document.getElementById('mensajeRefId').value;
     
     if (!asunto || !contenido) {
         alert('Completa el asunto y el mensaje');
         return;
     }
     
-    const ok = await enviarMensaje(para, asunto, contenido);
+    const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null);
     if (ok) {
         closeModal('nuevoMensajeModal');
-        switchMensajesTab('recibidos');
+        
+        // Si vino de una ficha, refrescar la pestaña de mensajes de esa ficha
+        if (refTipo && refId) {
+            renderMensajesFicha(refTipo, parseInt(refId));
+        } else {
+            switchMensajesTab('recibidos');
+        }
         updateNotificationBadge();
     }
 }
@@ -334,6 +366,48 @@ async function initMensajes() {
     } catch (e) {
         console.error('Error init mensajes:', e);
     }
+}
+
+// ============================================
+// MENSAJES EN FICHAS (inquilino / proveedor)
+// ============================================
+
+async function renderMensajesFicha(tipo, id) {
+    var divId = tipo === 'inquilino' ? 'inquilinoMensajesFicha' : 'proveedorMensajesFicha';
+    var container = document.getElementById(divId);
+    if (!container) return;
+    
+    container.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando mensajes...</p>';
+    
+    var msgs = await loadMensajesPorReferencia(tipo, id);
+    
+    if (!msgs || msgs.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">No hay mensajes vinculados.</p>';
+        return;
+    }
+    
+    var html = '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
+    msgs.forEach(function(m) {
+        var de = usuarios.find(function(u) { return u.id === m.de_usuario_id; });
+        var para = m.para_usuario_id ? usuarios.find(function(u) { return u.id === m.para_usuario_id; }) : null;
+        var deNombre = de ? de.nombre : 'Sistema';
+        var paraNombre = para ? para.nombre : 'Todos';
+        var fecha = new Date(m.fecha_envio);
+        var fechaStr = fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+        var horaStr = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        
+        html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">';
+        html += '<strong style="font-size:0.85rem;">' + (m.asunto || 'Sin asunto') + '</strong>';
+        html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + fechaStr + ' ' + horaStr + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.3rem;">De: ' + deNombre + ' → Para: ' + paraNombre + '</div>';
+        html += '<div style="font-size:0.85rem;white-space:pre-wrap;">' + (m.contenido || '') + '</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    
+    container.innerHTML = html;
 }
 
 console.log('✅ MENSAJES-UI.JS cargado');
