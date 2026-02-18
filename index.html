@@ -1333,6 +1333,13 @@
                         <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Mensaje: *</label>
                         <textarea id="mensajeContenido" required rows="5" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
                     </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">📎 Adjuntar documento:</label>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <input type="file" id="mensajeAdjunto" accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="font-size:0.85rem;">
+                        </div>
+                        <span id="mensajeAdjuntoInfo" style="font-size:0.75rem;color:var(--text-light);"></span>
+                    </div>
                 </form>
             </div>
         </div>
