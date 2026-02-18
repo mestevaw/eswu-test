@@ -234,6 +234,20 @@ function switchTab(type, tabName) {
             document.querySelector('#proveedorDetailModal .tab:nth-child(4)').classList.add('active');
             document.getElementById('proveedorNotasTab').classList.add('active');
         }
+    } else if (type === 'eswu') {
+        document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
+        
+        if (tabName === 'legales') {
+            document.querySelector('#eswuDocsPage .tab:nth-child(1)').classList.add('active');
+            document.getElementById('eswuLegalesTab').classList.add('active');
+        } else if (tabName === 'generales') {
+            document.querySelector('#eswuDocsPage .tab:nth-child(2)').classList.add('active');
+            document.getElementById('eswuGeneralesTab').classList.add('active');
+        } else if (tabName === 'mensajes') {
+            document.querySelector('#eswuDocsPage .tab:nth-child(3)').classList.add('active');
+            document.getElementById('eswuMensajesTab').classList.add('active');
+        }
     }
 }
 
