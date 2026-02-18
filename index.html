@@ -341,7 +341,7 @@
                         <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
                             <h2 class="card-title">Contabilidad - Documentos</h2>
                             <div style="display:flex; align-items:center; gap:0.4rem;">
-                                <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--primary); font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</span>
+                                <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
                                 <span id="contabilidadHomeBtn" onclick="contabilidadGoHome()" title="Inicio Contabilidad" style="display:none; font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🏠</span>
                             </div>
                         </div>
@@ -518,7 +518,7 @@
                     <div class="tabs">
                         <button class="tab active" onclick="switchTab('inquilino', 'pagos')">Historial de Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
                         <button class="tab" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
-                        <button class="tab" onclick="switchTab('inquilino', 'notas')">Notas<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarNotaModal();" title="Agregar Nota" style="color:var(--success);">+</span></button>
+                        <button class="tab" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="inquilinoPagosTab" class="tab-content active">
                         <div id="historialPagos"></div>
@@ -527,7 +527,7 @@
                         <div id="documentosAdicionales"></div>
                     </div>
                     <div id="inquilinoNotasTab" class="tab-content">
-                        <p id="notasInquilino"></p>
+                        <div id="inquilinoMensajesFicha"></div>
                     </div>
                 </div>
             </div>
@@ -724,7 +724,7 @@
                         <button class="tab active" onclick="switchTab('proveedor', 'pagadas')">Facturas Pagadas</button>
                         <button class="tab" onclick="switchTab('proveedor', 'porpagar')">Facturas X Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
                         <button class="tab" onclick="switchTab('proveedor', 'docs')">Documentos Adicionales<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
-                        <button class="tab" onclick="switchTab('proveedor', 'notas')">Notas<span class="btn-add-inline" onclick="event.stopPropagation(); showEditNotasProveedorModal();" title="Editar notas">+</span></button>
+                        <button class="tab" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="proveedorPagadasTab" class="tab-content active">
                         <div id="facturasPagadas"></div>
@@ -736,7 +736,7 @@
                         <div id="proveedorDocumentosAdicionales"></div>
                     </div>
                     <div id="proveedorNotasTab" class="tab-content">
-                        <div id="proveedorNotasContent"></div>
+                        <div id="proveedorMensajesFicha"></div>
                     </div>
                 </div>
             </div>
@@ -1319,6 +1319,8 @@
             </div>
             <div style="padding:1rem 1.25rem;">
                 <form id="nuevoMensajeForm" onsubmit="submitNuevoMensaje(event)">
+                    <input type="hidden" id="mensajeRefTipo" value="">
+                    <input type="hidden" id="mensajeRefId" value="">
                     <div style="margin-bottom:0.5rem;">
                         <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Para:</label>
                         <select id="mensajeDestinatario" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;"></select>
