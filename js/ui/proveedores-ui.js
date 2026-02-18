@@ -391,10 +391,9 @@ function showProveedorDetail(id) {
         additionalDiv.innerHTML = '';
     }
     
-    // Notas
-    const notasDiv = document.getElementById('proveedorNotasContent');
-    if (notasDiv) {
-        notasDiv.textContent = prov.notas || 'Sin notas';
+    // MENSAJES DE FICHA
+    if (typeof renderMensajesFicha === 'function') {
+        renderMensajesFicha('proveedor', prov.id);
     }
     
     // ── Pestaña: Facturas Pagadas (tabla 3 columnas con encabezado sticky) ──
