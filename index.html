@@ -65,16 +65,13 @@
         <div class="main-content">
             <div class="menu-sidebar" id="menuSidebar">
                 <button id="menuAdmin" class="menu-btn" onclick="showSubMenu('admin')">Admin</button>
-                <button id="menuEswu" class="menu-btn" onclick="showSubMenu('eswu')">ESWU</button>
+                <button id="menuEswu" class="menu-btn" onclick="showEswuFicha()">ESWU</button>
                 <button id="menuInquilinos" class="menu-btn" onclick="showSubMenu('inquilinos')">Inquilinos</button>
                 <button id="menuProveedores" class="menu-btn" onclick="showSubMenu('proveedores')">Proveedores</button>
                 <button class="menu-btn menu-btn-secondary" onclick="logout()">Salir</button>
             </div>
 
-            <div id="eswuSubMenu" class="submenu-container">
-                <button class="submenu-btn" onclick="showEswuDocsPage('generales')">Documentos Generales</button>
-                <button class="submenu-btn" onclick="showEswuDocsPage('legales')">Documentos Legales</button>
-            </div>
+            <div id="eswuSubMenu" class="submenu-container" style="display:none;"></div>
 
             <div id="inquilinosSubMenu" class="submenu-container">
                 <button class="submenu-btn" onclick="showInquilinosView('list')">Listado</button>
@@ -341,19 +338,46 @@
                     </div>
                 </div>
 
-                <!-- ESWU Documentos Page -->
+                <!-- ESWU Ficha Page -->
                 <div id="eswuDocsPage" class="page">
-                    <div class="card">
-                        <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
-                            <h2 class="card-title" id="eswuDocsTitle">ESWU - Documentos</h2>
-                            <div style="display:flex; align-items:center; gap:0.4rem;">
-                                <span id="eswuUploadBtn" onclick="uploadToEswuFolder()" title="Subir documento" style="display:none; color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                    <div class="card" style="max-width:1050px; margin:0 auto;">
+                        <div class="modal-header modal-header-sticky" style="position:sticky;top:0;z-index:10;background:white;border-bottom:1px solid var(--border);padding:0.75rem 1rem;">
+                            <h2 class="modal-title">INMOBILIARIS ESWU</h2>
+                            <div style="display:flex; align-items:center; gap:0.25rem;">
+                                <button class="close-modal" onclick="handleRegresa()" style="position:static">×</button>
                             </div>
                         </div>
-                        <div style="padding:1rem;">
-                            <div id="eswuDocsBreadcrumb" style="margin-bottom:0.5rem;"></div>
-                            <div id="eswuDocsContent">
-                                <p style="color:var(--text-light);text-align:center;padding:2rem;">Conecta Google Drive para ver documentos.</p>
+                        <div style="padding:1.25rem;">
+                            <!-- Acta Constitutiva -->
+                            <div id="eswuActaSection" style="margin-bottom:0.5rem;"></div>
+                            <!-- Contactos (usuarios) -->
+                            <div style="margin-bottom:0.5rem;">
+                                <div id="eswuContactsList"></div>
+                            </div>
+                            <!-- Pestañas -->
+                            <div class="tabs-container">
+                                <div class="tabs">
+                                    <button class="tab active" onclick="switchTab('eswu', 'legales')">Documentos Legales</button>
+                                    <button class="tab" onclick="switchTab('eswu', 'generales')">Documentos Generales</button>
+                                    <button class="tab" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                                </div>
+                                <div id="eswuLegalesTab" class="tab-content active">
+                                    <div style="margin-bottom:0.5rem; display:flex; gap:0.5rem; align-items:center;">
+                                        <input type="text" id="eswuLegalesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('legales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
+                                        <span onclick="uploadToEswuFolder('legales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
+                                    </div>
+                                    <div id="eswuLegalesContent"></div>
+                                </div>
+                                <div id="eswuGeneralesTab" class="tab-content">
+                                    <div style="margin-bottom:0.5rem; display:flex; gap:0.5rem; align-items:center;">
+                                        <input type="text" id="eswuGeneralesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('generales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
+                                        <span onclick="uploadToEswuFolder('generales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
+                                    </div>
+                                    <div id="eswuGeneralesContent"></div>
+                                </div>
+                                <div id="eswuMensajesTab" class="tab-content">
+                                    <div id="eswuMensajesFicha"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
