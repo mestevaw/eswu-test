@@ -355,7 +355,8 @@ async function getOrCreateInquilinoFolder(inquilinoNombre) {
     }
     
     // Create it
-    return await createDriveFolder(inquilinoNombre, inquilinosParentId);
+    var newFolder = await createDriveFolder(inquilinoNombre, inquilinosParentId);
+    return newFolder.id;
 }
 
 // ============================================
@@ -386,7 +387,8 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
         return data2.files[0].id;
     }
     
-    return await createDriveFolder(proveedorNombre, proveedoresParentId);
+    var newFolder = await createDriveFolder(proveedorNombre, proveedoresParentId);
+    return newFolder.id;
 }
 
 console.log('✅ GOOGLE-DRIVE.JS v2 cargado');
