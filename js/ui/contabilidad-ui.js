@@ -87,7 +87,7 @@ function renderContabilidadYearsAndMonths() {
     if (anios.length === 0) {
         aniosDiv.innerHTML = '';
         var emptyHtml = '<p style="color:var(--text-light);">No hay carpetas registradas.</p>';
-        if (isGoogleConnected() && currentUser && currentUser.nivel === 1) {
+        if (isGoogleConnected() && currentUser && (currentUser.nivel <= 2 || currentUser.nivel === 4)) {
             emptyHtml += '<div style="margin-top:0.5rem;"><span onclick="importarAniosExistentes()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span></div>';
         }
         contentDiv.innerHTML = emptyHtml;
@@ -136,8 +136,8 @@ function renderContabilidadYearsAndMonths() {
             `;
         }).join('') + '</div>';
     
-    // Add import link at bottom (only for nivel 1 admin when connected)
-    if (connected && currentUser && currentUser.nivel === 1) {
+    // Add import link at bottom (nivel 1-2 and nivel 4 contabilidad)
+    if (connected && currentUser && (currentUser.nivel <= 2 || currentUser.nivel === 4)) {
         contentDiv.innerHTML += '<div style="margin-top:1rem; text-align:center; display:flex; flex-direction:column; gap:0.4rem; align-items:center;">'
             + '<span onclick="importarAniosExistentes()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">📥 Importar años existentes de Google Drive</span>'
             + '<span onclick="sincronizarIndiceCompleto()" style="font-size:0.8rem; color:var(--primary); cursor:pointer; text-decoration:underline;">🔄 Sincronizar índice de documentos</span>'
