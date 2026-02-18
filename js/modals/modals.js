@@ -17,6 +17,10 @@ function showAddInquilinoModal() {
     var cfn = document.getElementById('contratoFileName');
     if (cfn) cfn.textContent = '';
     
+    // Ocultar sección terminar contrato (solo en edición)
+    var termSection = document.getElementById('terminarContratoSection');
+    if (termSection) termSection.classList.add('hidden');
+    
     document.getElementById('addInquilinoModal').classList.add('active');
 }
 
