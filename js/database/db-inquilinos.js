@@ -77,11 +77,44 @@ async function loadInquilinos() {
 }
 
 // ============================================
+// TERMINAR CONTRATO (toggle en form)
+// ============================================
+
+function toggleTerminarContratoFecha() {
+    var val = document.getElementById('terminarContratoSelect').value;
+    var fechaInput = document.getElementById('terminarContratoFecha');
+    if (val === 'si') {
+        fechaInput.classList.remove('hidden');
+        fechaInput.value = new Date().toISOString().split('T')[0];
+    } else {
+        fechaInput.classList.add('hidden');
+        fechaInput.value = '';
+    }
+}
+
+// ============================================
 // SAVE INQUILINO
 // ============================================
 
 async function saveInquilino(event) {
     event.preventDefault();
+    
+    // Verificar si quiere terminar contrato
+    var termSection = document.getElementById('terminarContratoSection');
+    var termSelect = document.getElementById('terminarContratoSelect');
+    var quiereTerminar = isEditMode && termSection && !termSection.classList.contains('hidden') && termSelect && termSelect.value === 'si';
+    
+    if (quiereTerminar) {
+        var fechaTerm = document.getElementById('terminarContratoFecha').value;
+        if (!fechaTerm) {
+            alert('Selecciona la fecha de terminación del contrato');
+            return;
+        }
+        if (!confirm('¿Estás seguro de terminar el contrato de este inquilino?\n\nEsta acción marcará el contrato como inactivo y dejará de generar requerimientos de renta.')) {
+            return;
+        }
+    }
+    
     showLoading();
     
     try {
@@ -135,6 +168,15 @@ async function saveInquilino(event) {
                 .insert(contactosToInsert);
             
             if (contactosError) throw contactosError;
+        }
+        
+        // Terminar contrato si fue seleccionado
+        if (quiereTerminar) {
+            var fechaTerm = document.getElementById('terminarContratoFecha').value;
+            await supabaseClient
+                .from('inquilinos')
+                .update({ contrato_activo: false, fecha_terminacion: fechaTerm })
+                .eq('id', inquilinoId);
         }
         
         await loadInquilinos();
@@ -341,6 +383,19 @@ function editInquilino() {
     document.getElementById('inquilinoFechaVenc').value = inq.fecha_vencimiento;
     
     renderContactosList(tempInquilinoContactos, 'inquilinoContactosList', 'deleteInquilinoContacto', 'showEditContactoInquilinoModal');
+    
+    // Mostrar sección terminar contrato solo en edición y si contrato activo
+    var termSection = document.getElementById('terminarContratoSection');
+    if (termSection) {
+        if (inq.contrato_activo !== false) {
+            termSection.classList.remove('hidden');
+            document.getElementById('terminarContratoSelect').value = 'no';
+            document.getElementById('terminarContratoFecha').classList.add('hidden');
+            document.getElementById('terminarContratoFecha').value = '';
+        } else {
+            termSection.classList.add('hidden');
+        }
+    }
     
     closeModal('inquilinoDetailModal');
     document.getElementById('addInquilinoModal').classList.add('active');
