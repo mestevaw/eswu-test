@@ -15,45 +15,59 @@ function openPDFViewer(base64Data) {
     }
     
     try {
-        // Convertir base64 data URI a Blob URL (Safari iOS no soporta data URIs en iframes)
-        let blobUrl;
+        var mime = '';
+        var blobUrl;
+        
         if (base64Data.startsWith('data:')) {
-            const parts = base64Data.split(',');
-            const mime = parts[0].match(/:(.*?);/)[1];
-            const byteString = atob(parts[1]);
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
+            var parts = base64Data.split(',');
+            mime = parts[0].match(/:(.*?);/)[1];
+            var byteString = atob(parts[1]);
+            var ab = new ArrayBuffer(byteString.length);
+            var ia = new Uint8Array(ab);
+            for (var i = 0; i < byteString.length; i++) {
                 ia[i] = byteString.charCodeAt(i);
             }
-            const blob = new Blob([ab], { type: mime });
+            var blob = new Blob([ab], { type: mime });
             blobUrl = URL.createObjectURL(blob);
         } else {
             blobUrl = base64Data;
         }
         
-        // Intentar overlay (funciona en mobile y desktop con blob URL)
-        const overlay = document.getElementById('pdfViewerOverlay');
-        const iframe = document.getElementById('pdfViewerIframe');
+        var overlay = document.getElementById('pdfViewerOverlay');
+        var iframe = document.getElementById('pdfViewerIframe');
+        var imgViewer = document.getElementById('pdfViewerImg');
         
-        if (overlay && iframe) {
-            // Guardar blob URL para liberar memoria al cerrar
+        if (overlay) {
             overlay.dataset.blobUrl = blobUrl;
-            iframe.src = blobUrl;
+            
+            // Si es imagen, mostrar como <img> ajustada a pantalla
+            if (mime.startsWith('image/')) {
+                if (iframe) iframe.style.display = 'none';
+                if (imgViewer) {
+                    imgViewer.src = blobUrl;
+                    imgViewer.style.display = 'block';
+                }
+            } else {
+                // PDF u otro: usar iframe
+                if (imgViewer) imgViewer.style.display = 'none';
+                if (iframe) {
+                    iframe.style.display = 'block';
+                    iframe.src = blobUrl;
+                }
+            }
+            
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
             return;
         }
         
-        // Fallback: abrir blob URL directamente
         window.open(blobUrl, '_blank');
         
     } catch (e) {
-        console.error('Error abriendo PDF:', e);
-        // Último fallback: intentar window.open con data URI original
-        const w = window.open();
+        console.error('Error abriendo documento:', e);
+        var w = window.open();
         if (w) {
-            w.document.write(`<iframe width='100%' height='100%' src='${base64Data}' style='border:none;position:fixed;top:0;left:0;right:0;bottom:0;'></iframe>`);
+            w.document.write('<iframe width="100%" height="100%" src="' + base64Data + '" style="border:none;position:fixed;top:0;left:0;right:0;bottom:0;"></iframe>');
         } else {
             alert('No se pudo abrir el documento.');
         }
@@ -61,16 +75,15 @@ function openPDFViewer(base64Data) {
 }
 
 function closePDFViewer() {
-    const overlay = document.getElementById('pdfViewerOverlay');
-    const iframe = document.getElementById('pdfViewerIframe');
+    var overlay = document.getElementById('pdfViewerOverlay');
+    var iframe = document.getElementById('pdfViewerIframe');
+    var imgViewer = document.getElementById('pdfViewerImg');
     
-    if (iframe) {
-        iframe.src = 'about:blank';
-    }
+    if (iframe) { iframe.src = 'about:blank'; iframe.style.display = 'block'; }
+    if (imgViewer) { imgViewer.src = ''; imgViewer.style.display = 'none'; }
     if (overlay) {
         overlay.style.display = 'none';
         document.body.style.overflow = '';
-        // Liberar memoria del blob URL
         if (overlay.dataset.blobUrl) {
             URL.revokeObjectURL(overlay.dataset.blobUrl);
             delete overlay.dataset.blobUrl;
