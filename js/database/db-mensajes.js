@@ -52,7 +52,7 @@ async function loadMensajesEnviados() {
 // SEND MENSAJE
 // ============================================
 
-async function enviarMensaje(paraUsuarioId, asunto, contenido, referenciaTipo, referenciaId) {
+async function enviarMensaje(paraUsuarioId, asunto, contenido, referenciaTipo, referenciaId, adjuntoDriveId, adjuntoNombre) {
     showLoading();
     try {
         const msgData = {
@@ -66,6 +66,12 @@ async function enviarMensaje(paraUsuarioId, asunto, contenido, referenciaTipo, r
         if (referenciaTipo && referenciaId) {
             msgData.referencia_tipo = referenciaTipo;
             msgData.referencia_id = parseInt(referenciaId);
+        }
+        
+        // Adjunto
+        if (adjuntoDriveId) {
+            msgData.adjunto_drive_file_id = adjuntoDriveId;
+            msgData.adjunto_nombre = adjuntoNombre || 'Documento';
         }
         
         if (paraUsuarioId === 'todos') {
