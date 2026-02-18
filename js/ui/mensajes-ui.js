@@ -325,7 +325,7 @@ function renderMensajeAdjuntosList() {
     div.innerHTML = html;
 }
 
-// Abrir nuevo mensaje desde ficha de inquilino o proveedor
+// Abrir nuevo mensaje desde ficha de inquilino, proveedor o eswu
 function showNuevoMensajeFicha(tipo) {
     var nombre = '';
     var id = null;
@@ -338,13 +338,16 @@ function showNuevoMensajeFicha(tipo) {
         var prov = proveedores.find(p => p.id === currentProveedorId);
         nombre = prov ? prov.nombre : '';
         id = currentProveedorId;
+    } else if (tipo === 'eswu') {
+        nombre = 'ESWU';
+        id = 0; // ID especial para ESWU
     }
     
     showNuevoMensajeModal(null, nombre);
     
     // Marcar referencia
     document.getElementById('mensajeRefTipo').value = tipo;
-    document.getElementById('mensajeRefId').value = id || '';
+    document.getElementById('mensajeRefId').value = id !== null ? id : '';
 }
 
 async function submitNuevoMensaje(event) {
@@ -378,19 +381,21 @@ async function submitNuevoMensaje(event) {
             if (refTipo === 'inquilino' && refId) {
                 var inq = inquilinos.find(function(i) { return i.id === parseInt(refId); });
                 if (inq) {
-                    folderId = inq.google_drive_folder_id;
+                    folderId = sanitizeDriveId(inq.google_drive_folder_id);
                     if (!folderId) {
                         folderId = await getOrCreateInquilinoFolder(inq.nombre);
                         await supabaseClient.from('inquilinos').update({ google_drive_folder_id: folderId }).eq('id', parseInt(refId));
+                        inq.google_drive_folder_id = folderId;
                     }
                 }
             } else if (refTipo === 'proveedor' && refId) {
                 var prov = proveedores.find(function(p) { return p.id === parseInt(refId); });
                 if (prov) {
-                    folderId = prov.google_drive_folder_id;
+                    folderId = sanitizeDriveId(prov.google_drive_folder_id);
                     if (!folderId) {
                         folderId = await getOrCreateProveedorFolder(prov.nombre);
                         await supabaseClient.from('proveedores').update({ google_drive_folder_id: folderId }).eq('id', parseInt(refId));
+                        prov.google_drive_folder_id = folderId;
                     }
                 }
             }
@@ -442,7 +447,7 @@ async function submitNuevoMensaje(event) {
         closeModal('nuevoMensajeModal');
         
         // Si vino de una ficha, refrescar mensajes Y recargar datos para documentos
-        if (refTipo && refId) {
+        if (refTipo && (refId || refTipo === 'eswu')) {
             if (refTipo === 'inquilino') {
                 await loadInquilinos();
                 showInquilinoDetail(parseInt(refId));
@@ -451,6 +456,9 @@ async function submitNuevoMensaje(event) {
                 await loadProveedores();
                 showProveedorDetail(parseInt(refId));
                 setTimeout(function() { switchTab('proveedor', 'notas'); }, 150);
+            } else if (refTipo === 'eswu') {
+                renderMensajesFicha('eswu', 0);
+                switchTab('eswu', 'mensajes');
             }
         } else {
             switchMensajesTab('recibidos');
@@ -537,7 +545,7 @@ async function initMensajes() {
 // ============================================
 
 async function renderMensajesFicha(tipo, id) {
-    var divId = tipo === 'inquilino' ? 'inquilinoMensajesFicha' : 'proveedorMensajesFicha';
+    var divId = tipo === 'inquilino' ? 'inquilinoMensajesFicha' : tipo === 'eswu' ? 'eswuMensajesFicha' : 'proveedorMensajesFicha';
     var container = document.getElementById(divId);
     if (!container) return;
     
