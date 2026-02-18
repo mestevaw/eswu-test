@@ -374,4 +374,32 @@ th.sorted-desc::after {
         padding: 0.25rem 0.35rem !important;
         font-size: 0.8rem;
     }
+    
+    /* ── Facturas Por Pagar: ocultar CLABE en móvil ── */
+    #proveedoresFacturasPorPagarTable thead th:nth-child(2),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(2) {
+        display: none;
+    }
+    
+    /* ── Facturas Por Pagar: anchos proporcionados sin CLABE ── */
+    #proveedoresFacturasPorPagarTable thead th:nth-child(1),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(1) {
+        width: 30%;
+    }
+    #proveedoresFacturasPorPagarTable thead th:nth-child(3),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(3) {
+        width: 15%;
+    }
+    #proveedoresFacturasPorPagarTable thead th:nth-child(4),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(4) {
+        width: 20%;
+    }
+    #proveedoresFacturasPorPagarTable thead th:nth-child(5),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(5) {
+        width: 20%;
+    }
+    #proveedoresFacturasPorPagarTable thead th:nth-child(6),
+    #proveedoresFacturasPorPagarTable tbody td:nth-child(6) {
+        width: 15%;
+    }
 }
