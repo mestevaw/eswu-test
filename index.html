@@ -49,6 +49,7 @@
                 <button class="btn-icon clear" onclick="clearSearch()" title="Limpiar">🧹</button>
             </div>
             <div class="header-actions">
+                <button id="btnNotif" class="btn-notif" onclick="toggleNotifPanel()" title="Notificaciones" style="position:relative; background:none; border:none; font-size:1.3rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🔔<span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px;">0</span></button>
                 <button id="btnSearch" class="btn-search hidden" onclick="toggleSearch()">🔍</button>
                 <button id="btnRegresa" class="btn-regresa-simple hidden" onclick="handleRegresa()" style="color:var(--danger);">✖</button>
             </div>
@@ -429,10 +430,24 @@
                     </div>
                 </div>
 
-            </div>
-        </div>
+                <!-- Mensajes / Notificaciones Page -->
+                <div id="mensajesPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Notificaciones</h2>
+                        </div>
+                        <div style="padding:0 1rem;">
+                            <div style="display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:1rem;">
+                                <button class="tab active" data-tab="alertas" onclick="switchMensajesTab('alertas')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">⚠️ Alertas <span id="tabBadgeAlertas" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                                <button class="tab" data-tab="recibidos" onclick="switchMensajesTab('recibidos')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">✉️ Mensajes <span id="tabBadgeMensajes" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                                <button class="tab" data-tab="avisos" onclick="switchMensajesTab('avisos')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">📢 Avisos <span id="tabBadgeAvisos" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                            </div>
+                            <div id="mensajesContent" style="min-height:200px;"></div>
+                        </div>
+                    </div>
+                </div>
 
-<!-- ========== FIN PARTE 2 ========== -->
+            </div> -->
 <!-- CONTINÚA EN PARTE 3 (MODALS) -->
         <!-- ========== PARTE 3 de 3 ========== -->
 <!-- PEGA ESTO JUSTO DESPUÉS DE LA PARTE 2 -->
@@ -1259,6 +1274,86 @@
         </div>
     </div>
 
+    <!-- Modal: Detalle Mensaje -->
+    <div id="detalleMensajeModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="detalleMensajeAsunto"></h2>
+                <button class="close-modal" onclick="closeModal('detalleMensajeModal')">×</button>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <div style="display:flex; gap:1rem; margin-bottom:0.75rem; font-size:0.85rem; color:var(--text-light);">
+                    <div><strong>De:</strong> <span id="detalleMensajeDe"></span></div>
+                    <div><strong>Para:</strong> <span id="detalleMensajePara"></span></div>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-light); margin-bottom:1rem;" id="detalleMensajeFecha"></div>
+                <div style="white-space:pre-wrap; font-size:0.9rem; line-height:1.5; padding:0.75rem; background:var(--bg); border-radius:6px;" id="detalleMensajeContenido"></div>
+                <div style="display:flex; gap:0.5rem; margin-top:1rem; justify-content:flex-end;">
+                    <button id="btnResponderMensaje" style="background:var(--primary);color:white;border:none;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">↩️ Responder</button>
+                    <button id="btnEliminarMensaje" style="background:var(--danger);color:white;border:none;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">🗑️ Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Mensaje -->
+    <div id="nuevoMensajeModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Mensaje</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoMensajeForm" title="Enviar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0.25rem 0.4rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</button>
+                    <button class="close-modal" onclick="closeModal('nuevoMensajeModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="nuevoMensajeForm" onsubmit="submitNuevoMensaje(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Para:</label>
+                        <select id="mensajeDestinatario" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;"></select>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Asunto: *</label>
+                        <input type="text" id="mensajeAsunto" required autocomplete="off" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Mensaje: *</label>
+                        <textarea id="mensajeContenido" required rows="5" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Aviso -->
+    <div id="nuevoAvisoModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Aviso</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoAvisoForm" title="Publicar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0.25rem 0.4rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</button>
+                    <button class="close-modal" onclick="closeModal('nuevoAvisoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="nuevoAvisoForm" onsubmit="submitNuevoAviso(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Título: *</label>
+                        <input type="text" id="avisoTitulo" required autocomplete="off" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Contenido: *</label>
+                        <textarea id="avisoContenido" required rows="4" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Fecha de expiración (opcional):</label>
+                        <input type="date" id="avisoExpiracion" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <div id="pdfViewerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10001;">
         <div style="position:absolute; top:0; right:0; padding:0.75rem; z-index:10002;">
             <button onclick="closePDFViewer()" style="background:var(--danger); color:white; border:none; border-radius:50%; width:44px; height:44px; font-size:1.5rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);">✕</button>
@@ -1283,6 +1378,7 @@
     <script src="js/database/db-facturas.js?v=22"></script>
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=23"></script>
+    <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=22"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
@@ -1290,6 +1386,7 @@
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/admin-ui.js?v=22"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
+    <script src="js/ui/mensajes-ui.js?v=23"></script>
     <script src="js/modals/modals.js?v=22"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
