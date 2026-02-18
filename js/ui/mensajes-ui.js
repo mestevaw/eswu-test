@@ -395,7 +395,11 @@ async function submitNuevoMensaje(event) {
                 }
             }
             
-            var targetFolder = folderId || 'root';
+            var targetFolder = folderId;
+            if (!targetFolder) {
+                // Mensaje general: guardar en Documentos Generales
+                targetFolder = await getOrCreateDocumentosGeneralesFolder();
+            }
             
             for (var fi = 0; fi < mensajePendingFiles.length; fi++) {
                 var file = mensajePendingFiles[fi];
