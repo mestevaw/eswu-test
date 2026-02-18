@@ -243,6 +243,9 @@ function abrirMensaje(msgId) {
 // MODAL: NUEVO MENSAJE
 // ============================================
 
+// Archivos pendientes para adjuntar
+var mensajePendingFiles = [];
+
 function showNuevoMensajeModal(paraId, asuntoPrefill) {
     const select = document.getElementById('mensajeDestinatario');
     select.innerHTML = '<option value="todos">📢 Todos los usuarios</option>';
@@ -260,12 +263,48 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     document.getElementById('mensajeContenido').value = '';
     document.getElementById('mensajeRefTipo').value = '';
     document.getElementById('mensajeRefId').value = '';
-    var adjInput = document.getElementById('mensajeAdjunto');
-    if (adjInput) adjInput.value = '';
-    var adjInfo = document.getElementById('mensajeAdjuntoInfo');
-    if (adjInfo) adjInfo.textContent = '';
+    
+    // Limpiar adjuntos
+    mensajePendingFiles = [];
+    var fileInput = document.getElementById('mensajeAdjuntoInput');
+    if (fileInput) fileInput.value = '';
+    renderMensajeAdjuntosList();
     
     document.getElementById('nuevoMensajeModal').classList.add('active');
+}
+
+function onMensajeFilesSelected() {
+    var input = document.getElementById('mensajeAdjuntoInput');
+    if (!input || !input.files.length) return;
+    for (var i = 0; i < input.files.length; i++) {
+        mensajePendingFiles.push(input.files[i]);
+    }
+    input.value = '';
+    renderMensajeAdjuntosList();
+}
+
+function removeMensajeFile(idx) {
+    mensajePendingFiles.splice(idx, 1);
+    renderMensajeAdjuntosList();
+}
+
+function renderMensajeAdjuntosList() {
+    var div = document.getElementById('mensajeAdjuntosList');
+    if (!div) return;
+    if (mensajePendingFiles.length === 0) {
+        div.innerHTML = '';
+        return;
+    }
+    var html = '';
+    mensajePendingFiles.forEach(function(f, i) {
+        html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.25rem 0;border-bottom:1px solid #f0f0f0;">';
+        html += '<span style="font-size:0.8rem;">📄</span>';
+        html += '<span style="font-size:0.8rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+        html += '<span style="font-size:0.7rem;color:var(--text-light);">' + (f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB') + '</span>';
+        html += '<span onclick="removeMensajeFile(' + i + ')" style="color:var(--danger);cursor:pointer;font-weight:700;font-size:0.9rem;padding:0 0.2rem;" title="Quitar">✕</span>';
+        html += '</div>';
+    });
+    div.innerHTML = html;
 }
 
 // Abrir nuevo mensaje desde ficha de inquilino o proveedor
@@ -298,19 +337,16 @@ async function submitNuevoMensaje(event) {
     const contenido = document.getElementById('mensajeContenido').value;
     const refTipo = document.getElementById('mensajeRefTipo').value;
     const refId = document.getElementById('mensajeRefId').value;
-    const fileInput = document.getElementById('mensajeAdjunto');
-    const file = fileInput ? fileInput.files[0] : null;
     
     if (!asunto || !contenido) {
         alert('Completa el asunto y el mensaje');
         return;
     }
     
-    var adjuntoDriveId = null;
-    var adjuntoNombre = null;
+    var adjuntos = []; // [{drive_file_id, nombre}]
     
-    // Subir archivo a Google Drive si existe
-    if (file) {
+    // Subir archivos a Google Drive
+    if (mensajePendingFiles.length > 0) {
         if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
             alert('Para adjuntar documentos, conecta Google Drive primero.');
             return;
@@ -341,39 +377,36 @@ async function submitNuevoMensaje(event) {
                 }
             }
             
-            if (!folderId) {
-                // Subir a la raíz del Drive si no hay carpeta específica
-                var result = await uploadFileToDrive(file, 'root');
-                adjuntoDriveId = result.id;
-            } else {
-                var result = await uploadFileToDrive(file, folderId);
-                adjuntoDriveId = result.id;
-            }
-            adjuntoNombre = file.name;
+            var targetFolder = folderId || 'root';
             
-            // También registrar en documentos de la ficha
-            if (refTipo === 'inquilino' && refId) {
-                await supabaseClient.from('inquilinos_documentos').insert([{
-                    inquilino_id: parseInt(refId),
-                    nombre_documento: file.name,
-                    fecha_guardado: new Date().toISOString().split('T')[0],
-                    usuario_guardo: currentUser.nombre,
-                    google_drive_file_id: adjuntoDriveId,
-                    archivo_pdf: ''
-                }]);
-            } else if (refTipo === 'proveedor' && refId) {
-                await supabaseClient.from('proveedores_documentos').insert([{
-                    proveedor_id: parseInt(refId),
-                    nombre_documento: file.name,
-                    fecha_guardado: new Date().toISOString().split('T')[0],
-                    usuario_guardo: currentUser.nombre,
-                    google_drive_file_id: adjuntoDriveId,
-                    archivo_pdf: ''
-                }]);
+            for (var fi = 0; fi < mensajePendingFiles.length; fi++) {
+                var file = mensajePendingFiles[fi];
+                var result = await uploadFileToDrive(file, targetFolder);
+                adjuntos.push({ drive_file_id: result.id, nombre: file.name });
+                
+                // Registrar en documentos de la ficha
+                if (refTipo === 'inquilino' && refId) {
+                    await supabaseClient.from('inquilinos_documentos').insert([{
+                        inquilino_id: parseInt(refId),
+                        nombre_documento: file.name,
+                        fecha_guardado: new Date().toISOString().split('T')[0],
+                        usuario_guardo: currentUser.nombre,
+                        google_drive_file_id: result.id,
+                        archivo_pdf: ''
+                    }]);
+                } else if (refTipo === 'proveedor' && refId) {
+                    await supabaseClient.from('proveedores_documentos').insert([{
+                        proveedor_id: parseInt(refId),
+                        nombre_documento: file.name,
+                        fecha_guardado: new Date().toISOString().split('T')[0],
+                        usuario_guardo: currentUser.nombre,
+                        google_drive_file_id: result.id,
+                        archivo_pdf: ''
+                    }]);
+                }
             }
-            
         } catch (e) {
-            console.error('Error subiendo adjunto:', e);
+            console.error('Error subiendo adjuntos:', e);
             alert('Error al subir documento: ' + e.message);
             hideLoading();
             return;
@@ -381,17 +414,21 @@ async function submitNuevoMensaje(event) {
         hideLoading();
     }
     
-    const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null, adjuntoDriveId, adjuntoNombre);
+    const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null, adjuntos);
     if (ok) {
+        mensajePendingFiles = [];
         closeModal('nuevoMensajeModal');
         
-        // Si vino de una ficha, refrescar la pestaña de mensajes y documentos
+        // Si vino de una ficha, refrescar mensajes Y recargar datos para documentos
         if (refTipo && refId) {
-            renderMensajesFicha(refTipo, parseInt(refId));
-            // Recargar datos para que documentos se actualicen
-            if (adjuntoDriveId) {
-                if (refTipo === 'inquilino') await loadInquilinos();
-                if (refTipo === 'proveedor') await loadProveedores();
+            if (refTipo === 'inquilino') {
+                await loadInquilinos();
+                showInquilinoDetail(parseInt(refId));
+                setTimeout(function() { switchTab('inquilino', 'notas'); }, 150);
+            } else if (refTipo === 'proveedor') {
+                await loadProveedores();
+                showProveedorDetail(parseInt(refId));
+                setTimeout(function() { switchTab('proveedor', 'notas'); }, 150);
             }
         } else {
             switchMensajesTab('recibidos');
@@ -479,19 +516,20 @@ async function renderMensajesFicha(tipo, id) {
         if (used[msgs[i].id]) continue;
         var m = msgs[i];
         var destinatarios = [];
+        var todosLeidos = true;
         
-        // Buscar mensajes del mismo remitente, asunto y contenido enviados dentro de 5 segundos
         for (var j = 0; j < msgs.length; j++) {
             if (used[msgs[j].id]) continue;
             var m2 = msgs[j];
             if (m2.de_usuario_id === m.de_usuario_id && m2.asunto === m.asunto && m2.contenido === m.contenido && Math.abs(new Date(m2.fecha_envio) - new Date(m.fecha_envio)) < 5000) {
                 var paraUser = m2.para_usuario_id ? usuarios.find(function(u) { return u.id === m2.para_usuario_id; }) : null;
                 destinatarios.push(paraUser ? paraUser.nombre : 'Todos');
+                if (!m2.leido) todosLeidos = false;
                 used[m2.id] = true;
             }
         }
         
-        grouped.push({ msg: m, destinatarios: destinatarios });
+        grouped.push({ msg: m, destinatarios: destinatarios, todosLeidos: todosLeidos });
     }
     
     var html = '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
@@ -504,16 +542,30 @@ async function renderMensajesFicha(tipo, id) {
         var fechaStr = fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         var horaStr = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         
+        // Palomita verde si fue leído
+        var leidoIcon = g.todosLeidos ? ' <span title="Mensaje visto" style="color:#22c55e;font-size:0.85rem;">✓</span>' : '';
+        
         html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;">';
         html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">';
-        html += '<strong style="font-size:0.85rem;">' + (m.asunto || 'Sin asunto') + '</strong>';
+        html += '<strong style="font-size:0.85rem;">' + (m.asunto || 'Sin asunto') + leidoIcon + '</strong>';
         html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + fechaStr + ' ' + horaStr + '</span>';
         html += '</div>';
         html += '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.3rem;">De: ' + deNombre + ' → Para: ' + paraNombres + '</div>';
         html += '<div style="font-size:0.85rem;white-space:pre-wrap;">' + (m.contenido || '') + '</div>';
         
-        // Adjunto
-        if (m.adjunto_drive_file_id && m.adjunto_nombre) {
+        // Adjuntos múltiples (JSONB)
+        var adjuntos = m.adjuntos || [];
+        if (typeof adjuntos === 'string') { try { adjuntos = JSON.parse(adjuntos); } catch(e) { adjuntos = []; } }
+        if (adjuntos.length > 0) {
+            html += '<div style="margin-top:0.4rem;border-top:1px solid #f0f0f0;padding-top:0.3rem;">';
+            adjuntos.forEach(function(adj) {
+                html += '<div><span onclick="viewDriveFileInline(\'' + adj.drive_file_id + '\', \'' + (adj.nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.8rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📎 ' + adj.nombre + '</span></div>';
+            });
+            html += '</div>';
+        }
+        
+        // Legacy: single adjunto columns
+        if (adjuntos.length === 0 && m.adjunto_drive_file_id && m.adjunto_nombre) {
             html += '<div style="margin-top:0.4rem;"><span onclick="viewDriveFileInline(\'' + m.adjunto_drive_file_id + '\', \'' + (m.adjunto_nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.8rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📎 ' + m.adjunto_nombre + '</span></div>';
         }
         
