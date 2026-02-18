@@ -245,6 +245,30 @@ function abrirMensaje(msgId) {
 
 // Archivos pendientes para adjuntar
 var mensajePendingFiles = [];
+var _adjuntoListenersBound = false;
+
+function bindAdjuntoListeners() {
+    if (_adjuntoListenersBound) return;
+    var input = document.getElementById('mensajeAdjuntoInput');
+    var btn = document.getElementById('btnAdjuntarDocs');
+    if (!input || !btn) return;
+    
+    btn.addEventListener('click', function() {
+        input.value = '';
+        input.click();
+    });
+    
+    input.addEventListener('change', function() {
+        if (!this.files || !this.files.length) return;
+        for (var i = 0; i < this.files.length; i++) {
+            mensajePendingFiles.push(this.files[i]);
+        }
+        this.value = '';
+        renderMensajeAdjuntosList();
+    });
+    
+    _adjuntoListenersBound = true;
+}
 
 function showNuevoMensajeModal(paraId, asuntoPrefill) {
     const select = document.getElementById('mensajeDestinatario');
@@ -271,16 +295,9 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     renderMensajeAdjuntosList();
     
     document.getElementById('nuevoMensajeModal').classList.add('active');
-}
-
-function onMensajeFilesSelected() {
-    var input = document.getElementById('mensajeAdjuntoInput');
-    if (!input || !input.files.length) return;
-    for (var i = 0; i < input.files.length; i++) {
-        mensajePendingFiles.push(input.files[i]);
-    }
-    input.value = '';
-    renderMensajeAdjuntosList();
+    
+    // Bind listeners después de que el modal esté visible
+    setTimeout(bindAdjuntoListeners, 50);
 }
 
 function removeMensajeFile(idx) {
@@ -297,11 +314,12 @@ function renderMensajeAdjuntosList() {
     }
     var html = '';
     mensajePendingFiles.forEach(function(f, i) {
-        html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.25rem 0;border-bottom:1px solid #f0f0f0;">';
-        html += '<span style="font-size:0.8rem;">📄</span>';
-        html += '<span style="font-size:0.8rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
-        html += '<span style="font-size:0.7rem;color:var(--text-light);">' + (f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB') + '</span>';
-        html += '<span onclick="removeMensajeFile(' + i + ')" style="color:var(--danger);cursor:pointer;font-weight:700;font-size:0.9rem;padding:0 0.2rem;" title="Quitar">✕</span>';
+        var size = f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB';
+        html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;margin-bottom:0.2rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">';
+        html += '<span style="font-size:0.85rem;">📄</span>';
+        html += '<span style="font-size:0.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+        html += '<span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">' + size + '</span>';
+        html += '<span onclick="removeMensajeFile(' + i + ')" style="color:var(--danger);cursor:pointer;font-weight:700;font-size:0.95rem;padding:0 0.25rem;line-height:1;" title="Quitar">✕</span>';
         html += '</div>';
     });
     div.innerHTML = html;
@@ -486,6 +504,25 @@ async function initMensajes() {
         await Promise.all([loadMensajes(), loadAvisos()]);
         generarAlertasSistema();
         updateNotificationBadge();
+        
+        // Polling cada 15 seg para nuevos mensajes y actualizaciones de leído
+        setInterval(async function() {
+            try {
+                await loadMensajes();
+                updateNotificationBadge();
+                
+                // Si hay una ficha abierta con pestaña de mensajes activa, refrescar palomitas
+                var inqTab = document.getElementById('inquilinoNotasTab');
+                if (inqTab && inqTab.classList.contains('active') && currentInquilinoId) {
+                    renderMensajesFicha('inquilino', currentInquilinoId);
+                }
+                var provTab = document.getElementById('proveedorNotasTab');
+                if (provTab && provTab.classList.contains('active') && currentProveedorId) {
+                    renderMensajesFicha('proveedor', currentProveedorId);
+                }
+            } catch(e) { /* silencioso */ }
+        }, 15000);
+        
     } catch (e) {
         console.error('Error init mensajes:', e);
     }
