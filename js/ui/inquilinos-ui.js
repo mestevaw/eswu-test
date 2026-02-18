@@ -445,8 +445,10 @@ function showInquilinoDetail(id) {
             docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos</p>';
         }
         
-        // NOTAS
-        document.getElementById('notasInquilino').textContent = inq.notas || 'No hay notas para este inquilino.';
+        // MENSAJES DE FICHA
+        if (typeof renderMensajesFicha === 'function') {
+            renderMensajesFicha('inquilino', inq.id);
+        }
         
         document.getElementById('inquilinoDetailModal').classList.add('active');
         
