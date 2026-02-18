@@ -8,16 +8,22 @@ function navigateAfterFacturaAction(defaultTab) {
     window.facturaActionContext = null; // Limpiar
     
     if (ctx === 'standalone-porpagar') {
-        // Volver al listado standalone de facturas por pagar
         renderProveedoresFacturasPorPagar();
     } else if (ctx === 'standalone-pagadas') {
         renderProveedoresFacturasPagadas();
     } else {
-        // Estamos en la ficha del proveedor
-        showProveedorDetail(currentProveedorId);
-        if (defaultTab) {
-            setTimeout(() => switchTab('proveedor', defaultTab), 100);
+        // Estamos en la ficha del proveedor - reabrir con datos frescos
+        if (currentProveedorId) {
+            showProveedorDetail(currentProveedorId);
+            if (defaultTab) {
+                setTimeout(() => switchTab('proveedor', defaultTab), 150);
+            }
         }
+    }
+    
+    // También refrescar tabla de proveedores si es visible
+    if (typeof renderProveedoresTable === 'function' && currentSubContext === 'proveedores-list') {
+        renderProveedoresTable();
     }
 }
 
