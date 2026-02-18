@@ -272,6 +272,7 @@ function renderProveedoresFacturasPorPagar() {
                             provId: prov.id,
                             factId: f.id,
                             proveedor: prov.nombre,
+                            clabe: prov.clabe || '',
                             numero: f.numero || 'S/N',
                             monto: f.monto,
                             vencimiento: f.vencimiento,
@@ -290,6 +291,7 @@ function renderProveedoresFacturasPorPagar() {
         const escapedNum = (f.numero).replace(/'/g, "\\'");
         row.innerHTML = `
             <td>${f.proveedor}</td>
+            <td style="font-size:0.8rem; font-family:monospace; white-space:nowrap;">${f.clabe || '<span style="color:var(--text-light)">—</span>'}</td>
             <td>${f.numero}</td>
             <td class="currency">${formatCurrency(f.monto)}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
@@ -311,11 +313,11 @@ function renderProveedoresFacturasPorPagar() {
     });
     
     if (porPagar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td colspan="2" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
     }
 }
 
@@ -801,6 +803,7 @@ function exportFacturasPorPagarToExcel() {
                 if (!f.fecha_pago) {
                     rows.push({
                         'Proveedor': prov.nombre,
+                        'CLABE': prov.clabe || '',
                         'No. Factura': f.numero || 'S/N',
                         'Fecha Factura': f.fecha,
                         'Vencimiento': f.vencimiento,
@@ -816,7 +819,7 @@ function exportFacturasPorPagarToExcel() {
     rows.sort((a, b) => new Date(a['Vencimiento']) - new Date(b['Vencimiento']));
     
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
+    ws['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Facturas Por Pagar');
     XLSX.writeFile(wb, `Facturas_Por_Pagar_${new Date().toISOString().split('T')[0]}.xlsx`);
