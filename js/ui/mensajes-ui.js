@@ -260,6 +260,10 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     document.getElementById('mensajeContenido').value = '';
     document.getElementById('mensajeRefTipo').value = '';
     document.getElementById('mensajeRefId').value = '';
+    var adjInput = document.getElementById('mensajeAdjunto');
+    if (adjInput) adjInput.value = '';
+    var adjInfo = document.getElementById('mensajeAdjuntoInfo');
+    if (adjInfo) adjInfo.textContent = '';
     
     document.getElementById('nuevoMensajeModal').classList.add('active');
 }
@@ -294,19 +298,101 @@ async function submitNuevoMensaje(event) {
     const contenido = document.getElementById('mensajeContenido').value;
     const refTipo = document.getElementById('mensajeRefTipo').value;
     const refId = document.getElementById('mensajeRefId').value;
+    const fileInput = document.getElementById('mensajeAdjunto');
+    const file = fileInput ? fileInput.files[0] : null;
     
     if (!asunto || !contenido) {
         alert('Completa el asunto y el mensaje');
         return;
     }
     
-    const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null);
+    var adjuntoDriveId = null;
+    var adjuntoNombre = null;
+    
+    // Subir archivo a Google Drive si existe
+    if (file) {
+        if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+            alert('Para adjuntar documentos, conecta Google Drive primero.');
+            return;
+        }
+        
+        showLoading();
+        try {
+            var folderId = null;
+            
+            // Determinar carpeta según referencia
+            if (refTipo === 'inquilino' && refId) {
+                var inq = inquilinos.find(function(i) { return i.id === parseInt(refId); });
+                if (inq) {
+                    folderId = inq.google_drive_folder_id;
+                    if (!folderId) {
+                        folderId = await getOrCreateInquilinoFolder(inq.nombre);
+                        await supabaseClient.from('inquilinos').update({ google_drive_folder_id: folderId }).eq('id', parseInt(refId));
+                    }
+                }
+            } else if (refTipo === 'proveedor' && refId) {
+                var prov = proveedores.find(function(p) { return p.id === parseInt(refId); });
+                if (prov) {
+                    folderId = prov.google_drive_folder_id;
+                    if (!folderId) {
+                        folderId = await getOrCreateProveedorFolder(prov.nombre);
+                        await supabaseClient.from('proveedores').update({ google_drive_folder_id: folderId }).eq('id', parseInt(refId));
+                    }
+                }
+            }
+            
+            if (!folderId) {
+                // Subir a la raíz del Drive si no hay carpeta específica
+                var result = await uploadFileToDrive(file, 'root');
+                adjuntoDriveId = result.id;
+            } else {
+                var result = await uploadFileToDrive(file, folderId);
+                adjuntoDriveId = result.id;
+            }
+            adjuntoNombre = file.name;
+            
+            // También registrar en documentos de la ficha
+            if (refTipo === 'inquilino' && refId) {
+                await supabaseClient.from('inquilinos_documentos').insert([{
+                    inquilino_id: parseInt(refId),
+                    nombre_documento: file.name,
+                    fecha_guardado: new Date().toISOString().split('T')[0],
+                    usuario_guardo: currentUser.nombre,
+                    google_drive_file_id: adjuntoDriveId,
+                    archivo_pdf: ''
+                }]);
+            } else if (refTipo === 'proveedor' && refId) {
+                await supabaseClient.from('proveedores_documentos').insert([{
+                    proveedor_id: parseInt(refId),
+                    nombre_documento: file.name,
+                    fecha_guardado: new Date().toISOString().split('T')[0],
+                    usuario_guardo: currentUser.nombre,
+                    google_drive_file_id: adjuntoDriveId,
+                    archivo_pdf: ''
+                }]);
+            }
+            
+        } catch (e) {
+            console.error('Error subiendo adjunto:', e);
+            alert('Error al subir documento: ' + e.message);
+            hideLoading();
+            return;
+        }
+        hideLoading();
+    }
+    
+    const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null, adjuntoDriveId, adjuntoNombre);
     if (ok) {
         closeModal('nuevoMensajeModal');
         
-        // Si vino de una ficha, refrescar la pestaña de mensajes de esa ficha
+        // Si vino de una ficha, refrescar la pestaña de mensajes y documentos
         if (refTipo && refId) {
             renderMensajesFicha(refTipo, parseInt(refId));
+            // Recargar datos para que documentos se actualicen
+            if (adjuntoDriveId) {
+                if (refTipo === 'inquilino') await loadInquilinos();
+                if (refTipo === 'proveedor') await loadProveedores();
+            }
         } else {
             switchMensajesTab('recibidos');
         }
@@ -386,12 +472,34 @@ async function renderMensajesFicha(tipo, id) {
         return;
     }
     
+    // Agrupar mensajes enviados al mismo tiempo (broadcast "todos")
+    var grouped = [];
+    var used = {};
+    for (var i = 0; i < msgs.length; i++) {
+        if (used[msgs[i].id]) continue;
+        var m = msgs[i];
+        var destinatarios = [];
+        
+        // Buscar mensajes del mismo remitente, asunto y contenido enviados dentro de 5 segundos
+        for (var j = 0; j < msgs.length; j++) {
+            if (used[msgs[j].id]) continue;
+            var m2 = msgs[j];
+            if (m2.de_usuario_id === m.de_usuario_id && m2.asunto === m.asunto && m2.contenido === m.contenido && Math.abs(new Date(m2.fecha_envio) - new Date(m.fecha_envio)) < 5000) {
+                var paraUser = m2.para_usuario_id ? usuarios.find(function(u) { return u.id === m2.para_usuario_id; }) : null;
+                destinatarios.push(paraUser ? paraUser.nombre : 'Todos');
+                used[m2.id] = true;
+            }
+        }
+        
+        grouped.push({ msg: m, destinatarios: destinatarios });
+    }
+    
     var html = '<div style="display:flex;flex-direction:column;gap:0.5rem;">';
-    msgs.forEach(function(m) {
+    grouped.forEach(function(g) {
+        var m = g.msg;
         var de = usuarios.find(function(u) { return u.id === m.de_usuario_id; });
-        var para = m.para_usuario_id ? usuarios.find(function(u) { return u.id === m.para_usuario_id; }) : null;
         var deNombre = de ? de.nombre : 'Sistema';
-        var paraNombre = para ? para.nombre : 'Todos';
+        var paraNombres = g.destinatarios.join(', ');
         var fecha = new Date(m.fecha_envio);
         var fechaStr = fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         var horaStr = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
@@ -401,8 +509,14 @@ async function renderMensajesFicha(tipo, id) {
         html += '<strong style="font-size:0.85rem;">' + (m.asunto || 'Sin asunto') + '</strong>';
         html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + fechaStr + ' ' + horaStr + '</span>';
         html += '</div>';
-        html += '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.3rem;">De: ' + deNombre + ' → Para: ' + paraNombre + '</div>';
+        html += '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.3rem;">De: ' + deNombre + ' → Para: ' + paraNombres + '</div>';
         html += '<div style="font-size:0.85rem;white-space:pre-wrap;">' + (m.contenido || '') + '</div>';
+        
+        // Adjunto
+        if (m.adjunto_drive_file_id && m.adjunto_nombre) {
+            html += '<div style="margin-top:0.4rem;"><span onclick="viewDriveFileInline(\'' + m.adjunto_drive_file_id + '\', \'' + (m.adjunto_nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.8rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📎 ' + m.adjunto_nombre + '</span></div>';
+        }
+        
         html += '</div>';
     });
     html += '</div>';
