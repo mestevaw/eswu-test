@@ -1,289 +1,239 @@
 /* ========================================
-   NAVIGATION.JS v1
+   ESWU-UI.JS v1
+   Documentos Generales y Legales
    ======================================== */
 
-// ============================================
-// GLOBAL NAVIGATION STATE
-// ============================================
+var eswuCurrentFolder = null;     // current Drive folder ID
+var eswuFolderType = 'generales'; // 'generales' or 'legales'
+var eswuNavStack = [];            // breadcrumb: [{label, folderId}]
 
-let currentMenuContext = 'main';
-let currentSubContext = null;
-let currentSearchContext = null;
-
-// ============================================
-// PDF VIEWER - MOVIDO A db-fetch-docs.js
-// (versión con blob URLs compatible con iOS Safari)
-// ============================================
+// Nombres de carpetas en Google Drive (dentro de Inmobiliaris ESWU)
+var ESWU_FOLDER_NAMES = {
+    generales: 'Documentos Generales',
+    legales: 'Documentos Legales'
+};
 
 // ============================================
-// MENU NAVIGATION
+// SHOW ESWU DOCS PAGE
 // ============================================
 
-function showSubMenu(menu) {
-    document.getElementById('menuInquilinos').classList.remove('active');
-    document.getElementById('menuProveedores').classList.remove('active');
-    document.getElementById('menuAdmin').classList.remove('active');
-    document.getElementById('menuEswu').classList.remove('active');
+function showEswuDocsPage(tipo) {
+    eswuFolderType = tipo || 'generales';
+    eswuNavStack = [];
+    eswuCurrentFolder = null;
     
-    document.getElementById('inquilinosSubMenu').classList.remove('active');
-    document.getElementById('proveedoresSubMenu').classList.remove('active');
-    document.getElementById('adminSubMenu').classList.remove('active');
     document.getElementById('eswuSubMenu').classList.remove('active');
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('eswuDocsPage').classList.add('active');
     
-    if (menu === 'inquilinos') {
-        document.getElementById('inquilinosSubMenu').classList.add('active');
-        document.getElementById('menuInquilinos').classList.add('active');
-        currentMenuContext = 'inquilinos';
-    } else if (menu === 'proveedores') {
-        document.getElementById('proveedoresSubMenu').classList.add('active');
-        document.getElementById('menuProveedores').classList.add('active');
-        currentMenuContext = 'proveedores';
-    } else if (menu === 'admin') {
-        document.getElementById('adminSubMenu').classList.add('active');
-        document.getElementById('menuAdmin').classList.add('active');
-        currentMenuContext = 'admin';
-    } else if (menu === 'eswu') {
-        document.getElementById('eswuSubMenu').classList.add('active');
-        document.getElementById('menuEswu').classList.add('active');
-        currentMenuContext = 'eswu';
-    }
+    currentSubContext = 'eswu-docs';
+    currentMenuContext = 'eswu';
     
-    document.getElementById('btnRegresa').classList.add('hidden');
-    document.getElementById('btnSearch').classList.add('hidden');
-    document.getElementById('contentArea').classList.add('with-submenu');
-}
-
-function handleRegresa() {
-    // Level 4: X button logs them out completely
-    if (currentUser && currentUser.nivel === 4) {
-        logout();
-        return;
-    }
-    
-    if (currentSubContext) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        
-        if (currentMenuContext === 'inquilinos') {
-            document.getElementById('inquilinosSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'proveedores') {
-            document.getElementById('proveedoresSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'admin') {
-            document.getElementById('adminSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'eswu') {
-            document.getElementById('eswuSubMenu').classList.add('active');
-        }
-        
-        currentSubContext = null;
-        currentSearchContext = null;
-        document.getElementById('btnRegresa').classList.add('hidden');
-        document.getElementById('btnSearch').classList.add('hidden');
-        document.getElementById('menuSidebar').classList.remove('hidden');
-        document.getElementById('contentArea').classList.remove('fullwidth');
-        document.getElementById('contentArea').classList.add('with-submenu');
-    }
-}
-
-function showPageFromMenu(pageName) {
-    document.getElementById('inquilinosSubMenu').classList.remove('active');
-    document.getElementById('proveedoresSubMenu').classList.remove('active');
-    document.getElementById('adminSubMenu').classList.remove('active');
-    document.getElementById('eswuSubMenu').classList.remove('active');
-    
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(pageName + 'Page').classList.add('active');
-    
-    currentSubContext = pageName;
     document.getElementById('btnRegresa').classList.remove('hidden');
-    
-    if (pageName === 'bitacora') {
-        document.getElementById('btnSearch').classList.remove('hidden');
-        currentSearchContext = 'bitacora';
-    }
-    
+    document.getElementById('btnSearch').classList.add('hidden');
     document.getElementById('contentArea').classList.remove('with-submenu');
     document.getElementById('menuSidebar').classList.add('hidden');
     document.getElementById('contentArea').classList.add('fullwidth');
     
-    if (pageName === 'estacionamiento') renderEstacionamientoTable();
-    if (pageName === 'bitacora') renderBitacoraTable();
+    var title = tipo === 'legales' ? 'ESWU - Documentos Legales' : 'ESWU - Documentos Generales';
+    document.getElementById('eswuDocsTitle').textContent = title;
+    
+    loadEswuRootFolder();
 }
 
 // ============================================
-// SEARCH FUNCTIONS
+// FIND ROOT FOLDER IN DRIVE
 // ============================================
 
-function toggleSearch() {
-    const searchBar = document.getElementById('headerSearchBar');
-    const btnSearch = document.getElementById('btnSearch');
+async function loadEswuRootFolder() {
+    var content = document.getElementById('eswuDocsContent');
     
-    searchBar.classList.toggle('active');
-    
-    if (searchBar.classList.contains('active')) {
-        btnSearch.classList.add('hidden');
-        document.getElementById('searchInput').focus();
-    } else {
-        btnSearch.classList.remove('hidden');
-    }
-}
-
-function executeSearch() {
-    const query = document.getElementById('searchInput').value.toLowerCase().trim();
-    
-    if (!query) {
-        alert('Por favor ingresa un término de búsqueda');
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        content.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:var(--text-light);margin-bottom:1rem;">Conecta Google Drive para ver documentos.</p><button onclick="googleSignIn()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">Conectar Google Drive</button></div>';
+        document.getElementById('eswuUploadBtn').style.display = 'none';
         return;
     }
     
-    if (currentSearchContext === 'bitacora') {
-        filtrarBitacora(query);
-    } else if (currentSearchContext === 'proveedores') {
-        filtrarProveedores(query);
-    } else if (currentSearchContext === 'inquilinos') {
-        filtrarInquilinos(query);
-    }
+    content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">Cargando...</p>';
     
-    // Limpiar barra de búsqueda
-    document.getElementById('searchInput').value = '';
-    document.getElementById('headerSearchBar').classList.remove('active');
-    document.getElementById('btnSearch').classList.remove('hidden');
-}
-
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    
-    if (currentSearchContext === 'bitacora') {
-        renderBitacoraTable();
-    } else if (currentSearchContext === 'proveedores') {
-        renderProveedoresTable();
-    } else if (currentSearchContext === 'inquilinos') {
-        renderInquilinosTable();
-    }
-    
-    document.getElementById('headerSearchBar').classList.remove('active');
-    document.getElementById('btnSearch').classList.remove('hidden');
-}
-
-// ============================================
-// FORMAT FUNCTIONS
-// ============================================
-
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('es-MX', { 
-        style: 'currency', 
-        currency: 'MXN' 
-    }).format(amount);
-}
-
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString + 'T00:00:00');
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-}
-
-function formatDateVencimiento(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString + 'T00:00:00');
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
-    const formatted = formatDate(dateString);
-    
-    if (diffDays <= 7 && diffDays >= 0) {
-        return `<span class="vencimiento-proximo">${formatted}</span>`;
-    }
-    return formatted;
-}
-
-// ============================================
-// TAB SWITCHING
-// ============================================
-
-function switchTab(type, tabName) {
-    if (type === 'inquilino') {
-        document.querySelectorAll('#inquilinoDetailModal .tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#inquilinoDetailModal .tab-content').forEach(tc => tc.classList.remove('active'));
+    try {
+        var folderName = ESWU_FOLDER_NAMES[eswuFolderType];
+        var folderId = await findEswuFolder(folderName);
         
-        if (tabName === 'pagos') {
-            document.querySelector('#inquilinoDetailModal .tab:nth-child(1)').classList.add('active');
-            document.getElementById('inquilinoPagosTab').classList.add('active');
-        } else if (tabName === 'docs') {
-            document.querySelector('#inquilinoDetailModal .tab:nth-child(2)').classList.add('active');
-            document.getElementById('inquilinoDocsTab').classList.add('active');
-        } else if (tabName === 'notas') {
-            document.querySelector('#inquilinoDetailModal .tab:nth-child(3)').classList.add('active');
-            document.getElementById('inquilinoNotasTab').classList.add('active');
+        if (!folderId) {
+            content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">No se encontró la carpeta "' + folderName + '" en Google Drive.</p>';
+            document.getElementById('eswuUploadBtn').style.display = 'none';
+            return;
         }
-    } else if (type === 'proveedor') {
-        document.querySelectorAll('#proveedorDetailModal .tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#proveedorDetailModal .tab-content').forEach(tc => tc.classList.remove('active'));
         
-        // Los + verdes ya están en el HTML con clase btn-add-inline
-        // El CSS se encarga de mostrarlos solo en la pestaña activa
+        eswuCurrentFolder = folderId;
+        eswuNavStack = [{ label: folderName, folderId: folderId }];
+        renderEswuBreadcrumb();
+        await renderEswuFolderContents(folderId);
         
-        if (tabName === 'pagadas') {
-            document.querySelector('#proveedorDetailModal .tab:nth-child(1)').classList.add('active');
-            document.getElementById('proveedorPagadasTab').classList.add('active');
-        } else if (tabName === 'porpagar') {
-            document.querySelector('#proveedorDetailModal .tab:nth-child(2)').classList.add('active');
-            document.getElementById('proveedorPorPagarTab').classList.add('active');
-        } else if (tabName === 'docs') {
-            document.querySelector('#proveedorDetailModal .tab:nth-child(3)').classList.add('active');
-            document.getElementById('proveedorDocsTab').classList.add('active');
-        } else if (tabName === 'notas') {
-            document.querySelector('#proveedorDetailModal .tab:nth-child(4)').classList.add('active');
-            document.getElementById('proveedorNotasTab').classList.add('active');
-        }
+    } catch (e) {
+        console.error('Error cargando carpeta ESWU:', e);
+        content.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem;">Error: ' + e.message + '</p>';
     }
 }
 
-// ============================================
-// DROPDOWN
-// ============================================
-
-function toggleDropdown(dropdownId) {
-    const dropdown = document.getElementById(dropdownId);
-    document.querySelectorAll('.dropdown-content').forEach(dd => {
-        if (dd.id !== dropdownId) dd.classList.remove('show');
+async function findEswuFolder(folderName) {
+    // Search for folder by name under root
+    var q = "name = '" + folderName.replace(/'/g, "\\'") + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
     });
-    dropdown.classList.toggle('show');
+    var data = await resp.json();
+    return (data.files && data.files.length > 0) ? data.files[0].id : null;
 }
 
-window.addEventListener('click', function(e) {
-    if (!e.target.matches('.dropdown-toggle')) {
-        document.querySelectorAll('.dropdown-content').forEach(dropdown => {
-            dropdown.classList.remove('show');
+// ============================================
+// RENDER FOLDER CONTENTS
+// ============================================
+
+async function renderEswuFolderContents(folderId) {
+    var content = document.getElementById('eswuDocsContent');
+    content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando...</p>';
+    
+    try {
+        var result = await listDriveFolder(folderId);
+        var folders = result.folders || [];
+        var files = result.files || [];
+        
+        if (folders.length === 0 && files.length === 0) {
+            content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">Carpeta vacía</p>';
+            document.getElementById('eswuUploadBtn').style.display = 'inline';
+            return;
+        }
+        
+        var html = '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
+        
+        // Folders
+        folders.forEach(function(f) {
+            html += '<div onclick="openEswuSubfolder(\'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.12)\'" onmouseout="this.style.boxShadow=\'none\'">';
+            html += '<span style="font-size:1.3rem;">📁</span>';
+            html += '<span style="font-weight:500;font-size:0.9rem;">' + f.name + '</span>';
+            html += '</div>';
         });
-    }
-});
-
-// ============================================
-// LOGOUT
-// ============================================
-
-function logout() {
-    if (confirm('¿Cerrar sesión?')) {
-        localStorage.removeItem('eswu_remembered_user');
-        localStorage.removeItem('eswu_remembered_pass');
         
-        document.getElementById('appContainer').classList.remove('active');
-        document.getElementById('loginContainer').classList.remove('hidden');
-        document.body.classList.remove('logged-in');
+        // Files
+        files.forEach(function(f) {
+            var icon = getFileIcon(f.mimeType);
+            var size = formatFileSize(f.size);
+            html += '<div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.8rem; display:flex; align-items:center; gap:0.5rem;">';
+            html += '<span style="font-size:1.1rem;">' + icon + '</span>';
+            html += '<div style="flex:1;min-width:0;">';
+            html += '<span onclick="viewDriveFileInline(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="font-size:0.88rem;color:var(--primary);cursor:pointer;text-decoration:underline;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+            if (size) html += '<span style="font-size:0.72rem;color:var(--text-light);">' + size + '</span>';
+            html += '</div>';
+            html += '</div>';
+        });
         
-        document.getElementById('menuSidebar').classList.remove('hidden');
-        document.getElementById('contentArea').classList.remove('fullwidth', 'with-submenu');
+        html += '</div>';
+        content.innerHTML = html;
         
-        document.getElementById('inquilinosSubMenu').classList.remove('active');
-        document.getElementById('proveedoresSubMenu').classList.remove('active');
-        document.getElementById('adminSubMenu').classList.remove('active');
+        // Show upload button when inside a folder (not root level with subfolders)
+        document.getElementById('eswuUploadBtn').style.display = 'inline';
         
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        
-        currentUser = null;
-        currentMenuContext = 'main';
-        currentSubContext = null;
+    } catch (e) {
+        console.error('Error renderizando carpeta:', e);
+        content.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem;">Error: ' + e.message + '</p>';
     }
 }
 
-console.log('✅ NAVIGATION.JS cargado (2026-02-13 00:30 CST)');
-console.log('   PDF Viewer → db-fetch-docs.js (blob URLs)');
+function getFileIcon(mimeType) {
+    if (!mimeType) return '📄';
+    if (mimeType.includes('pdf')) return '📄';
+    if (mimeType.includes('image')) return '🖼️';
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) return '📊';
+    if (mimeType.includes('document') || mimeType.includes('word')) return '📝';
+    return '📄';
+}
+
+// ============================================
+// SUBFOLDER NAVIGATION
+// ============================================
+
+function openEswuSubfolder(name, folderId) {
+    eswuNavStack.push({ label: name, folderId: folderId });
+    eswuCurrentFolder = folderId;
+    renderEswuBreadcrumb();
+    renderEswuFolderContents(folderId);
+}
+
+function eswuNavigateTo(index) {
+    eswuNavStack = eswuNavStack.slice(0, index + 1);
+    eswuCurrentFolder = eswuNavStack[index].folderId;
+    renderEswuBreadcrumb();
+    renderEswuFolderContents(eswuCurrentFolder);
+}
+
+function renderEswuBreadcrumb() {
+    var div = document.getElementById('eswuDocsBreadcrumb');
+    if (!div || eswuNavStack.length <= 1) {
+        if (div) div.innerHTML = '';
+        return;
+    }
+    var html = '';
+    eswuNavStack.forEach(function(item, i) {
+        if (i > 0) html += ' <span style="color:var(--text-light);margin:0 0.2rem;">›</span> ';
+        if (i < eswuNavStack.length - 1) {
+            html += '<span onclick="eswuNavigateTo(' + i + ')" style="color:var(--primary);cursor:pointer;font-size:0.85rem;">' + item.label + '</span>';
+        } else {
+            html += '<span style="font-weight:600;font-size:0.85rem;">' + item.label + '</span>';
+        }
+    });
+    div.innerHTML = html;
+}
+
+// ============================================
+// UPLOAD TO CURRENT FOLDER
+// ============================================
+
+async function uploadToEswuFolder() {
+    if (!eswuCurrentFolder) {
+        alert('No hay carpeta seleccionada');
+        return;
+    }
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        alert('Conecta Google Drive primero');
+        return;
+    }
+    
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.txt';
+    input.onchange = async function() {
+        if (!input.files.length) return;
+        showLoading();
+        try {
+            for (var i = 0; i < input.files.length; i++) {
+                await uploadFileToDrive(input.files[i], eswuCurrentFolder);
+            }
+            await renderEswuFolderContents(eswuCurrentFolder);
+        } catch (e) {
+            alert('Error al subir: ' + e.message);
+        } finally {
+            hideLoading();
+        }
+    };
+    input.click();
+}
+
+// ============================================
+// HELPER: Get or create "Documentos Generales" folder
+// For general message attachments
+// ============================================
+
+async function getOrCreateDocumentosGeneralesFolder() {
+    var folderName = 'Documentos Generales';
+    var folderId = await findEswuFolder(folderName);
+    if (folderId) return folderId;
+    
+    // Create it under the root (or you could create it under a parent)
+    var newFolder = await createDriveFolder(folderName, 'root');
+    return newFolder.id;
+}
+
+console.log('✅ ESWU-UI.JS cargado');
