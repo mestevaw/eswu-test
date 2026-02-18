@@ -52,15 +52,21 @@ async function loadMensajesEnviados() {
 // SEND MENSAJE
 // ============================================
 
-async function enviarMensaje(paraUsuarioId, asunto, contenido) {
+async function enviarMensaje(paraUsuarioId, asunto, contenido, referenciaTipo, referenciaId) {
     showLoading();
     try {
         const msgData = {
             de_usuario_id: currentUser.id,
-            para_usuario_id: paraUsuarioId || null,  // null = para todos
+            para_usuario_id: paraUsuarioId || null,
             asunto: asunto,
             contenido: contenido
         };
+        
+        // Vincular a ficha si viene referencia
+        if (referenciaTipo && referenciaId) {
+            msgData.referencia_tipo = referenciaTipo;
+            msgData.referencia_id = parseInt(referenciaId);
+        }
         
         if (paraUsuarioId === 'todos') {
             // Enviar uno individual a cada usuario activo
@@ -325,6 +331,27 @@ function updateNotificationBadge() {
     if (badge) {
         badge.textContent = total;
         badge.style.display = total > 0 ? 'flex' : 'none';
+    }
+}
+
+// ============================================
+// MENSAJES POR REFERENCIA (ficha inquilino/proveedor)
+// ============================================
+
+async function loadMensajesPorReferencia(tipo, id) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('mensajes')
+            .select('*')
+            .eq('referencia_tipo', tipo)
+            .eq('referencia_id', id)
+            .order('fecha_envio', { ascending: false });
+        
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error('Error cargando mensajes de referencia:', e);
+        return [];
     }
 }
 
