@@ -85,8 +85,19 @@ function isGoogleConnected() {
 // DRIVE API - LIST FOLDER CONTENTS
 // ============================================
 
+// Safety: extract ID from object or JSON string
+function sanitizeDriveId(id) {
+    if (!id) return id;
+    if (typeof id === 'object' && id.id) return id.id;
+    if (typeof id === 'string' && id.startsWith('{')) {
+        try { return JSON.parse(id).id || id; } catch(e) {}
+    }
+    return id;
+}
+
 async function listDriveFolder(folderId) {
     if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
+    folderId = sanitizeDriveId(folderId);
     
     const query = `'${folderId}' in parents and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,webViewLink)&orderBy=name&pageSize=100&key=${GOOGLE_API_KEY}`;
@@ -150,8 +161,8 @@ async function createDriveFolder(name, parentFolderId) {
 
 async function uploadFileToDrive(file, folderId) {
     if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
+    folderId = sanitizeDriveId(folderId);
     
-    // Use resumable upload for reliability
     const metadata = {
         name: file.name,
         parents: [folderId]
