@@ -1,6 +1,6 @@
 /* ========================================
-   ESWU-UI.JS v2
-   Ficha ESWU - Docs Legales, Generales, Mensajes
+   ESWU-UI.JS v3
+   Ficha ESWU - Acta, Contactos, Docs, Mensajes
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
@@ -38,39 +38,151 @@ function showEswuFicha() {
 // ============================================
 
 function renderEswuFicha() {
-    // Acta Constitutiva link
-    var actaDiv = document.getElementById('eswuActaSection');
-    actaDiv.innerHTML = '<div style="background:var(--bg);border-radius:6px;padding:0.5rem 0.75rem;display:inline-block;margin-bottom:0.1rem;">' +
-        '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>' +
-        '<div style="font-size:0.85rem;color:var(--text-light);font-style:italic;">Ver en Documentos Legales</div>' +
-        '</div>';
-    
-    // Contactos = usuarios activos
-    var contactsDiv = document.getElementById('eswuContactsList');
-    var activeUsers = (typeof usuarios !== 'undefined') ? usuarios.filter(function(u) { return u.activo; }) : [];
-    
-    if (activeUsers.length > 0) {
-        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
-        activeUsers.forEach(function(u) {
-            html += '<div style="flex:1;min-width:140px;background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;">';
-            html += '<div style="font-size:0.88rem;font-weight:600;">' + u.nombre + '</div>';
-            if (u.email) html += '<div style="font-size:0.75rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
-            html += '</div>';
-        });
-        html += '</div>';
-        contactsDiv.innerHTML = html;
-    } else {
-        contactsDiv.innerHTML = '';
-    }
-    
-    // Load doc tabs
+    renderEswuActa();
+    renderEswuContacts();
     loadEswuDocsTab('legales');
     loadEswuDocsTab('generales');
-    
-    // Load messages
     if (typeof renderMensajesFicha === 'function') {
         renderMensajesFicha('eswu', 0);
     }
+}
+
+// ============================================
+// ACTA CONSTITUTIVA
+// ============================================
+
+function renderEswuActa() {
+    var div = document.getElementById('eswuActaSection');
+    var fileId = localStorage.getItem('eswu_acta_file_id');
+    var fileName = localStorage.getItem('eswu_acta_file_name') || 'Acta Constitutiva';
+    
+    var html = '<div style="display:flex;gap:0.4rem;align-items:stretch;flex-wrap:wrap;">';
+    
+    if (fileId) {
+        // Tiene acta: mostrar link + botón cambiar
+        html += '<div style="flex:1;min-width:200px;background:var(--bg);border-radius:6px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.4rem;">';
+        html += '<div style="flex:1;">';
+        html += '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
+        html += '<span onclick="viewDriveFileInline(\'' + fileId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')" style="font-size:0.85rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📄 ' + fileName + '</span>';
+        html += '</div>';
+        html += '<span onclick="selectEswuActa()" title="Cambiar documento" style="cursor:pointer;font-size:1rem;padding:0.2rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'">🔄</span>';
+        html += '</div>';
+    } else {
+        // No tiene acta: mostrar + para seleccionar
+        html += '<div style="flex:1;min-width:200px;background:var(--bg);border-radius:6px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.4rem;">';
+        html += '<div style="flex:1;">';
+        html += '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
+        html += '<span style="font-size:0.82rem;color:var(--text-light);font-style:italic;">No vinculada</span>';
+        html += '</div>';
+        html += '<span onclick="selectEswuActa()" title="Seleccionar Acta Constitutiva" style="color:var(--success);font-size:1.4rem;font-weight:700;cursor:pointer;padding:0 0.3rem;">+</span>';
+        html += '</div>';
+    }
+    
+    html += '</div>';
+    div.innerHTML = html;
+}
+
+async function selectEswuActa() {
+    // Buscar en Documentos Legales
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        alert('Conecta Google Drive primero');
+        return;
+    }
+    
+    if (!eswuFolderIds.legales) {
+        eswuFolderIds.legales = await findEswuFolder(ESWU_FOLDER_NAMES.legales);
+    }
+    
+    if (!eswuFolderIds.legales) {
+        alert('No se encontró la carpeta DOCUMENTOS LEGALES');
+        return;
+    }
+    
+    showLoading();
+    try {
+        var result = await listDriveFolder(eswuFolderIds.legales);
+        var files = (result.folders || []).concat(result.files || []);
+        hideLoading();
+        
+        if (files.length === 0) {
+            alert('No hay archivos en DOCUMENTOS LEGALES');
+            return;
+        }
+        
+        // Mostrar selector simple
+        var options = files.map(function(f) { return f.name; });
+        var selected = prompt('Selecciona el número del documento:\n\n' + options.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n'));
+        
+        if (selected) {
+            var idx = parseInt(selected) - 1;
+            if (idx >= 0 && idx < files.length) {
+                localStorage.setItem('eswu_acta_file_id', files[idx].id);
+                localStorage.setItem('eswu_acta_file_name', files[idx].name);
+                renderEswuActa();
+            }
+        }
+    } catch (e) {
+        hideLoading();
+        alert('Error: ' + e.message);
+    }
+}
+
+// ============================================
+// CONTACTOS (dropdown expandible)
+// ============================================
+
+var eswuContactsExpanded = false;
+
+function renderEswuContacts() {
+    var div = document.getElementById('eswuContactsList');
+    var activeUsers = (typeof usuarios !== 'undefined') ? usuarios.filter(function(u) { return u.activo; }) : [];
+    
+    if (activeUsers.length === 0) {
+        div.innerHTML = '';
+        return;
+    }
+    
+    var summary = activeUsers.map(function(u) { return u.nombre; }).join(', ');
+    
+    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;margin-bottom:0.3rem;">';
+    html += '<div onclick="toggleEswuContacts()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">';
+    html += '<div><span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Contactos</span> <span style="font-size:0.8rem;color:var(--text);">' + summary + '</span></div>';
+    html += '<span style="font-size:0.8rem;color:var(--text-light);transition:transform 0.2s;" id="eswuContactsArrow">' + (eswuContactsExpanded ? '▲' : '▼') + '</span>';
+    html += '</div>';
+    
+    html += '<div id="eswuContactsDetail" style="' + (eswuContactsExpanded ? '' : 'display:none;') + 'margin-top:0.4rem;">';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">';
+    activeUsers.forEach(function(u) {
+        html += '<div style="flex:1;min-width:160px;background:white;border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.5rem;">';
+        html += '<div style="font-size:0.85rem;font-weight:600;">' + u.nombre + '</div>';
+        if (u.email) html += '<div style="font-size:0.75rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
+        var nivelLabel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
+        if (nivelLabel) html += '<div style="font-size:0.7rem;color:var(--primary);">' + nivelLabel + '</div>';
+        html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+    
+    div.innerHTML = html;
+}
+
+function toggleEswuContacts() {
+    eswuContactsExpanded = !eswuContactsExpanded;
+    var detail = document.getElementById('eswuContactsDetail');
+    var arrow = document.getElementById('eswuContactsArrow');
+    if (detail) detail.style.display = eswuContactsExpanded ? '' : 'none';
+    if (arrow) arrow.textContent = eswuContactsExpanded ? '▲' : '▼';
+}
+
+function editEswuUsuarios() {
+    // Navegar a Admin > Usuarios
+    showSubMenu('admin');
+    setTimeout(function() {
+        if (typeof showAdminView === 'function') {
+            showAdminView('usuarios');
+        }
+    }, 100);
 }
 
 // ============================================
@@ -229,4 +341,4 @@ async function getOrCreateDocumentosGeneralesFolder() {
     return newFolder.id;
 }
 
-console.log('✅ ESWU-UI.JS v2 cargado');
+console.log('✅ ESWU-UI.JS v3 cargado');
