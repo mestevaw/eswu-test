@@ -1,29 +1,24 @@
 /* ========================================
-   ESWU-UI.JS v1
-   Documentos Generales y Legales
+   ESWU-UI.JS v2
+   Ficha ESWU - Docs Legales, Generales, Mensajes
    ======================================== */
 
-var eswuCurrentFolder = null;     // current Drive folder ID
-var eswuFolderType = 'generales'; // 'generales' or 'legales'
-var eswuNavStack = [];            // breadcrumb: [{label, folderId}]
+var eswuFolderIds = { legales: null, generales: null };
+var eswuFolderContents = { legales: [], generales: [] };
 
-// Nombres de carpetas en Google Drive (dentro de Inmobiliaris ESWU)
 var ESWU_FOLDER_NAMES = {
-    generales: 'Documentos Generales',
-    legales: 'Documentos Legales'
+    generales: 'DOCUMENTOS GENERALES',
+    legales: 'DOCUMENTOS LEGALES'
 };
 
 // ============================================
-// SHOW ESWU DOCS PAGE
+// SHOW ESWU FICHA
 // ============================================
 
-function showEswuDocsPage(tipo) {
-    eswuFolderType = tipo || 'generales';
-    eswuNavStack = [];
-    eswuCurrentFolder = null;
-    
-    document.getElementById('eswuSubMenu').classList.remove('active');
+function showEswuFicha() {
+    document.querySelectorAll('.submenu-container').forEach(function(s) { s.classList.remove('active'); });
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    
     document.getElementById('eswuDocsPage').classList.add('active');
     
     currentSubContext = 'eswu-docs';
@@ -35,169 +30,150 @@ function showEswuDocsPage(tipo) {
     document.getElementById('menuSidebar').classList.add('hidden');
     document.getElementById('contentArea').classList.add('fullwidth');
     
-    var title = tipo === 'legales' ? 'ESWU - Documentos Legales' : 'ESWU - Documentos Generales';
-    document.getElementById('eswuDocsTitle').textContent = title;
-    
-    loadEswuRootFolder();
+    renderEswuFicha();
 }
 
 // ============================================
-// FIND ROOT FOLDER IN DRIVE
+// RENDER FICHA
 // ============================================
 
-async function loadEswuRootFolder() {
-    var content = document.getElementById('eswuDocsContent');
+function renderEswuFicha() {
+    // Acta Constitutiva link
+    var actaDiv = document.getElementById('eswuActaSection');
+    actaDiv.innerHTML = '<div style="background:var(--bg);border-radius:6px;padding:0.5rem 0.75rem;display:inline-block;margin-bottom:0.1rem;">' +
+        '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>' +
+        '<div style="font-size:0.85rem;color:var(--text-light);font-style:italic;">Ver en Documentos Legales</div>' +
+        '</div>';
+    
+    // Contactos = usuarios activos
+    var contactsDiv = document.getElementById('eswuContactsList');
+    var activeUsers = (typeof usuarios !== 'undefined') ? usuarios.filter(function(u) { return u.activo; }) : [];
+    
+    if (activeUsers.length > 0) {
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.35rem;">';
+        activeUsers.forEach(function(u) {
+            html += '<div style="flex:1;min-width:140px;background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;">';
+            html += '<div style="font-size:0.88rem;font-weight:600;">' + u.nombre + '</div>';
+            if (u.email) html += '<div style="font-size:0.75rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+        contactsDiv.innerHTML = html;
+    } else {
+        contactsDiv.innerHTML = '';
+    }
+    
+    // Load doc tabs
+    loadEswuDocsTab('legales');
+    loadEswuDocsTab('generales');
+    
+    // Load messages
+    if (typeof renderMensajesFicha === 'function') {
+        renderMensajesFicha('eswu', 0);
+    }
+}
+
+// ============================================
+// LOAD DOCS TAB
+// ============================================
+
+async function loadEswuDocsTab(tipo) {
+    var contentDiv = document.getElementById('eswu' + cap(tipo) + 'Content');
+    if (!contentDiv) return;
     
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        content.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:var(--text-light);margin-bottom:1rem;">Conecta Google Drive para ver documentos.</p><button onclick="googleSignIn()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;">Conectar Google Drive</button></div>';
-        document.getElementById('eswuUploadBtn').style.display = 'none';
+        contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);margin-bottom:0.5rem;">Conecta Google Drive para ver documentos.</p></div>';
         return;
     }
     
-    content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">Cargando...</p>';
+    contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando...</p>';
     
     try {
-        var folderName = ESWU_FOLDER_NAMES[eswuFolderType];
-        var folderId = await findEswuFolder(folderName);
+        if (!eswuFolderIds[tipo]) {
+            eswuFolderIds[tipo] = await findEswuFolder(ESWU_FOLDER_NAMES[tipo]);
+        }
         
-        if (!folderId) {
-            content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">No se encontró la carpeta "' + folderName + '" en Google Drive.</p>';
-            document.getElementById('eswuUploadBtn').style.display = 'none';
+        if (!eswuFolderIds[tipo]) {
+            contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">No se encontró la carpeta "' + ESWU_FOLDER_NAMES[tipo] + '" en Google Drive.</p>';
             return;
         }
         
-        eswuCurrentFolder = folderId;
-        eswuNavStack = [{ label: folderName, folderId: folderId }];
-        renderEswuBreadcrumb();
-        await renderEswuFolderContents(folderId);
+        var result = await listDriveFolder(eswuFolderIds[tipo]);
+        var allItems = (result.folders || []).concat(result.files || []);
+        eswuFolderContents[tipo] = allItems;
+        renderEswuDocsList(tipo, allItems);
         
     } catch (e) {
-        console.error('Error cargando carpeta ESWU:', e);
-        content.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem;">Error: ' + e.message + '</p>';
+        console.error('Error cargando docs ESWU:', e);
+        contentDiv.innerHTML = '<p style="color:var(--danger);text-align:center;padding:1rem;">Error: ' + e.message + '</p>';
     }
 }
 
-async function findEswuFolder(folderName) {
-    // Search for folder by name under root
-    var q = "name = '" + folderName.replace(/'/g, "\\'") + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data = await resp.json();
-    return (data.files && data.files.length > 0) ? data.files[0].id : null;
-}
-
-// ============================================
-// RENDER FOLDER CONTENTS
-// ============================================
-
-async function renderEswuFolderContents(folderId) {
-    var content = document.getElementById('eswuDocsContent');
-    content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando...</p>';
+function renderEswuDocsList(tipo, items) {
+    var contentDiv = document.getElementById('eswu' + cap(tipo) + 'Content');
+    if (!contentDiv) return;
     
-    try {
-        var result = await listDriveFolder(folderId);
-        var folders = result.folders || [];
-        var files = result.files || [];
-        
-        if (folders.length === 0 && files.length === 0) {
-            content.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">Carpeta vacía</p>';
-            document.getElementById('eswuUploadBtn').style.display = 'inline';
-            return;
-        }
-        
-        var html = '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
-        
-        // Folders
-        folders.forEach(function(f) {
-            html += '<div onclick="openEswuSubfolder(\'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.6rem 0.8rem; display:flex; align-items:center; gap:0.5rem; cursor:pointer; transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 8px rgba(0,0,0,0.12)\'" onmouseout="this.style.boxShadow=\'none\'">';
-            html += '<span style="font-size:1.3rem;">📁</span>';
-            html += '<span style="font-weight:500;font-size:0.9rem;">' + f.name + '</span>';
-            html += '</div>';
-        });
-        
-        // Files
-        files.forEach(function(f) {
-            var icon = getFileIcon(f.mimeType);
-            var size = formatFileSize(f.size);
-            html += '<div style="background:white; border:1px solid var(--border); border-radius:8px; padding:0.5rem 0.8rem; display:flex; align-items:center; gap:0.5rem;">';
-            html += '<span style="font-size:1.1rem;">' + icon + '</span>';
-            html += '<div style="flex:1;min-width:0;">';
-            html += '<span onclick="viewDriveFileInline(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="font-size:0.88rem;color:var(--primary);cursor:pointer;text-decoration:underline;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
-            if (size) html += '<span style="font-size:0.72rem;color:var(--text-light);">' + size + '</span>';
-            html += '</div>';
-            html += '</div>';
-        });
-        
-        html += '</div>';
-        content.innerHTML = html;
-        
-        // Show upload button when inside a folder (not root level with subfolders)
-        document.getElementById('eswuUploadBtn').style.display = 'inline';
-        
-    } catch (e) {
-        console.error('Error renderizando carpeta:', e);
-        content.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem;">Error: ' + e.message + '</p>';
-    }
-}
-
-function getFileIcon(mimeType) {
-    if (!mimeType) return '📄';
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('image')) return '🖼️';
-    if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) return '📊';
-    if (mimeType.includes('document') || mimeType.includes('word')) return '📝';
-    return '📄';
-}
-
-// ============================================
-// SUBFOLDER NAVIGATION
-// ============================================
-
-function openEswuSubfolder(name, folderId) {
-    eswuNavStack.push({ label: name, folderId: folderId });
-    eswuCurrentFolder = folderId;
-    renderEswuBreadcrumb();
-    renderEswuFolderContents(folderId);
-}
-
-function eswuNavigateTo(index) {
-    eswuNavStack = eswuNavStack.slice(0, index + 1);
-    eswuCurrentFolder = eswuNavStack[index].folderId;
-    renderEswuBreadcrumb();
-    renderEswuFolderContents(eswuCurrentFolder);
-}
-
-function renderEswuBreadcrumb() {
-    var div = document.getElementById('eswuDocsBreadcrumb');
-    if (!div || eswuNavStack.length <= 1) {
-        if (div) div.innerHTML = '';
+    if (!items || items.length === 0) {
+        contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">Carpeta vacía</p>';
         return;
     }
-    var html = '';
-    eswuNavStack.forEach(function(item, i) {
-        if (i > 0) html += ' <span style="color:var(--text-light);margin:0 0.2rem;">›</span> ';
-        if (i < eswuNavStack.length - 1) {
-            html += '<span onclick="eswuNavigateTo(' + i + ')" style="color:var(--primary);cursor:pointer;font-size:0.85rem;">' + item.label + '</span>';
+    
+    var html = '<div style="display:flex;flex-direction:column;gap:0.3rem;">';
+    items.forEach(function(f) {
+        var isFolder = f.mimeType === 'application/vnd.google-apps.folder';
+        if (isFolder) {
+            var fUrl = f.webViewLink || ('https://drive.google.com/drive/folders/' + f.id);
+            html += '<div onclick="window.open(\'' + fUrl + '\', \'_blank\')" style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 6px rgba(0,0,0,0.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
+            html += '<span style="font-size:1.1rem;">📁</span>';
+            html += '<span style="font-size:0.88rem;font-weight:500;">' + f.name + '</span>';
+            html += '</div>';
         } else {
-            html += '<span style="font-weight:600;font-size:0.85rem;">' + item.label + '</span>';
+            var icon = eswuFileIcon(f.mimeType);
+            html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.7rem;display:flex;align-items:center;gap:0.5rem;">';
+            html += '<span style="font-size:1rem;">' + icon + '</span>';
+            html += '<span onclick="viewDriveFileInline(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="flex:1;font-size:0.85rem;color:var(--primary);cursor:pointer;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+            if (f.size) html += '<span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">' + formatFileSize(f.size) + '</span>';
+            html += '</div>';
         }
     });
-    div.innerHTML = html;
+    html += '</div>';
+    contentDiv.innerHTML = html;
 }
 
 // ============================================
-// UPLOAD TO CURRENT FOLDER
+// SEARCH
 // ============================================
 
-async function uploadToEswuFolder() {
-    if (!eswuCurrentFolder) {
-        alert('No hay carpeta seleccionada');
-        return;
+function filterEswuDocs(tipo) {
+    var input = document.getElementById('eswu' + cap(tipo) + 'Search');
+    var q = input ? input.value.toLowerCase().trim() : '';
+    var items = eswuFolderContents[tipo] || [];
+    
+    if (!q) {
+        renderEswuDocsList(tipo, items);
+    } else {
+        renderEswuDocsList(tipo, items.filter(function(f) {
+            return f.name.toLowerCase().includes(q);
+        }));
     }
+}
+
+// ============================================
+// UPLOAD
+// ============================================
+
+async function uploadToEswuFolder(tipo) {
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
         alert('Conecta Google Drive primero');
         return;
+    }
+    
+    if (!eswuFolderIds[tipo]) {
+        eswuFolderIds[tipo] = await findEswuFolder(ESWU_FOLDER_NAMES[tipo]);
+        if (!eswuFolderIds[tipo]) {
+            alert('No se encontró la carpeta "' + ESWU_FOLDER_NAMES[tipo] + '" en Google Drive.');
+            return;
+        }
     }
     
     var input = document.createElement('input');
@@ -209,9 +185,10 @@ async function uploadToEswuFolder() {
         showLoading();
         try {
             for (var i = 0; i < input.files.length; i++) {
-                await uploadFileToDrive(input.files[i], eswuCurrentFolder);
+                await uploadFileToDrive(input.files[i], eswuFolderIds[tipo]);
             }
-            await renderEswuFolderContents(eswuCurrentFolder);
+            eswuFolderIds[tipo] = null;
+            await loadEswuDocsTab(tipo);
         } catch (e) {
             alert('Error al subir: ' + e.message);
         } finally {
@@ -222,18 +199,34 @@ async function uploadToEswuFolder() {
 }
 
 // ============================================
-// HELPER: Get or create "Documentos Generales" folder
-// For general message attachments
+// HELPERS
 // ============================================
 
+async function findEswuFolder(folderName) {
+    var q = "name = '" + folderName.replace(/'/g, "\\'") + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name,webViewLink)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    return (data.files && data.files.length > 0) ? data.files[0].id : null;
+}
+
+function eswuFileIcon(mt) {
+    if (!mt) return '📄';
+    if (mt.includes('pdf')) return '📄';
+    if (mt.includes('image')) return '🖼️';
+    if (mt.includes('spreadsheet') || mt.includes('excel')) return '📊';
+    if (mt.includes('document') || mt.includes('word')) return '📝';
+    return '📄';
+}
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
 async function getOrCreateDocumentosGeneralesFolder() {
-    var folderName = 'Documentos Generales';
-    var folderId = await findEswuFolder(folderName);
+    var folderId = await findEswuFolder(ESWU_FOLDER_NAMES.generales);
     if (folderId) return folderId;
-    
-    // Create it under the root (or you could create it under a parent)
-    var newFolder = await createDriveFolder(folderName, 'root');
+    var newFolder = await createDriveFolder(ESWU_FOLDER_NAMES.generales, 'root');
     return newFolder.id;
 }
 
-console.log('✅ ESWU-UI.JS cargado');
+console.log('✅ ESWU-UI.JS v2 cargado');
