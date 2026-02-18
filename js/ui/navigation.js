@@ -23,10 +23,12 @@ function showSubMenu(menu) {
     document.getElementById('menuInquilinos').classList.remove('active');
     document.getElementById('menuProveedores').classList.remove('active');
     document.getElementById('menuAdmin').classList.remove('active');
+    document.getElementById('menuEswu').classList.remove('active');
     
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.getElementById('adminSubMenu').classList.remove('active');
+    document.getElementById('eswuSubMenu').classList.remove('active');
     
     if (menu === 'inquilinos') {
         document.getElementById('inquilinosSubMenu').classList.add('active');
@@ -40,6 +42,10 @@ function showSubMenu(menu) {
         document.getElementById('adminSubMenu').classList.add('active');
         document.getElementById('menuAdmin').classList.add('active');
         currentMenuContext = 'admin';
+    } else if (menu === 'eswu') {
+        document.getElementById('eswuSubMenu').classList.add('active');
+        document.getElementById('menuEswu').classList.add('active');
+        currentMenuContext = 'eswu';
     }
     
     document.getElementById('btnRegresa').classList.add('hidden');
@@ -63,6 +69,8 @@ function handleRegresa() {
             document.getElementById('proveedoresSubMenu').classList.add('active');
         } else if (currentMenuContext === 'admin') {
             document.getElementById('adminSubMenu').classList.add('active');
+        } else if (currentMenuContext === 'eswu') {
+            document.getElementById('eswuSubMenu').classList.add('active');
         }
         
         currentSubContext = null;
@@ -79,6 +87,7 @@ function showPageFromMenu(pageName) {
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.getElementById('adminSubMenu').classList.remove('active');
+    document.getElementById('eswuSubMenu').classList.remove('active');
     
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageName + 'Page').classList.add('active');
