@@ -339,7 +339,7 @@ function showNuevoMensajeFicha(tipo) {
         nombre = prov ? prov.nombre : '';
         id = currentProveedorId;
     } else if (tipo === 'eswu') {
-        nombre = 'ESWU';
+        nombre = 'Inmobiliaris ESWU';
         id = 0; // ID especial para ESWU
     }
     
@@ -517,23 +517,13 @@ async function initMensajes() {
         generarAlertasSistema();
         updateNotificationBadge();
         
-        // Polling cada 15 seg para nuevos mensajes y actualizaciones de leído
+        // Polling cada 30 seg para badge de notificaciones solamente
         setInterval(async function() {
             try {
                 await loadMensajes();
                 updateNotificationBadge();
-                
-                // Si hay una ficha abierta con pestaña de mensajes activa, refrescar palomitas
-                var inqTab = document.getElementById('inquilinoNotasTab');
-                if (inqTab && inqTab.classList.contains('active') && currentInquilinoId) {
-                    renderMensajesFicha('inquilino', currentInquilinoId);
-                }
-                var provTab = document.getElementById('proveedorNotasTab');
-                if (provTab && provTab.classList.contains('active') && currentProveedorId) {
-                    renderMensajesFicha('proveedor', currentProveedorId);
-                }
             } catch(e) { /* silencioso */ }
-        }, 15000);
+        }, 30000);
         
     } catch (e) {
         console.error('Error init mensajes:', e);
@@ -591,31 +581,33 @@ async function renderMensajesFicha(tipo, id) {
         var fechaStr = fecha.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
         var horaStr = fecha.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
         
-        // Palomita verde si fue leído
-        var leidoIcon = g.todosLeidos ? ' <span title="Mensaje visto" style="color:#22c55e;font-size:0.85rem;">✓</span>' : '';
+        var leidoIcon = g.todosLeidos ? ' <span title="Mensaje visto" style="color:#22c55e;font-size:0.8rem;">✓</span>' : '';
         
-        html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.25rem;">';
-        html += '<strong style="font-size:0.85rem;">' + (m.asunto || 'Sin asunto') + leidoIcon + '</strong>';
-        html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + fechaStr + ' ' + horaStr + '</span>';
+        html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;">';
+        // Línea 1: Asunto + leído
+        html += '<div style="font-size:0.88rem;font-weight:600;margin-bottom:0.15rem;">' + (m.asunto || 'Sin asunto') + leidoIcon + '</div>';
+        // Línea 2: De → Para + Fecha (misma línea)
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.2rem;">';
+        html += '<span style="font-size:0.75rem;color:var(--text-light);">De: ' + deNombre + ' → ' + paraNombres + '</span>';
+        html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;margin-left:0.5rem;">' + fechaStr + ' ' + horaStr + '</span>';
         html += '</div>';
-        html += '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.3rem;">De: ' + deNombre + ' → Para: ' + paraNombres + '</div>';
+        // Línea 3: Contenido
         html += '<div style="font-size:0.85rem;white-space:pre-wrap;">' + (m.contenido || '') + '</div>';
         
-        // Adjuntos múltiples (JSONB)
+        // Adjuntos en fila horizontal
         var adjuntos = m.adjuntos || [];
         if (typeof adjuntos === 'string') { try { adjuntos = JSON.parse(adjuntos); } catch(e) { adjuntos = []; } }
         if (adjuntos.length > 0) {
-            html += '<div style="margin-top:0.4rem;border-top:1px solid #f0f0f0;padding-top:0.3rem;">';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-top:0.3rem;">';
             adjuntos.forEach(function(adj) {
-                html += '<div><span onclick="viewDriveFileInline(\'' + adj.drive_file_id + '\', \'' + (adj.nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.8rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📎 ' + adj.nombre + '</span></div>';
+                html += '<span onclick="viewDriveFileInline(\'' + adj.drive_file_id + '\', \'' + (adj.nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.78rem;color:var(--primary);cursor:pointer;text-decoration:underline;background:#f0f7ff;padding:0.15rem 0.4rem;border-radius:4px;white-space:nowrap;">📎 ' + adj.nombre + '</span>';
             });
             html += '</div>';
         }
         
-        // Legacy: single adjunto columns
+        // Legacy single adjunto
         if (adjuntos.length === 0 && m.adjunto_drive_file_id && m.adjunto_nombre) {
-            html += '<div style="margin-top:0.4rem;"><span onclick="viewDriveFileInline(\'' + m.adjunto_drive_file_id + '\', \'' + (m.adjunto_nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.8rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📎 ' + m.adjunto_nombre + '</span></div>';
+            html += '<div style="margin-top:0.3rem;"><span onclick="viewDriveFileInline(\'' + m.adjunto_drive_file_id + '\', \'' + (m.adjunto_nombre || '').replace(/'/g, "\\'") + '\')" style="font-size:0.78rem;color:var(--primary);cursor:pointer;text-decoration:underline;background:#f0f7ff;padding:0.15rem 0.4rem;border-radius:4px;">📎 ' + m.adjunto_nombre + '</span></div>';
         }
         
         html += '</div>';
