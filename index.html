@@ -180,7 +180,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">Rentas</h2>
-                                <button class="btn-excel-icon" onclick="exportarRentasExcel()" title="Exportar a Excel">📊</button>
+                                <span onclick="exportarRentasExcel()" title="Exportar a Excel" style="font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📊</span>
                             </div>
                             <div style="padding: 1.5rem;">
                                 <div class="filter-section">
@@ -218,7 +218,7 @@
                         <div class="card">
                             <div class="card-header">
                                 <h2 class="card-title">Vencimiento de Contratos</h2>
-                                <button class="btn-excel-icon" onclick="exportarContratosExcel()" title="Exportar a Excel">📊</button>
+                                <span onclick="exportarContratosExcel()" title="Exportar a Excel" style="font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📊</span>
                             </div>
                             <div class="table-container">
                                 <table id="inquilinosVencimientoContratosTable" class="sticky-header-table">
@@ -309,7 +309,7 @@
                             </div>
                             <div class="table-container">
                              <table id="proveedoresFacturasPorPagarTable">
-    <thead><tr><th>Proveedor</th><th>Número</th><th>Monto</th><th>Vencimiento</th><th style="width:80px">Acciones</th></tr></thead>
+    <thead><tr><th>Proveedor</th><th>CLABE</th><th>Número</th><th>Monto</th><th>Vencimiento</th><th style="width:80px">Acciones</th></tr></thead>
     <tbody></tbody>
 </table>
                             </div>
@@ -576,6 +576,16 @@
                             <span onclick="showAddContactoInquilinoModal()" title="Agregar contacto" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
                         </div>
                         <div id="inquilinoContactosList"></div>
+                    </div>
+                    <div id="terminarContratoSection" class="hidden" style="border-top:1px solid var(--border); margin:0.75rem 0 0.5rem 0; padding-top:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <strong style="font-size:0.9rem; color:var(--danger);">⚠️ Terminar Contrato</strong>
+                            <select id="terminarContratoSelect" onchange="toggleTerminarContratoFecha()" style="padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
+                                <option value="no">No</option>
+                                <option value="si">Sí, terminar</option>
+                            </select>
+                            <input type="date" id="terminarContratoFecha" class="hidden" style="padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
+                        </div>
                     </div>
                 </form>
             </div>
@@ -1098,7 +1108,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title">Editar Espacio <span id="editEspacioNumero"></span></h2>
-                <button class="close-modal" onclick="closeModal('editEstacionamientoModal')">×</button>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveEstacionamiento()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('editEstacionamientoModal')">×</button>
+                </div>
             </div>
             <div style="padding: 1.5rem;">
                 <div class="form-group">
@@ -1108,10 +1121,6 @@
                 <div class="form-group">
                     <label>Número de Despacho</label>
                     <input type="text" id="editEspacioDespacho" disabled style="background: var(--bg)">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('editEstacionamientoModal')">Cancelar</button>
-                    <button type="button" class="btn btn-success" onclick="saveEstacionamiento()">Guardar</button>
                 </div>
             </div>
         </div>
@@ -1359,6 +1368,7 @@
             <button onclick="closePDFViewer()" style="background:var(--danger); color:white; border:none; border-radius:50%; width:44px; height:44px; font-size:1.5rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);">✕</button>
         </div>
         <iframe id="pdfViewerIframe" style="width:100%; height:100%; border:none;"></iframe>
+        <img id="pdfViewerImg" style="display:none; max-width:100%; max-height:100%; width:auto; height:auto; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); object-fit:contain; border-radius:4px;">
     </div>
 
   <!-- Supabase Library -->
