@@ -1309,7 +1309,7 @@
 
     <!-- Modal: Nuevo Mensaje -->
     <div id="nuevoMensajeModal" class="modal">
-        <div class="modal-content" style="max-width:500px;">
+        <div class="modal-content" style="max-width:540px;">
             <div class="modal-header">
                 <h2 class="modal-title">Nuevo Mensaje</h2>
                 <div style="display:flex; align-items:center; gap:0.25rem;">
@@ -1331,14 +1331,12 @@
                     </div>
                     <div style="margin-bottom:0.5rem;">
                         <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Mensaje: *</label>
-                        <textarea id="mensajeContenido" required rows="5" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+                        <textarea id="mensajeContenido" required rows="6" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
                     </div>
-                    <div style="margin-bottom:0.5rem;">
-                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">📎 Adjuntar documento:</label>
-                        <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <input type="file" id="mensajeAdjunto" accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="font-size:0.85rem;">
-                        </div>
-                        <span id="mensajeAdjuntoInfo" style="font-size:0.75rem;color:var(--text-light);"></span>
+                    <div style="margin-bottom:0.25rem;">
+                        <input type="file" id="mensajeAdjuntoInput" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="display:none;" onchange="onMensajeFilesSelected()">
+                        <span onclick="document.getElementById('mensajeAdjuntoInput').click()" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar documentos</span>
+                        <div id="mensajeAdjuntosList" style="margin-top:0.4rem;"></div>
                     </div>
                 </form>
             </div>
