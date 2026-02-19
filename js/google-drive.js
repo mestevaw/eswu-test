@@ -320,11 +320,6 @@ function getGooglePreviewUrl(fileId) {
 
 var pendingViewFile = null;
 
-function isMobileDevice() {
-    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
-           (navigator.maxTouchPoints > 0 && window.innerWidth < 900);
-}
-
 async function viewDriveFileInline(fileId, fileName) {
     if (!gdriveAccessToken) {
         pendingViewFile = { fileId: fileId, fileName: fileName };
@@ -393,7 +388,7 @@ async function loadFileInViewer(fileId, fileName) {
         var isPdf = mimeType.includes('pdf');
         var isGoogleDoc = mimeType.includes('google-apps.document') || mimeType.includes('google-apps.spreadsheet') || mimeType.includes('google-apps.presentation');
         
-        // Download the file (export Google docs as PDF)
+        // Google native docs → export as PDF
         var downloadUrl;
         if (isGoogleDoc) {
             downloadUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '/export?mimeType=application/pdf';
@@ -408,20 +403,12 @@ async function loadFileInViewer(fileId, fileName) {
             });
             if (!resp.ok) throw new Error('Error descargando archivo');
             var blob = await resp.blob();
+            var blobUrl = URL.createObjectURL(new Blob([blob], { type: isPdf ? 'application/pdf' : mimeType }));
             
             if (mimeType.includes('image/') && !isPdf) {
-                // Images — simple display
-                var blobUrl = URL.createObjectURL(new Blob([blob], { type: mimeType }));
                 contentDiv.innerHTML = '<img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;" />';
-                return;
-            }
-            
-            // PDF — use PDF.js on mobile, iframe on desktop
-            if (isPdf && isMobileDevice() && typeof pdfjsLib !== 'undefined') {
-                await renderPdfMobile(blob, contentDiv);
             } else {
-                var blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
-                contentDiv.innerHTML = '<iframe src="' + blobUrl + '#zoom=page-width" style="width:100%;height:100%;border:none;"></iframe>';
+                contentDiv.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
             }
             return;
         }
@@ -438,61 +425,6 @@ async function loadFileInViewer(fileId, fileName) {
             '<p style="color:var(--danger);margin-bottom:0.5rem;">Error: ' + e.message + '</p>' +
             '<a href="https://drive.google.com/file/d/' + fileId + '/view" target="_blank" style="color:var(--primary);text-decoration:underline;">Abrir en Google Drive</a>' +
             '</div>';
-    }
-}
-
-// ============================================
-// PDF.JS MOBILE RENDERER
-// ============================================
-
-async function renderPdfMobile(blob, container) {
-    container.innerHTML = '<p style="color:var(--text-light);">Renderizando PDF...</p>';
-    
-    try {
-        var arrayBuf = await blob.arrayBuffer();
-        var pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
-        var totalPages = pdf.numPages;
-        
-        // Create scrollable container
-        var scrollDiv = document.createElement('div');
-        scrollDiv.style.cssText = 'width:100%; height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; background:#f5f5f5; padding:0;';
-        container.innerHTML = '';
-        container.style.display = 'block';
-        container.style.overflow = 'hidden';
-        container.appendChild(scrollDiv);
-        
-        var containerWidth = container.clientWidth || window.innerWidth;
-        
-        for (var i = 1; i <= totalPages; i++) {
-            var page = await pdf.getPage(i);
-            var viewport = page.getViewport({ scale: 1 });
-            
-            // Scale to fit container width
-            var scale = (containerWidth - 8) / viewport.width; // 4px margin each side
-            var scaledViewport = page.getViewport({ scale: scale });
-            
-            var canvas = document.createElement('canvas');
-            canvas.width = scaledViewport.width;
-            canvas.height = scaledViewport.height;
-            canvas.style.cssText = 'display:block; margin:4px auto; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.15);';
-            
-            scrollDiv.appendChild(canvas);
-            
-            var ctx = canvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
-        }
-        
-        // Page counter
-        var counter = document.createElement('div');
-        counter.style.cssText = 'text-align:center; padding:0.5rem; font-size:0.75rem; color:var(--text-light);';
-        counter.textContent = totalPages + (totalPages === 1 ? ' página' : ' páginas');
-        scrollDiv.appendChild(counter);
-        
-    } catch (e) {
-        console.error('PDF.js render error:', e);
-        // Fallback: iframe
-        var blobUrl = URL.createObjectURL(blob);
-        container.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
     }
 }
 
