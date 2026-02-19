@@ -104,15 +104,17 @@ function renderEswuContacts() {
     var allUsers = (typeof usuarios !== 'undefined') ? usuarios : [];
     var activeUsers = allUsers.filter(function(u) { return u.activo; });
     
-    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">';
-    html += '<span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Contactos</span>';
+    // Sort alphabetically
+    activeUsers.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
     
-    // Select dropdown
+    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">';
+    html += '<span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Usuarios</span>';
+    
+    // Select dropdown — first user is default
     html += '<select id="eswuUsuarioSelect" onchange="onEswuUsuarioSelect(this.value)" style="flex:1;min-width:140px;padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;cursor:pointer;">';
-    html += '<option value="">— Seleccionar usuario —</option>';
-    activeUsers.forEach(function(u) {
+    activeUsers.forEach(function(u, i) {
         var nivel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
-        html += '<option value="' + u.id + '">' + u.nombre + (nivel ? ' (' + nivel + ')' : '') + '</option>';
+        html += '<option value="' + u.id + '"' + (i === 0 ? ' selected' : '') + '>' + u.nombre + (nivel ? ' (' + nivel + ')' : '') + '</option>';
     });
     html += '</select>';
     
@@ -126,15 +128,14 @@ function renderEswuContacts() {
 function onEswuUsuarioSelect(val) {
     if (!val) return;
     showEswuEditUsuario(parseInt(val));
-    // Reset select back to placeholder
-    var sel = document.getElementById('eswuUsuarioSelect');
-    if (sel) sel.value = '';
 }
 
 function editEswuUsuarios() {
-    // Pencil icon: focus the select dropdown
+    // Pencil icon: open edit for currently selected user
     var sel = document.getElementById('eswuUsuarioSelect');
-    if (sel) { sel.focus(); sel.click(); }
+    if (sel && sel.value) {
+        showEswuEditUsuario(parseInt(sel.value));
+    }
 }
 
 // ============================================
@@ -207,12 +208,18 @@ async function saveEswuUsuario(event) {
 // DOCS TABS - WITH SUBFOLDER NAVIGATION
 // ============================================
 
-async function loadEswuDocsTab(tipo) {
+async function loadEswuDocsTab(tipo, retryCount) {
     var contentDiv = document.getElementById('eswu' + cap(tipo) + 'Content');
     if (!contentDiv) return;
+    retryCount = retryCount || 0;
     
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);">Conecta Google Drive para ver documentos.</p></div>';
+        if (retryCount < 3) {
+            contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Conectando a Google Drive...</p>';
+            setTimeout(function() { loadEswuDocsTab(tipo, retryCount + 1); }, 2000);
+        } else {
+            contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);margin-bottom:0.5rem;">No se pudo conectar a Google Drive.</p><button onclick="googleSignIn()" style="background:var(--primary);color:white;border:none;padding:0.35rem 0.7rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">Conectar</button></div>';
+        }
         return;
     }
     
