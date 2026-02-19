@@ -24,6 +24,7 @@ function showEswuFicha() {
     
     currentSubContext = 'eswu-docs';
     currentMenuContext = 'eswu';
+    window.eswuActiveTab = 'legales'; // default tab
     
     document.getElementById('btnRegresa').classList.remove('hidden');
     document.getElementById('btnSearch').classList.add('hidden');
@@ -404,6 +405,61 @@ async function getOrCreateDocumentosGeneralesFolder() {
     if (folderId) return folderId;
     var newFolder = await createDriveFolder(ESWU_FOLDER_NAMES.generales, 'root');
     return newFolder.id;
+}
+
+// Find existing ESWU docs folder by name
+async function getOrCreateEswuDocsFolder(folderName) {
+    var folderId = await findEswuFolder(folderName);
+    if (folderId) return folderId;
+    // Create under root if not found
+    var newFolder = await createDriveFolder(folderName, 'root');
+    return newFolder.id;
+}
+
+// Create/find: Inmobiliaris ESWU / YEAR / MONTH / Reportes financieros
+async function getOrCreateEswuReportesFolder() {
+    var mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var now = new Date();
+    var year = String(now.getFullYear());
+    var month = mesesNombres[now.getMonth()];
+    
+    // 1. Find or create "Inmobiliaris ESWU"
+    var eswuRoot = await findOrCreateSubfolder('Inmobiliaris ESWU', null);
+    
+    // 2. Find or create YEAR folder
+    var yearFolder = await findOrCreateSubfolder(year, eswuRoot);
+    
+    // 3. Find or create MONTH folder
+    var monthFolder = await findOrCreateSubfolder(month, yearFolder);
+    
+    // 4. Find or create "Reportes financieros"
+    var reportesFolder = await findOrCreateSubfolder('Reportes financieros', monthFolder);
+    
+    return reportesFolder;
+}
+
+// Helper: find or create a subfolder inside a parent
+async function findOrCreateSubfolder(name, parentId) {
+    var safeName = name.replace(/'/g, "\\'");
+    var q;
+    if (parentId) {
+        q = "'" + parentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    } else {
+        q = "name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    }
+    
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    
+    if (data.files && data.files.length > 0) {
+        return data.files[0].id;
+    }
+    
+    // Create it
+    var folder = await createDriveFolder(name, parentId || 'root');
+    return folder.id;
 }
 
 // ============================================
