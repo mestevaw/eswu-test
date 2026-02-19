@@ -42,6 +42,8 @@ function tryAutoConnect() {
     }
 }
 
+var gdrivePostConnectCallbacks = [];
+
 function handleGoogleAuthResponse(response) {
     if (response.error) {
         if (response.error === 'user_denied' || response.error === 'access_denied') {
@@ -49,6 +51,8 @@ function handleGoogleAuthResponse(response) {
         } else {
             console.error('Google Auth error:', response.error);
         }
+        // Clear pending callbacks on error
+        gdrivePostConnectCallbacks = [];
         return;
     }
     
@@ -69,6 +73,11 @@ function handleGoogleAuthResponse(response) {
             loadEswuDocsTab('generales');
         }
     }
+    
+    // Execute any post-connect callbacks (e.g., pending file views)
+    var cbs = gdrivePostConnectCallbacks;
+    gdrivePostConnectCallbacks = [];
+    cbs.forEach(function(cb) { try { cb(); } catch(e) {} });
 }
 
 function googleSignIn() {
@@ -298,13 +307,28 @@ function getGooglePreviewUrl(fileId) {
 // INLINE VIEWER - View Drive file in app (using API token)
 // ============================================
 
+var pendingViewFile = null; // queued file view after auth
+
 async function viewDriveFileInline(fileId, fileName) {
+    // If no token, show connect prompt in the viewer itself
     if (!gdriveAccessToken) {
-        alert('Conecta Google Drive primero');
+        pendingViewFile = { fileId: fileId, fileName: fileName };
+        showDriveViewerOverlay(fileName);
+        var contentDiv = document.getElementById('driveViewerContent');
+        if (contentDiv) {
+            contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
+                '<p style="margin-bottom:1rem;color:var(--text);font-size:0.95rem;">Para ver documentos, conecta Google Drive.</p>' +
+                '<button onclick="connectAndRetryView()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:0.95rem;">Conectar Google Drive</button>' +
+                '</div>';
+        }
         return;
     }
     
-    // Show overlay immediately with loading
+    showDriveViewerOverlay(fileName);
+    await loadFileInViewer(fileId, fileName);
+}
+
+function showDriveViewerOverlay(fileName) {
     var overlay = document.getElementById('driveViewerOverlay');
     if (!overlay) {
         overlay = document.createElement('div');
@@ -312,26 +336,48 @@ async function viewDriveFileInline(fileId, fileName) {
         document.body.appendChild(overlay);
     }
     overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:white; z-index:9999; display:flex; flex-direction:column;';
-    overlay.innerHTML = `
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; background:var(--primary); color:white; flex-shrink:0;">
-            <span style="font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${fileName || 'Documento'}</span>
-            <button onclick="closeDriveViewer()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">✕</button>
-        </div>
-        <div id="driveViewerContent" style="flex:1; display:flex; align-items:center; justify-content:center; overflow:auto;">
-            <p style="color:var(--text-light);">Cargando documento...</p>
-        </div>
-    `;
+    overlay.innerHTML = 
+        '<div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; background:var(--primary); color:white; flex-shrink:0;">' +
+            '<span style="font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (fileName || 'Documento') + '</span>' +
+            '<button onclick="closeDriveViewer()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">✕</button>' +
+        '</div>' +
+        '<div id="driveViewerContent" style="flex:1; display:flex; align-items:center; justify-content:center; overflow:auto;">' +
+            '<p style="color:var(--text-light);">Cargando documento...</p>' +
+        '</div>';
+}
+
+function connectAndRetryView() {
+    if (pendingViewFile) {
+        var f = pendingViewFile;
+        gdrivePostConnectCallbacks.push(function() {
+            pendingViewFile = null;
+            var contentDiv = document.getElementById('driveViewerContent');
+            if (contentDiv) contentDiv.innerHTML = '<p style="color:var(--text-light);">Cargando documento...</p>';
+            loadFileInViewer(f.fileId, f.fileName);
+        });
+    }
+    googleSignIn();
+}
+
+async function loadFileInViewer(fileId, fileName) {
+    var contentDiv = document.getElementById('driveViewerContent');
+    if (!contentDiv) return;
     
     try {
-        // Get file metadata to determine type
+        // Get file metadata
         var metaResp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=mimeType,name,webViewLink&key=' + GOOGLE_API_KEY, {
             headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
         });
+        
+        if (!metaResp.ok) {
+            var err = await metaResp.json();
+            throw new Error(err.error?.message || 'Error accediendo archivo');
+        }
+        
         var meta = await metaResp.json();
         var mimeType = meta.mimeType || '';
-        var contentDiv = document.getElementById('driveViewerContent');
         
-        // Google native docs → export as PDF then display
+        // Google native docs → export as PDF
         if (mimeType.includes('google-apps.document') || mimeType.includes('google-apps.spreadsheet') || mimeType.includes('google-apps.presentation')) {
             var exportUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '/export?mimeType=application/pdf';
             var resp = await fetch(exportUrl, { headers: { 'Authorization': 'Bearer ' + gdriveAccessToken } });
@@ -342,7 +388,7 @@ async function viewDriveFileInline(fileId, fileName) {
             return;
         }
         
-        // PDF / images / regular files → download with alt=media
+        // PDF / images → download with alt=media
         if (mimeType.includes('pdf') || mimeType.includes('image/')) {
             var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
                 headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
@@ -359,19 +405,18 @@ async function viewDriveFileInline(fileId, fileName) {
             return;
         }
         
-        // Other files → download and offer save, or open webViewLink
-        if (meta.webViewLink) {
-            contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="margin-bottom:1rem;">Este tipo de archivo no se puede previsualizar.</p><a href="' + meta.webViewLink + '" target="_blank" style="color:var(--primary);text-decoration:underline;font-size:0.95rem;">Abrir en Google Drive</a></div>';
-        } else {
-            contentDiv.innerHTML = '<p style="color:var(--text-light);padding:2rem;">No se puede previsualizar este tipo de archivo.</p>';
-        }
+        // Other files → link to open in Drive
+        contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
+            '<p style="margin-bottom:1rem;">Este tipo de archivo no se puede previsualizar.</p>' +
+            (meta.webViewLink ? '<a href="' + meta.webViewLink + '" target="_blank" style="color:var(--primary);text-decoration:underline;font-size:0.95rem;">Abrir en Google Drive</a>' : '') +
+            '</div>';
         
     } catch (e) {
         console.error('Error viewing file:', e);
-        var contentDiv = document.getElementById('driveViewerContent');
-        if (contentDiv) {
-            contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:var(--danger);margin-bottom:0.5rem;">Error: ' + e.message + '</p><a href="https://drive.google.com/file/d/' + fileId + '/view" target="_blank" style="color:var(--primary);text-decoration:underline;">Intentar abrir en Google Drive</a></div>';
-        }
+        contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
+            '<p style="color:var(--danger);margin-bottom:0.5rem;">Error: ' + e.message + '</p>' +
+            '<a href="https://drive.google.com/file/d/' + fileId + '/view" target="_blank" style="color:var(--primary);text-decoration:underline;">Abrir en Google Drive</a>' +
+            '</div>';
     }
 }
 
