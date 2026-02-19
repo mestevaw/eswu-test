@@ -356,23 +356,21 @@
                             <!-- Pestañas -->
                             <div class="tabs-container">
                                 <div class="tabs">
-                                    <button class="tab active" onclick="switchTab('eswu', 'legales')">Documentos Legales</button>
-                                    <button class="tab" onclick="switchTab('eswu', 'generales')">Documentos Generales</button>
+                                    <button class="tab active" onclick="switchTab('eswu', 'legales')">Documentos Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" onclick="switchTab('eswu', 'generales')">Documentos Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
-                                    <button class="tab" onclick="switchTab('eswu', 'bancos')">Bancos</button>
+                                    <button class="tab" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
                                 </div>
                                 <div id="eswuLegalesTab" class="tab-content active">
-                                    <div style="margin-bottom:0.5rem; display:flex; gap:0.5rem; align-items:center;">
-                                        <input type="text" id="eswuLegalesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('legales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
-                                        <span onclick="uploadToEswuFolder('legales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
+                                    <div style="margin-bottom:0.5rem;">
+                                        <input type="text" id="eswuLegalesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('legales')" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
                                     </div>
                                     <div id="eswuLegalesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuLegalesContent"></div>
                                 </div>
                                 <div id="eswuGeneralesTab" class="tab-content">
-                                    <div style="margin-bottom:0.5rem; display:flex; gap:0.5rem; align-items:center;">
-                                        <input type="text" id="eswuGeneralesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('generales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
-                                        <span onclick="uploadToEswuFolder('generales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
+                                    <div style="margin-bottom:0.5rem;">
+                                        <input type="text" id="eswuGeneralesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('generales')" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
                                     </div>
                                     <div id="eswuGeneralesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuGeneralesContent"></div>
@@ -381,9 +379,6 @@
                                     <div id="eswuMensajesFicha"></div>
                                 </div>
                                 <div id="eswuBancosTab" class="tab-content">
-                                    <div style="margin-bottom:0.5rem; display:flex; justify-content:flex-end;">
-                                        <span onclick="showAddBancoModal()" title="Agregar documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
-                                    </div>
                                     <div class="table-container">
                                         <table id="eswuBancosTable" class="sticky-header-table">
                                             <thead><tr><th>Archivo</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
@@ -1472,15 +1467,15 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=23"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=24"></script>
+    <script src="js/ui/navigation.js?v=25"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
-    <script src="js/ui/eswu-ui.js?v=25"></script>
+    <script src="js/ui/eswu-ui.js?v=26"></script>
     <script src="js/ui/admin-ui.js?v=22"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
-    <script src="js/ui/mensajes-ui.js?v=23"></script>
+    <script src="js/ui/mensajes-ui.js?v=24"></script>
     <script src="js/modals/modals.js?v=22"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
