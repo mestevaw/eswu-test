@@ -406,4 +406,74 @@ async function getOrCreateDocumentosGeneralesFolder() {
     return newFolder.id;
 }
 
-console.log('✅ ESWU-UI.JS v5 cargado');
+// ============================================
+// BANCOS TABLE (moved from Admin)
+// ============================================
+
+function renderEswuBancosTable() {
+    var table = document.getElementById('eswuBancosTable');
+    if (!table) return;
+    var tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (typeof bancosDocumentos === 'undefined' || !bancosDocumentos || bancosDocumentos.length === 0) {
+        // Try loading first
+        if (typeof ensureBancosLoaded === 'function') {
+            ensureBancosLoaded().then(function() { renderEswuBancosTable(); });
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:1rem;">Cargando...</td></tr>';
+            return;
+        }
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light)">No hay documentos</td></tr>';
+        return;
+    }
+    
+    var mesesNombres = ['', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    
+    var sorted = bancosDocumentos.slice().sort(function(a, b) {
+        if ((b.anio || 0) !== (a.anio || 0)) return (b.anio || 0) - (a.anio || 0);
+        return (b.mes || 0) - (a.mes || 0);
+    });
+    
+    var lastMonth = null;
+    var shadeToggle = true;
+    
+    sorted.forEach(function(b) {
+        var anio = b.anio || '';
+        var mes = b.mes ? mesesNombres[b.mes] : '';
+        var monthKey = '' + (b.anio || 0) + '-' + (b.mes || 0);
+        var tipo = b.tipo || 'Documento';
+        var nombre = b.nombre_archivo || '—';
+        var clickAction = '';
+        var rowStyle = '';
+        
+        if (monthKey !== lastMonth) {
+            shadeToggle = !shadeToggle;
+            lastMonth = monthKey;
+        }
+        
+        var bgColor = shadeToggle ? 'background:#f0f4f8;' : '';
+        
+        if (b.google_drive_file_id) {
+            var safeName = (b.nombre_archivo || tipo).replace(/'/g, "\\'");
+            clickAction = "viewDriveFileInline('" + b.google_drive_file_id + "', '" + safeName + "')";
+            rowStyle = 'cursor:pointer;';
+        }
+        
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td style="font-size:0.85rem;word-break:break-word;">' + nombre + '</td>' +
+            '<td>' + anio + '</td><td>' + mes + '</td><td>' + tipo + '</td>';
+        tr.style.cssText = rowStyle + bgColor;
+        if (clickAction) {
+            tr.onclick = new Function(clickAction);
+        }
+        tbody.appendChild(tr);
+    });
+}
+
+// Also keep renderBancosTable pointing to eswu table
+function renderBancosTable() {
+    renderEswuBancosTable();
+}
+
+console.log('✅ ESWU-UI.JS v6 cargado');
