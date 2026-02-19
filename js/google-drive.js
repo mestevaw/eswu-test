@@ -295,36 +295,84 @@ function getGooglePreviewUrl(fileId) {
 }
 
 // ============================================
-// INLINE VIEWER - View Drive file in app
+// INLINE VIEWER - View Drive file in app (using API token)
 // ============================================
 
-function viewDriveFileInline(fileId, fileName) {
-    const previewUrl = getGooglePreviewUrl(fileId);
-    
-    // Reuse the existing PDF viewer pattern
-    const viewer = document.getElementById('pdfViewerModal');
-    if (viewer) {
-        document.getElementById('pdfViewerTitle').textContent = fileName || 'Documento';
-        const container = document.getElementById('pdfViewerContainer');
-        container.innerHTML = `<iframe src="${previewUrl}" style="width:100%; height:100%; border:none;" allow="autoplay"></iframe>`;
-        viewer.classList.add('active');
+async function viewDriveFileInline(fileId, fileName) {
+    if (!gdriveAccessToken) {
+        alert('Conecta Google Drive primero');
         return;
     }
     
-    // Fallback: create simple fullscreen viewer
-    const overlay = document.createElement('div');
-    overlay.id = 'driveViewerOverlay';
+    // Show overlay immediately with loading
+    var overlay = document.getElementById('driveViewerOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'driveViewerOverlay';
+        document.body.appendChild(overlay);
+    }
     overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:white; z-index:9999; display:flex; flex-direction:column;';
-    
     overlay.innerHTML = `
         <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 1rem; background:var(--primary); color:white; flex-shrink:0;">
             <span style="font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">${fileName || 'Documento'}</span>
             <button onclick="closeDriveViewer()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">✕</button>
         </div>
-        <iframe src="${previewUrl}" style="flex:1; border:none;" allow="autoplay"></iframe>
+        <div id="driveViewerContent" style="flex:1; display:flex; align-items:center; justify-content:center; overflow:auto;">
+            <p style="color:var(--text-light);">Cargando documento...</p>
+        </div>
     `;
     
-    document.body.appendChild(overlay);
+    try {
+        // Get file metadata to determine type
+        var metaResp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=mimeType,name,webViewLink&key=' + GOOGLE_API_KEY, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var meta = await metaResp.json();
+        var mimeType = meta.mimeType || '';
+        var contentDiv = document.getElementById('driveViewerContent');
+        
+        // Google native docs → export as PDF then display
+        if (mimeType.includes('google-apps.document') || mimeType.includes('google-apps.spreadsheet') || mimeType.includes('google-apps.presentation')) {
+            var exportUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '/export?mimeType=application/pdf';
+            var resp = await fetch(exportUrl, { headers: { 'Authorization': 'Bearer ' + gdriveAccessToken } });
+            if (!resp.ok) throw new Error('Error exportando documento');
+            var blob = await resp.blob();
+            var blobUrl = URL.createObjectURL(blob);
+            contentDiv.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
+            return;
+        }
+        
+        // PDF / images / regular files → download with alt=media
+        if (mimeType.includes('pdf') || mimeType.includes('image/')) {
+            var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+                headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+            });
+            if (!resp.ok) throw new Error('Error descargando archivo');
+            var blob = await resp.blob();
+            var blobUrl = URL.createObjectURL(new Blob([blob], { type: mimeType }));
+            
+            if (mimeType.includes('image/')) {
+                contentDiv.innerHTML = '<img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;" />';
+            } else {
+                contentDiv.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
+            }
+            return;
+        }
+        
+        // Other files → download and offer save, or open webViewLink
+        if (meta.webViewLink) {
+            contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="margin-bottom:1rem;">Este tipo de archivo no se puede previsualizar.</p><a href="' + meta.webViewLink + '" target="_blank" style="color:var(--primary);text-decoration:underline;font-size:0.95rem;">Abrir en Google Drive</a></div>';
+        } else {
+            contentDiv.innerHTML = '<p style="color:var(--text-light);padding:2rem;">No se puede previsualizar este tipo de archivo.</p>';
+        }
+        
+    } catch (e) {
+        console.error('Error viewing file:', e);
+        var contentDiv = document.getElementById('driveViewerContent');
+        if (contentDiv) {
+            contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;"><p style="color:var(--danger);margin-bottom:0.5rem;">Error: ' + e.message + '</p><a href="https://drive.google.com/file/d/' + fileId + '/view" target="_blank" style="color:var(--primary);text-decoration:underline;">Intentar abrir en Google Drive</a></div>';
+        }
+    }
 }
 
 function closeDriveViewer() {
