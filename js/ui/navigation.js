@@ -238,6 +238,9 @@ function switchTab(type, tabName) {
         document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
         
+        // Track active tab for subject/folder logic
+        window.eswuActiveTab = tabName;
+        
         if (tabName === 'legales') {
             document.querySelector('#eswuDocsPage .tab:nth-child(1)').classList.add('active');
             document.getElementById('eswuLegalesTab').classList.add('active');
