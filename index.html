@@ -1421,6 +1421,13 @@
     
     <!-- SheetJS para exportar Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <!-- PDF.js for mobile PDF viewing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
@@ -1470,7 +1477,7 @@
     </div>
 
     <script src="js/config.js?v=22"></script>
-    <script src="js/google-drive.js?v=26"></script>
+    <script src="js/google-drive.js?v=27"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=22"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
