@@ -1,11 +1,11 @@
 /* ========================================
-   ESWU-UI.JS v4
-   Ficha ESWU - Subfolder nav, User edit, Docs, Msgs
+   ESWU-UI.JS v5
+   Ficha ESWU - Select dropdown contacts, subfolder nav
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
 var eswuFolderContents = { legales: [], generales: [] };
-var eswuNavStacks = { legales: [], generales: [] }; // breadcrumb per tab
+var eswuNavStacks = { legales: [], generales: [] };
 var eswuCurrentFolders = { legales: null, generales: null };
 
 var ESWU_FOLDER_NAMES = {
@@ -96,87 +96,74 @@ async function selectEswuActa() {
 }
 
 // ============================================
-// CONTACTOS (collapsible, first name only)
+// CONTACTOS (select dropdown)
 // ============================================
-
-var eswuContactsExpanded = false;
 
 function renderEswuContacts() {
     var div = document.getElementById('eswuContactsList');
-    var activeUsers = (typeof usuarios !== 'undefined') ? usuarios.filter(function(u) { return u.activo; }) : [];
+    var allUsers = (typeof usuarios !== 'undefined') ? usuarios : [];
+    var activeUsers = allUsers.filter(function(u) { return u.activo; });
     
-    if (activeUsers.length === 0) { div.innerHTML = ''; return; }
+    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">';
+    html += '<span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Contactos</span>';
     
-    var firstName = activeUsers[0].nombre;
-    var moreCount = activeUsers.length - 1;
-    var summaryText = firstName + (moreCount > 0 ? ' <span style="color:var(--text-light);font-size:0.75rem;">+' + moreCount + ' más</span>' : '');
-    
-    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;margin-bottom:0.3rem;">';
-    html += '<div onclick="toggleEswuContacts()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">';
-    html += '<div><span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;margin-right:0.3rem;">Contactos</span>' + summaryText + '</div>';
-    html += '<span style="font-size:0.75rem;color:var(--text-light);" id="eswuContactsArrow">' + (eswuContactsExpanded ? '▲' : '▼') + '</span>';
-    html += '</div>';
-    
-    html += '<div id="eswuContactsDetail" style="' + (eswuContactsExpanded ? '' : 'display:none;') + 'margin-top:0.4rem;">';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">';
+    // Select dropdown
+    html += '<select id="eswuUsuarioSelect" onchange="onEswuUsuarioSelect(this.value)" style="flex:1;min-width:140px;padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;cursor:pointer;">';
+    html += '<option value="">— Seleccionar usuario —</option>';
     activeUsers.forEach(function(u) {
         var nivel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
-        html += '<div style="flex:1;min-width:150px;background:white;border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.5rem;display:flex;align-items:center;gap:0.3rem;">';
-        html += '<div style="flex:1;">';
-        html += '<div style="font-size:0.85rem;font-weight:600;">' + u.nombre + '</div>';
-        if (u.email) html += '<div style="font-size:0.72rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
-        if (nivel) html += '<div style="font-size:0.68rem;color:var(--primary);">' + nivel + '</div>';
-        html += '</div>';
-        html += '<span onclick="event.stopPropagation();showEswuEditUsuario(' + u.id + ')" title="Editar" style="cursor:pointer;font-size:0.85rem;padding:0.15rem;border-radius:4px;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'">✏️</span>';
-        html += '</div>';
+        html += '<option value="' + u.id + '">' + u.nombre + (nivel ? ' (' + nivel + ')' : '') + '</option>';
     });
+    html += '</select>';
+    
+    // Add button
+    html += '<span onclick="showEswuAddUsuario()" title="Agregar usuario" style="color:var(--success);font-size:1.3rem;font-weight:700;cursor:pointer;padding:0 0.3rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'">+</span>';
     html += '</div>';
-    // Add user button
-    html += '<div style="margin-top:0.3rem;text-align:center;">';
-    html += '<span onclick="showEswuAddUsuario()" style="color:var(--success);font-size:1.2rem;font-weight:700;cursor:pointer;padding:0.1rem 0.5rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'" title="Agregar usuario">+</span>';
-    html += '</div>';
-    html += '</div></div>';
     
     div.innerHTML = html;
 }
 
-function toggleEswuContacts() {
-    eswuContactsExpanded = !eswuContactsExpanded;
-    var d = document.getElementById('eswuContactsDetail');
-    var a = document.getElementById('eswuContactsArrow');
-    if (d) d.style.display = eswuContactsExpanded ? '' : 'none';
-    if (a) a.textContent = eswuContactsExpanded ? '▲' : '▼';
+function onEswuUsuarioSelect(val) {
+    if (!val) return;
+    showEswuEditUsuario(parseInt(val));
+    // Reset select back to placeholder
+    var sel = document.getElementById('eswuUsuarioSelect');
+    if (sel) sel.value = '';
+}
+
+function editEswuUsuarios() {
+    // Pencil icon: focus the select dropdown
+    var sel = document.getElementById('eswuUsuarioSelect');
+    if (sel) { sel.focus(); sel.click(); }
 }
 
 // ============================================
-// USUARIO EDIT MODAL (within ESWU)
+// USUARIO EDIT MODAL
 // ============================================
 
 function showEswuEditUsuario(id) {
     var u = usuarios.find(function(x) { return x.id === id; });
     if (!u) return;
     
-    document.getElementById('eswuEditUsuarioTitle').textContent = 'Editar: ' + u.nombre;
+    document.getElementById('eswuEditUsuarioTitle').textContent = u.nombre;
     document.getElementById('eswuUsuarioId').value = u.id;
     document.getElementById('eswuUsuarioNombre').value = u.nombre;
     document.getElementById('eswuUsuarioEmail').value = u.email || '';
     document.getElementById('eswuUsuarioPassword').value = u.password || '';
     document.getElementById('eswuUsuarioNivel').value = u.nivel || 4;
     document.getElementById('eswuUsuarioActivo').checked = u.activo !== false;
-    document.getElementById('eswuDeleteUsuarioBtn').style.display = '';
     
     document.getElementById('eswuEditUsuarioModal').classList.add('active');
 }
 
 function showEswuAddUsuario() {
-    document.getElementById('eswuEditUsuarioTitle').textContent = 'Agregar Usuario';
+    document.getElementById('eswuEditUsuarioTitle').textContent = 'Nuevo Usuario';
     document.getElementById('eswuUsuarioId').value = '';
     document.getElementById('eswuUsuarioNombre').value = '';
     document.getElementById('eswuUsuarioEmail').value = '';
     document.getElementById('eswuUsuarioPassword').value = '';
     document.getElementById('eswuUsuarioNivel').value = '3';
     document.getElementById('eswuUsuarioActivo').checked = true;
-    document.getElementById('eswuDeleteUsuarioBtn').style.display = 'none';
     
     document.getElementById('eswuEditUsuarioModal').classList.add('active');
 }
@@ -204,7 +191,6 @@ async function saveEswuUsuario(event) {
             if (r.error) throw r.error;
         }
         
-        // Reload usuarios
         var res = await supabaseClient.from('usuarios').select('*');
         if (!res.error) usuarios = res.data || [];
         
@@ -215,36 +201,6 @@ async function saveEswuUsuario(event) {
     } finally {
         hideLoading();
     }
-}
-
-async function deleteEswuUsuario() {
-    var id = document.getElementById('eswuUsuarioId').value;
-    if (!id) return;
-    
-    var u = usuarios.find(function(x) { return x.id === parseInt(id); });
-    if (!confirm('¿Eliminar usuario "' + (u ? u.nombre : '') + '"?')) return;
-    
-    showLoading();
-    try {
-        var r = await supabaseClient.from('usuarios').delete().eq('id', parseInt(id));
-        if (r.error) throw r.error;
-        
-        var res = await supabaseClient.from('usuarios').select('*');
-        if (!res.error) usuarios = res.data || [];
-        
-        closeModal('eswuEditUsuarioModal');
-        renderEswuContacts();
-    } catch (e) {
-        alert('Error: ' + e.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-function editEswuUsuarios() {
-    // Pencil icon: expand contacts
-    eswuContactsExpanded = true;
-    renderEswuContacts();
 }
 
 // ============================================
@@ -271,12 +227,10 @@ async function loadEswuDocsTab(tipo) {
             return;
         }
         
-        // Init nav stack
         eswuNavStacks[tipo] = [{ label: ESWU_FOLDER_NAMES[tipo], folderId: eswuFolderIds[tipo] }];
         eswuCurrentFolders[tipo] = eswuFolderIds[tipo];
         
         await renderEswuFolder(tipo, eswuFolderIds[tipo]);
-        
     } catch (e) {
         console.error('Error cargando docs ESWU:', e);
         contentDiv.innerHTML = '<p style="color:var(--danger);text-align:center;padding:1rem;">Error: ' + e.message + '</p>';
@@ -295,10 +249,7 @@ async function renderEswuFolder(tipo, folderId) {
         eswuFolderContents[tipo] = allItems;
         eswuCurrentFolders[tipo] = folderId;
         
-        // Render breadcrumb
         renderEswuBreadcrumb(tipo);
-        
-        // Render items
         renderEswuDocsList(tipo, allItems);
     } catch (e) {
         contentDiv.innerHTML = '<p style="color:var(--danger);text-align:center;">Error: ' + e.message + '</p>';
@@ -331,8 +282,7 @@ function openEswuSubfolder(tipo, name, folderId) {
 
 function eswuNavTo(tipo, index) {
     eswuNavStacks[tipo] = eswuNavStacks[tipo].slice(0, index + 1);
-    var fid = eswuNavStacks[tipo][index].folderId;
-    renderEswuFolder(tipo, fid);
+    renderEswuFolder(tipo, eswuNavStacks[tipo][index].folderId);
 }
 
 function renderEswuDocsList(tipo, items) {
@@ -348,7 +298,6 @@ function renderEswuDocsList(tipo, items) {
     items.forEach(function(f) {
         var isFolder = f.mimeType === 'application/vnd.google-apps.folder';
         if (isFolder) {
-            // Click opens subfolder inline
             html += '<div onclick="openEswuSubfolder(\'' + tipo + '\', \'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 6px rgba(0,0,0,0.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
             html += '<span style="font-size:1.1rem;">📁</span>';
             html += '<span style="font-size:0.88rem;font-weight:500;">' + f.name + '</span>';
@@ -450,4 +399,4 @@ async function getOrCreateDocumentosGeneralesFolder() {
     return newFolder.id;
 }
 
-console.log('✅ ESWU-UI.JS v4 cargado');
+console.log('✅ ESWU-UI.JS v5 cargado');
