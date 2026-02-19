@@ -247,6 +247,10 @@ function switchTab(type, tabName) {
         } else if (tabName === 'mensajes') {
             document.querySelector('#eswuDocsPage .tab:nth-child(3)').classList.add('active');
             document.getElementById('eswuMensajesTab').classList.add('active');
+        } else if (tabName === 'bancos') {
+            document.querySelector('#eswuDocsPage .tab:nth-child(4)').classList.add('active');
+            document.getElementById('eswuBancosTab').classList.add('active');
+            if (typeof renderEswuBancosTable === 'function') renderEswuBancosTable();
         }
     }
 }
