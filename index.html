@@ -92,7 +92,6 @@
                 <button class="submenu-btn" onclick="showContabilidadPage()">Contabilidad</button>
                 <button class="submenu-btn" onclick="showPageFromMenu('estacionamiento')">Estacionamiento</button>
                 <button class="submenu-btn" onclick="showNumerosPage()">Números</button>
-                <button class="submenu-btn" onclick="showAdminView('usuarios')">Usuarios</button>
             </div>
 
             <div id="contentArea" class="content-area">
@@ -416,20 +415,6 @@
                     </div>
                 </div>
 
-                <div id="adminUsuariosPage" class="page">
-                    <div class="card">
-                        <div class="card-header">
-                            <h2 class="card-title">Usuarios</h2>
-                            <span onclick="showAddUsuarioModal()" title="Agregar usuario" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
-                        </div>
-                        <div class="table-container">
-                            <table id="usuariosTable" class="sticky-header-table">
-                                <thead><tr><th>Nombre</th><th>Email</th><th>Password</th><th>Nivel</th><th>Estado</th><th style="width:40px;"></th></tr></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
 
                 <div id="adminBancosPage" class="page">
                     <div class="card">
@@ -1445,7 +1430,10 @@
         <div class="modal-content" style="max-width:400px;">
             <div class="modal-header">
                 <h2 class="modal-title" id="eswuEditUsuarioTitle">Editar Usuario</h2>
-                <button class="close-modal" onclick="closeModal('eswuEditUsuarioModal')">×</button>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span onclick="document.getElementById('eswuEditUsuarioForm').requestSubmit()" title="Guardar" style="cursor:pointer; font-size:1.2rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</span>
+                    <button class="close-modal" onclick="closeModal('eswuEditUsuarioModal')">×</button>
+                </div>
             </div>
             <div style="padding:1rem 1.25rem;">
                 <form id="eswuEditUsuarioForm" onsubmit="saveEswuUsuario(event)">
@@ -1471,17 +1459,10 @@
                             <option value="4">4 - Contabilidad</option>
                         </select>
                     </div>
-                    <div style="margin-bottom:0.75rem;">
+                    <div style="margin-bottom:0.5rem;">
                         <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;">
                             <input type="checkbox" id="eswuUsuarioActivo" checked> Activo
                         </label>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <button type="button" id="eswuDeleteUsuarioBtn" onclick="deleteEswuUsuario()" style="background:none;border:1px solid var(--danger);color:var(--danger);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">Eliminar</button>
-                        <div style="display:flex;gap:0.4rem;">
-                            <button type="button" onclick="closeModal('eswuEditUsuarioModal')" style="background:none;border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">✕ Cancelar</button>
-                            <button type="submit" style="background:var(--primary);color:white;border:none;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">💾 Guardar</button>
-                        </div>
                     </div>
                 </form>
             </div>
