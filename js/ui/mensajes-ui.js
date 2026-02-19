@@ -339,7 +339,15 @@ function showNuevoMensajeFicha(tipo) {
         nombre = prov ? prov.nombre : '';
         id = currentProveedorId;
     } else if (tipo === 'eswu') {
-        nombre = 'Inmobiliaris ESWU';
+        // Subject depends on which ESWU tab is active
+        var activeTab = window.eswuActiveTab || 'mensajes';
+        if (activeTab === 'legales') {
+            nombre = 'ESWU-Documentos Legales';
+        } else if (activeTab === 'generales') {
+            nombre = 'ESWU-Documentos Generales';
+        } else {
+            nombre = 'Inmobiliaris ESWU';
+        }
         id = 0; // ID especial para ESWU
     }
     
@@ -397,6 +405,17 @@ async function submitNuevoMensaje(event) {
                         await supabaseClient.from('proveedores').update({ google_drive_folder_id: folderId }).eq('id', parseInt(refId));
                         prov.google_drive_folder_id = folderId;
                     }
+                }
+            } else if (refTipo === 'eswu') {
+                // Route based on which ESWU tab was active
+                var eswuTab = window.eswuActiveTab || 'mensajes';
+                if (eswuTab === 'legales') {
+                    folderId = await getOrCreateEswuDocsFolder('DOCUMENTOS LEGALES');
+                } else if (eswuTab === 'generales') {
+                    folderId = await getOrCreateEswuDocsFolder('DOCUMENTOS GENERALES');
+                } else {
+                    // Mensajes tab → Inmobiliaris ESWU/AÑO/MES/Reportes financieros
+                    folderId = await getOrCreateEswuReportesFolder();
                 }
             }
             
