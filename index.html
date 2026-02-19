@@ -87,7 +87,6 @@
 
             <div id="adminSubMenu" class="submenu-container">
                 <button class="submenu-btn" onclick="showActivosPage()">Activos</button>
-                <button class="submenu-btn" onclick="showAdminView('bancos')">Bancos</button>
                 <button class="submenu-btn" onclick="showPageFromMenu('bitacora')">Bitácora</button>
                 <button class="submenu-btn" onclick="showContabilidadPage()">Contabilidad</button>
                 <button class="submenu-btn" onclick="showPageFromMenu('estacionamiento')">Estacionamiento</button>
@@ -360,6 +359,7 @@
                                     <button class="tab active" onclick="switchTab('eswu', 'legales')">Documentos Legales</button>
                                     <button class="tab" onclick="switchTab('eswu', 'generales')">Documentos Generales</button>
                                     <button class="tab" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                                    <button class="tab" onclick="switchTab('eswu', 'bancos')">Bancos</button>
                                 </div>
                                 <div id="eswuLegalesTab" class="tab-content active">
                                     <div style="margin-bottom:0.5rem; display:flex; gap:0.5rem; align-items:center;">
@@ -379,6 +379,17 @@
                                 </div>
                                 <div id="eswuMensajesTab" class="tab-content">
                                     <div id="eswuMensajesFicha"></div>
+                                </div>
+                                <div id="eswuBancosTab" class="tab-content">
+                                    <div style="margin-bottom:0.5rem; display:flex; justify-content:flex-end;">
+                                        <span onclick="showAddBancoModal()" title="Agregar documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
+                                    </div>
+                                    <div class="table-container">
+                                        <table id="eswuBancosTable" class="sticky-header-table">
+                                            <thead><tr><th>Archivo</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -415,23 +426,6 @@
                     </div>
                 </div>
 
-
-                <div id="adminBancosPage" class="page">
-                    <div class="card">
-                        <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
-                            <h2 class="card-title">Bancos - Documentos</h2>
-                            <span onclick="showAddBancoModal()" title="Agregar documento" style="color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
-                        </div>
-                        <div class="table-container">
-                            <table id="bancosTable" class="sticky-header-table">
-                                <thead><tr><th>Archivo</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <!-- Vinculación tool area -->
-                        <div id="bancoVinculacionArea" style="display:none; padding:1rem; border-top:1px solid var(--border);"></div>
-                    </div>
-                </div>
 
                 <div id="estacionamientoPage" class="page">
                     <div class="card">
@@ -1421,13 +1415,6 @@
     
     <!-- SheetJS para exportar Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <!-- PDF.js for mobile PDF viewing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        if (typeof pdfjsLib !== 'undefined') {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        }
-    </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <!-- JavaScript Files -->
@@ -1477,7 +1464,7 @@
     </div>
 
     <script src="js/config.js?v=22"></script>
-    <script src="js/google-drive.js?v=27"></script>
+    <script src="js/google-drive.js?v=28"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=22"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
@@ -1485,12 +1472,12 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=23"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=23"></script>
+    <script src="js/ui/navigation.js?v=24"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
-    <script src="js/ui/eswu-ui.js?v=24"></script>
+    <script src="js/ui/eswu-ui.js?v=25"></script>
     <script src="js/ui/admin-ui.js?v=22"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
     <script src="js/ui/mensajes-ui.js?v=23"></script>
