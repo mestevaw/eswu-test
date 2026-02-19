@@ -1,12 +1,14 @@
 /* ========================================
-   GOOGLE-DRIVE.JS v1
-   OAuth + Drive API for Contabilidad
+   GOOGLE-DRIVE.JS v3
+   OAuth (persistent) + Drive API + Mobile PDF
    ======================================== */
 
 var gdriveAccessToken = null;
 var gdriveTokenClient = null;
 var gdriveInitialized = false;
 var gdriveAutoConnectAttempted = false;
+var gdriveTokenExpiry = 0;
+var gdriveRefreshTimer = null;
 
 // ============================================
 // INITIALIZATION
@@ -16,16 +18,29 @@ function initGoogleDrive() {
     if (gdriveInitialized) return;
     
     try {
+        // Restore token from storage if still valid
+        var storedToken = localStorage.getItem('gdrive_token');
+        var storedExpiry = parseInt(localStorage.getItem('gdrive_token_expiry') || '0');
+        var storedHint = localStorage.getItem('gdrive_login_hint') || '';
+        
+        if (storedToken && storedExpiry > Date.now() + 60000) {
+            gdriveAccessToken = storedToken;
+            gdriveTokenExpiry = storedExpiry;
+            scheduleTokenRefresh();
+            console.log('✅ Google Drive token restaurado (' + Math.round((storedExpiry - Date.now()) / 60000) + ' min restantes)');
+        }
+        
         gdriveTokenClient = google.accounts.oauth2.initTokenClient({
             client_id: GOOGLE_CLIENT_ID,
             scope: GOOGLE_SCOPES,
-            callback: handleGoogleAuthResponse
+            callback: handleGoogleAuthResponse,
+            hint: storedHint || undefined
         });
         gdriveInitialized = true;
         console.log('✅ Google Drive API inicializada');
         
-        // Try silent auto-connect if previously connected
-        if (!gdriveAutoConnectAttempted && localStorage.getItem('gdrive_was_connected') === 'true') {
+        // Auto-reconnect silently if previously connected but token expired
+        if (!gdriveAccessToken && !gdriveAutoConnectAttempted && localStorage.getItem('gdrive_was_connected') === 'true') {
             gdriveAutoConnectAttempted = true;
             tryAutoConnect();
         }
@@ -36,11 +51,34 @@ function initGoogleDrive() {
 
 function tryAutoConnect() {
     try {
-        gdriveTokenClient.requestAccessToken({ prompt: '' });
+        var hint = localStorage.getItem('gdrive_login_hint') || '';
+        gdriveTokenClient.requestAccessToken({ 
+            prompt: '', 
+            login_hint: hint || undefined 
+        });
     } catch (e) {
         console.log('Auto-connect silencioso no disponible');
     }
 }
+
+function scheduleTokenRefresh() {
+    if (gdriveRefreshTimer) clearTimeout(gdriveRefreshTimer);
+    
+    // Refresh 5 min before expiry
+    var msUntilRefresh = gdriveTokenExpiry - Date.now() - (5 * 60 * 1000);
+    if (msUntilRefresh < 10000) msUntilRefresh = 10000; // min 10s
+    
+    gdriveRefreshTimer = setTimeout(function() {
+        console.log('🔄 Auto-refrescando token de Google Drive...');
+        tryAutoConnect();
+    }, msUntilRefresh);
+    
+    console.log('⏱️ Token refresh programado en ' + Math.round(msUntilRefresh / 60000) + ' min');
+}
+
+// ============================================
+// AUTH RESPONSE
+// ============================================
 
 var gdrivePostConnectCallbacks = [];
 
@@ -51,21 +89,37 @@ function handleGoogleAuthResponse(response) {
         } else {
             console.error('Google Auth error:', response.error);
         }
-        // Clear pending callbacks on error
         gdrivePostConnectCallbacks = [];
         return;
     }
     
     gdriveAccessToken = response.access_token;
-    localStorage.setItem('gdrive_was_connected', 'true');
-    console.log('✅ Google Drive conectado');
     
-    // Refresh contabilidad view
+    // Persist token + expiry
+    var expiresIn = (response.expires_in || 3600) * 1000;
+    gdriveTokenExpiry = Date.now() + expiresIn;
+    localStorage.setItem('gdrive_was_connected', 'true');
+    localStorage.setItem('gdrive_token', gdriveAccessToken);
+    localStorage.setItem('gdrive_token_expiry', String(gdriveTokenExpiry));
+    
+    // Schedule auto-refresh before expiry
+    scheduleTokenRefresh();
+    
+    console.log('✅ Google Drive conectado (' + Math.round(expiresIn / 60000) + ' min)');
+    
+    // Save login_hint (skips account picker next time)
+    fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    }).then(function(r) { return r.json(); }).then(function(info) {
+        if (info.email) {
+            localStorage.setItem('gdrive_login_hint', info.email);
+        }
+    }).catch(function() {});
+    
+    // Refresh active views
     if (typeof renderContabilidadContent === 'function') {
         renderContabilidadContent();
     }
-    
-    // Refresh ESWU docs if ficha is visible
     var eswuPage = document.getElementById('eswuDocsPage');
     if (eswuPage && eswuPage.classList.contains('active')) {
         if (typeof loadEswuDocsTab === 'function') {
@@ -74,7 +128,7 @@ function handleGoogleAuthResponse(response) {
         }
     }
     
-    // Execute any post-connect callbacks (e.g., pending file views)
+    // Execute pending callbacks
     var cbs = gdrivePostConnectCallbacks;
     gdrivePostConnectCallbacks = [];
     cbs.forEach(function(cb) { try { cb(); } catch(e) {} });
@@ -85,25 +139,60 @@ function googleSignIn() {
         initGoogleDrive();
     }
     
-    if (gdriveAccessToken) {
-        if (typeof renderContabilidadContent === 'function') {
-            renderContabilidadContent();
-        }
+    // Token still valid → just refresh views
+    if (gdriveAccessToken && gdriveTokenExpiry > Date.now() + 60000) {
+        if (typeof renderContabilidadContent === 'function') renderContabilidadContent();
         return;
     }
     
-    gdriveTokenClient.requestAccessToken({ prompt: 'consent' });
+    gdriveAccessToken = null;
+    
+    var hint = localStorage.getItem('gdrive_login_hint') || '';
+    gdriveTokenClient.requestAccessToken({ 
+        prompt: hint ? '' : 'consent',
+        login_hint: hint || undefined
+    });
 }
 
 function isGoogleConnected() {
-    return !!gdriveAccessToken;
+    // Also check expiry
+    if (gdriveAccessToken && gdriveTokenExpiry > Date.now() + 30000) {
+        return true;
+    }
+    // Token expired — try silent refresh if possible
+    if (gdriveAccessToken && gdriveTokenExpiry <= Date.now() + 30000) {
+        gdriveAccessToken = null;
+        localStorage.removeItem('gdrive_token');
+        if (gdriveTokenClient && localStorage.getItem('gdrive_was_connected') === 'true') {
+            tryAutoConnect();
+        }
+    }
+    return false;
+}
+
+// Ensure valid token before API call (returns promise)
+async function ensureGdriveToken() {
+    if (gdriveAccessToken && gdriveTokenExpiry > Date.now() + 30000) {
+        return true;
+    }
+    
+    // Try silent refresh
+    return new Promise(function(resolve) {
+        gdrivePostConnectCallbacks.push(function() {
+            resolve(!!gdriveAccessToken);
+        });
+        
+        // Timeout after 5s
+        setTimeout(function() { resolve(false); }, 5000);
+        
+        tryAutoConnect();
+    });
 }
 
 // ============================================
 // DRIVE API - LIST FOLDER CONTENTS
 // ============================================
 
-// Safety: extract ID from object or JSON string
 function sanitizeDriveId(id) {
     if (!id) return id;
     if (typeof id === 'object' && id.id) return id.id;
@@ -131,7 +220,6 @@ async function listDriveFolder(folderId) {
     
     const data = await response.json();
     
-    // Separate folders and files, sort alphabetically
     const folders = (data.files || [])
         .filter(f => f.mimeType === 'application/vnd.google-apps.folder')
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -144,16 +232,14 @@ async function listDriveFolder(folderId) {
 }
 
 // ============================================
-// DRIVE API - CREATE FOLDER
+// DRIVE API - UPLOAD, CREATE FOLDER, SEARCH
 // ============================================
 
-async function createDriveFolder(name, parentFolderId) {
-    if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
-    
+async function createDriveFolder(folderName, parentId) {
     const metadata = {
-        name: name,
+        name: folderName,
         mimeType: 'application/vnd.google-apps.folder',
-        parents: [parentFolderId]
+        parents: parentId ? [parentId] : []
     };
     
     const response = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name,webViewLink', {
@@ -173,26 +259,21 @@ async function createDriveFolder(name, parentFolderId) {
     return await response.json();
 }
 
-// ============================================
-// DRIVE API - UPLOAD FILE
-// ============================================
-
 async function uploadFileToDrive(file, folderId) {
-    if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
-    folderId = sanitizeDriveId(folderId);
-    
     const metadata = {
         name: file.name,
-        parents: [folderId]
+        parents: folderId ? [folderId] : []
     };
     
     const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
     form.append('file', file);
     
     const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken },
+        headers: {
+            'Authorization': 'Bearer ' + gdriveAccessToken
+        },
         body: form
     });
     
@@ -204,14 +285,10 @@ async function uploadFileToDrive(file, folderId) {
     return await response.json();
 }
 
-// ============================================
-// DRIVE API - SEARCH FILES
-// ============================================
-
-async function searchDriveFiles(searchTerm, rootFolderIds) {
+async function searchDriveFiles(queryText) {
     if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
     
-    const query = `name contains '${searchTerm.replace(/'/g, "\\'")}' and trashed = false`;
+    const query = `fullText contains '${queryText.replace(/'/g, "\\'")}' and trashed = false`;
     const url = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size,modifiedTime,webViewLink,parents)&orderBy=modifiedTime desc&pageSize=50&key=${GOOGLE_API_KEY}`;
     
     const response = await fetch(url, {
@@ -220,74 +297,12 @@ async function searchDriveFiles(searchTerm, rootFolderIds) {
     
     if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error?.message || 'Error buscando archivos');
+        throw new Error(err.error?.message || 'Error buscando');
     }
     
     const data = await response.json();
-    var files = data.files || [];
-    
-    // Resolve paths in 3 parallel batches (subfolder → month → year)
-    var cache = {};
-    
-    // Batch 1: Get all unique parent IDs (subfolder level)
-    var parentIds = [...new Set(files.map(f => f.parents && f.parents[0]).filter(Boolean))];
-    await fetchFoldersBatch(parentIds, cache);
-    
-    // Batch 2: Get month level (parents of subfolders)
-    var monthIds = [...new Set(parentIds.map(id => cache[id] && cache[id].parents && cache[id].parents[0]).filter(Boolean))];
-    await fetchFoldersBatch(monthIds, cache);
-    
-    // Batch 3: Get year level (parents of months)
-    var yearIds = [...new Set(monthIds.map(id => cache[id] && cache[id].parents && cache[id].parents[0]).filter(Boolean))];
-    await fetchFoldersBatch(yearIds, cache);
-    
-    // Assign resolved paths to files
-    for (var i = 0; i < files.length; i++) {
-        var f = files[i];
-        var parentId = f.parents && f.parents[0];
-        if (!parentId || !cache[parentId]) continue;
-        
-        f._subfolder = cache[parentId].name || '';
-        var monthId = cache[parentId].parents && cache[parentId].parents[0];
-        if (monthId && cache[monthId]) {
-            f._month = cache[monthId].name || '';
-            var yearId = cache[monthId].parents && cache[monthId].parents[0];
-            if (yearId && cache[yearId]) {
-                f._year = cache[yearId].name || '';
-            }
-        }
-    }
-    
-    return files;
+    return data.files || [];
 }
-
-async function fetchFoldersBatch(ids, cache) {
-    if (!ids.length) return;
-    // Fetch all in parallel
-    var promises = ids.filter(id => !cache[id]).map(id =>
-        fetch(`https://www.googleapis.com/drive/v3/files/${id}?fields=name,parents&key=${GOOGLE_API_KEY}`, {
-            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-        })
-        .then(r => r.ok ? r.json() : { name: '', parents: [] })
-        .then(data => { cache[id] = data; })
-        .catch(() => { cache[id] = { name: '', parents: [] }; })
-    );
-    await Promise.all(promises);
-}
-
-// ============================================
-// HELPER - Extract folder ID from URL
-// ============================================
-
-function extractFolderId(url) {
-    if (!url) return null;
-    const match = url.match(/folders\/([a-zA-Z0-9_-]+)/);
-    return match ? match[1] : null;
-}
-
-// ============================================
-// HELPER - Extract file ID from URL
-// ============================================
 
 function extractFileId(url) {
     if (!url) return null;
@@ -295,22 +310,22 @@ function extractFileId(url) {
     return match ? match[1] : null;
 }
 
-// ============================================
-// HELPER - Get Google Drive preview URL
-// ============================================
-
 function getGooglePreviewUrl(fileId) {
-    return `https://drive.google.com/file/d/${fileId}/preview`;
+    return 'https://drive.google.com/file/d/' + fileId + '/preview';
 }
 
 // ============================================
-// INLINE VIEWER - View Drive file in app (using API token)
+// INLINE VIEWER — Mobile-friendly with PDF.js
 // ============================================
 
-var pendingViewFile = null; // queued file view after auth
+var pendingViewFile = null;
+
+function isMobileDevice() {
+    return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+           (navigator.maxTouchPoints > 0 && window.innerWidth < 900);
+}
 
 async function viewDriveFileInline(fileId, fileName) {
-    // If no token, show connect prompt in the viewer itself
     if (!gdriveAccessToken) {
         pendingViewFile = { fileId: fileId, fileName: fileName };
         showDriveViewerOverlay(fileName);
@@ -341,7 +356,7 @@ function showDriveViewerOverlay(fileName) {
             '<span style="font-size:0.9rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + (fileName || 'Documento') + '</span>' +
             '<button onclick="closeDriveViewer()" style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">✕</button>' +
         '</div>' +
-        '<div id="driveViewerContent" style="flex:1; display:flex; align-items:center; justify-content:center; overflow:auto;">' +
+        '<div id="driveViewerContent" style="flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; -webkit-overflow-scrolling:touch;">' +
             '<p style="color:var(--text-light);">Cargando documento...</p>' +
         '</div>';
 }
@@ -364,7 +379,6 @@ async function loadFileInViewer(fileId, fileName) {
     if (!contentDiv) return;
     
     try {
-        // Get file metadata
         var metaResp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?fields=mimeType,name,webViewLink&key=' + GOOGLE_API_KEY, {
             headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
         });
@@ -376,39 +390,46 @@ async function loadFileInViewer(fileId, fileName) {
         
         var meta = await metaResp.json();
         var mimeType = meta.mimeType || '';
+        var isPdf = mimeType.includes('pdf');
+        var isGoogleDoc = mimeType.includes('google-apps.document') || mimeType.includes('google-apps.spreadsheet') || mimeType.includes('google-apps.presentation');
         
-        // Google native docs → export as PDF
-        if (mimeType.includes('google-apps.document') || mimeType.includes('google-apps.spreadsheet') || mimeType.includes('google-apps.presentation')) {
-            var exportUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '/export?mimeType=application/pdf';
-            var resp = await fetch(exportUrl, { headers: { 'Authorization': 'Bearer ' + gdriveAccessToken } });
-            if (!resp.ok) throw new Error('Error exportando documento');
-            var blob = await resp.blob();
-            var blobUrl = URL.createObjectURL(blob);
-            contentDiv.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
-            return;
+        // Download the file (export Google docs as PDF)
+        var downloadUrl;
+        if (isGoogleDoc) {
+            downloadUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '/export?mimeType=application/pdf';
+            isPdf = true;
+        } else {
+            downloadUrl = 'https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media';
         }
         
-        // PDF / images → download with alt=media
-        if (mimeType.includes('pdf') || mimeType.includes('image/')) {
-            var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?alt=media', {
+        if (isPdf || mimeType.includes('image/')) {
+            var resp = await fetch(downloadUrl, {
                 headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
             });
             if (!resp.ok) throw new Error('Error descargando archivo');
             var blob = await resp.blob();
-            var blobUrl = URL.createObjectURL(new Blob([blob], { type: mimeType }));
             
-            if (mimeType.includes('image/')) {
+            if (mimeType.includes('image/') && !isPdf) {
+                // Images — simple display
+                var blobUrl = URL.createObjectURL(new Blob([blob], { type: mimeType }));
                 contentDiv.innerHTML = '<img src="' + blobUrl + '" style="max-width:100%;max-height:100%;object-fit:contain;" />';
+                return;
+            }
+            
+            // PDF — use PDF.js on mobile, iframe on desktop
+            if (isPdf && isMobileDevice() && typeof pdfjsLib !== 'undefined') {
+                await renderPdfMobile(blob, contentDiv);
             } else {
-                contentDiv.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
+                var blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+                contentDiv.innerHTML = '<iframe src="' + blobUrl + '#zoom=page-width" style="width:100%;height:100%;border:none;"></iframe>';
             }
             return;
         }
         
-        // Other files → link to open in Drive
+        // Other files
         contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
             '<p style="margin-bottom:1rem;">Este tipo de archivo no se puede previsualizar.</p>' +
-            (meta.webViewLink ? '<a href="' + meta.webViewLink + '" target="_blank" style="color:var(--primary);text-decoration:underline;font-size:0.95rem;">Abrir en Google Drive</a>' : '') +
+            (meta.webViewLink ? '<a href="' + meta.webViewLink + '" target="_blank" style="color:var(--primary);text-decoration:underline;">Abrir en Google Drive</a>' : '') +
             '</div>';
         
     } catch (e) {
@@ -420,8 +441,67 @@ async function loadFileInViewer(fileId, fileName) {
     }
 }
 
+// ============================================
+// PDF.JS MOBILE RENDERER
+// ============================================
+
+async function renderPdfMobile(blob, container) {
+    container.innerHTML = '<p style="color:var(--text-light);">Renderizando PDF...</p>';
+    
+    try {
+        var arrayBuf = await blob.arrayBuffer();
+        var pdf = await pdfjsLib.getDocument({ data: arrayBuf }).promise;
+        var totalPages = pdf.numPages;
+        
+        // Create scrollable container
+        var scrollDiv = document.createElement('div');
+        scrollDiv.style.cssText = 'width:100%; height:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; background:#f5f5f5; padding:0;';
+        container.innerHTML = '';
+        container.style.display = 'block';
+        container.style.overflow = 'hidden';
+        container.appendChild(scrollDiv);
+        
+        var containerWidth = container.clientWidth || window.innerWidth;
+        
+        for (var i = 1; i <= totalPages; i++) {
+            var page = await pdf.getPage(i);
+            var viewport = page.getViewport({ scale: 1 });
+            
+            // Scale to fit container width
+            var scale = (containerWidth - 8) / viewport.width; // 4px margin each side
+            var scaledViewport = page.getViewport({ scale: scale });
+            
+            var canvas = document.createElement('canvas');
+            canvas.width = scaledViewport.width;
+            canvas.height = scaledViewport.height;
+            canvas.style.cssText = 'display:block; margin:4px auto; background:white; box-shadow:0 1px 4px rgba(0,0,0,0.15);';
+            
+            scrollDiv.appendChild(canvas);
+            
+            var ctx = canvas.getContext('2d');
+            await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+        }
+        
+        // Page counter
+        var counter = document.createElement('div');
+        counter.style.cssText = 'text-align:center; padding:0.5rem; font-size:0.75rem; color:var(--text-light);';
+        counter.textContent = totalPages + (totalPages === 1 ? ' página' : ' páginas');
+        scrollDiv.appendChild(counter);
+        
+    } catch (e) {
+        console.error('PDF.js render error:', e);
+        // Fallback: iframe
+        var blobUrl = URL.createObjectURL(blob);
+        container.innerHTML = '<iframe src="' + blobUrl + '" style="width:100%;height:100%;border:none;"></iframe>';
+    }
+}
+
+// ============================================
+// CLOSE VIEWER
+// ============================================
+
 function closeDriveViewer() {
-    const overlay = document.getElementById('driveViewerOverlay');
+    var overlay = document.getElementById('driveViewerOverlay');
     if (overlay) overlay.remove();
 }
 
@@ -442,7 +522,6 @@ function formatFileSize(bytes) {
 // ============================================
 
 async function getOrCreateInquilinoFolder(inquilinoNombre) {
-    // Search for "Inquilinos" parent folder in Drive
     var q = "name = 'Inquilinos' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
     var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
@@ -455,7 +534,6 @@ async function getOrCreateInquilinoFolder(inquilinoNombre) {
     
     var inquilinosParentId = data.files[0].id;
     
-    // Search for inquilino subfolder
     var safeName = inquilinoNombre.replace(/'/g, "\\'");
     var q2 = "'" + inquilinosParentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
     var resp2 = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q2) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
@@ -467,7 +545,6 @@ async function getOrCreateInquilinoFolder(inquilinoNombre) {
         return data2.files[0].id;
     }
     
-    // Create it
     var newFolder = await createDriveFolder(inquilinoNombre, inquilinosParentId);
     return newFolder.id;
 }
@@ -504,4 +581,4 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
     return newFolder.id;
 }
 
-console.log('✅ GOOGLE-DRIVE.JS v2 cargado');
+console.log('✅ GOOGLE-DRIVE.JS v3 cargado');
