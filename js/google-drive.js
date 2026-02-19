@@ -60,6 +60,15 @@ function handleGoogleAuthResponse(response) {
     if (typeof renderContabilidadContent === 'function') {
         renderContabilidadContent();
     }
+    
+    // Refresh ESWU docs if ficha is visible
+    var eswuPage = document.getElementById('eswuDocsPage');
+    if (eswuPage && eswuPage.classList.contains('active')) {
+        if (typeof loadEswuDocsTab === 'function') {
+            loadEswuDocsTab('legales');
+            loadEswuDocsTab('generales');
+        }
+    }
 }
 
 function googleSignIn() {
