@@ -1,10 +1,12 @@
 /* ========================================
-   ESWU-UI.JS v3
-   Ficha ESWU - Acta, Contactos, Docs, Mensajes
+   ESWU-UI.JS v4
+   Ficha ESWU - Subfolder nav, User edit, Docs, Msgs
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
 var eswuFolderContents = { legales: [], generales: [] };
+var eswuNavStacks = { legales: [], generales: [] }; // breadcrumb per tab
+var eswuCurrentFolders = { legales: null, generales: null };
 
 var ESWU_FOLDER_NAMES = {
     generales: 'DOCUMENTOS GENERALES',
@@ -18,7 +20,6 @@ var ESWU_FOLDER_NAMES = {
 function showEswuFicha() {
     document.querySelectorAll('.submenu-container').forEach(function(s) { s.classList.remove('active'); });
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
-    
     document.getElementById('eswuDocsPage').classList.add('active');
     
     currentSubContext = 'eswu-docs';
@@ -32,10 +33,6 @@ function showEswuFicha() {
     
     renderEswuFicha();
 }
-
-// ============================================
-// RENDER FICHA
-// ============================================
 
 function renderEswuFicha() {
     renderEswuActa();
@@ -57,62 +54,36 @@ function renderEswuActa() {
     var fileName = localStorage.getItem('eswu_acta_file_name') || 'Acta Constitutiva';
     
     var html = '<div style="display:flex;gap:0.4rem;align-items:stretch;flex-wrap:wrap;">';
-    
     if (fileId) {
-        // Tiene acta: mostrar link + botón cambiar
         html += '<div style="flex:1;min-width:200px;background:var(--bg);border-radius:6px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.4rem;">';
-        html += '<div style="flex:1;">';
-        html += '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
-        html += '<span onclick="viewDriveFileInline(\'' + fileId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')" style="font-size:0.85rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📄 ' + fileName + '</span>';
-        html += '</div>';
-        html += '<span onclick="selectEswuActa()" title="Cambiar documento" style="cursor:pointer;font-size:1rem;padding:0.2rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'">🔄</span>';
+        html += '<div style="flex:1;"><div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
+        html += '<span onclick="viewDriveFileInline(\'' + fileId + '\', \'' + fileName.replace(/'/g, "\\'") + '\')" style="font-size:0.85rem;color:var(--primary);cursor:pointer;text-decoration:underline;">📄 ' + fileName + '</span></div>';
+        html += '<span onclick="selectEswuActa()" title="Cambiar" style="cursor:pointer;font-size:1rem;padding:0.2rem;border-radius:4px;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'">🔄</span>';
         html += '</div>';
     } else {
-        // No tiene acta: mostrar + para seleccionar
         html += '<div style="flex:1;min-width:200px;background:var(--bg);border-radius:6px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.4rem;">';
-        html += '<div style="flex:1;">';
-        html += '<div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
-        html += '<span style="font-size:0.82rem;color:var(--text-light);font-style:italic;">No vinculada</span>';
-        html += '</div>';
-        html += '<span onclick="selectEswuActa()" title="Seleccionar Acta Constitutiva" style="color:var(--success);font-size:1.4rem;font-weight:700;cursor:pointer;padding:0 0.3rem;">+</span>';
+        html += '<div style="flex:1;"><div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Acta Constitutiva</div>';
+        html += '<span style="font-size:0.82rem;color:var(--text-light);font-style:italic;">No vinculada</span></div>';
+        html += '<span onclick="selectEswuActa()" title="Seleccionar" style="color:var(--success);font-size:1.4rem;font-weight:700;cursor:pointer;padding:0 0.3rem;">+</span>';
         html += '</div>';
     }
-    
     html += '</div>';
     div.innerHTML = html;
 }
 
 async function selectEswuActa() {
-    // Buscar en Documentos Legales
-    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        alert('Conecta Google Drive primero');
-        return;
-    }
-    
-    if (!eswuFolderIds.legales) {
-        eswuFolderIds.legales = await findEswuFolder(ESWU_FOLDER_NAMES.legales);
-    }
-    
-    if (!eswuFolderIds.legales) {
-        alert('No se encontró la carpeta DOCUMENTOS LEGALES');
-        return;
-    }
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+    if (!eswuFolderIds.legales) eswuFolderIds.legales = await findEswuFolder(ESWU_FOLDER_NAMES.legales);
+    if (!eswuFolderIds.legales) { alert('No se encontró DOCUMENTOS LEGALES'); return; }
     
     showLoading();
     try {
         var result = await listDriveFolder(eswuFolderIds.legales);
         var files = (result.folders || []).concat(result.files || []);
         hideLoading();
+        if (files.length === 0) { alert('No hay archivos en DOCUMENTOS LEGALES'); return; }
         
-        if (files.length === 0) {
-            alert('No hay archivos en DOCUMENTOS LEGALES');
-            return;
-        }
-        
-        // Mostrar selector simple
-        var options = files.map(function(f) { return f.name; });
-        var selected = prompt('Selecciona el número del documento:\n\n' + options.map(function(n, i) { return (i + 1) + '. ' + n; }).join('\n'));
-        
+        var selected = prompt('Selecciona el número:\n\n' + files.map(function(n, i) { return (i+1) + '. ' + n.name; }).join('\n'));
         if (selected) {
             var idx = parseInt(selected) - 1;
             if (idx >= 0 && idx < files.length) {
@@ -121,14 +92,11 @@ async function selectEswuActa() {
                 renderEswuActa();
             }
         }
-    } catch (e) {
-        hideLoading();
-        alert('Error: ' + e.message);
-    }
+    } catch (e) { hideLoading(); alert('Error: ' + e.message); }
 }
 
 // ============================================
-// CONTACTOS (dropdown expandible)
+// CONTACTOS (collapsible, first name only)
 // ============================================
 
 var eswuContactsExpanded = false;
@@ -137,56 +105,150 @@ function renderEswuContacts() {
     var div = document.getElementById('eswuContactsList');
     var activeUsers = (typeof usuarios !== 'undefined') ? usuarios.filter(function(u) { return u.activo; }) : [];
     
-    if (activeUsers.length === 0) {
-        div.innerHTML = '';
-        return;
-    }
+    if (activeUsers.length === 0) { div.innerHTML = ''; return; }
     
-    var summary = activeUsers.map(function(u) { return u.nombre; }).join(', ');
+    var firstName = activeUsers[0].nombre;
+    var moreCount = activeUsers.length - 1;
+    var summaryText = firstName + (moreCount > 0 ? ' <span style="color:var(--text-light);font-size:0.75rem;">+' + moreCount + ' más</span>' : '');
     
     var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;margin-bottom:0.3rem;">';
     html += '<div onclick="toggleEswuContacts()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">';
-    html += '<div><span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Contactos</span> <span style="font-size:0.8rem;color:var(--text);">' + summary + '</span></div>';
-    html += '<span style="font-size:0.8rem;color:var(--text-light);transition:transform 0.2s;" id="eswuContactsArrow">' + (eswuContactsExpanded ? '▲' : '▼') + '</span>';
+    html += '<div><span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;margin-right:0.3rem;">Contactos</span>' + summaryText + '</div>';
+    html += '<span style="font-size:0.75rem;color:var(--text-light);" id="eswuContactsArrow">' + (eswuContactsExpanded ? '▲' : '▼') + '</span>';
     html += '</div>';
     
     html += '<div id="eswuContactsDetail" style="' + (eswuContactsExpanded ? '' : 'display:none;') + 'margin-top:0.4rem;">';
     html += '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">';
     activeUsers.forEach(function(u) {
-        html += '<div style="flex:1;min-width:160px;background:white;border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.5rem;">';
+        var nivel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
+        html += '<div style="flex:1;min-width:150px;background:white;border:1px solid var(--border);border-radius:6px;padding:0.35rem 0.5rem;display:flex;align-items:center;gap:0.3rem;">';
+        html += '<div style="flex:1;">';
         html += '<div style="font-size:0.85rem;font-weight:600;">' + u.nombre + '</div>';
-        if (u.email) html += '<div style="font-size:0.75rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
-        var nivelLabel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
-        if (nivelLabel) html += '<div style="font-size:0.7rem;color:var(--primary);">' + nivelLabel + '</div>';
+        if (u.email) html += '<div style="font-size:0.72rem;color:var(--text-light);">✉️ ' + u.email + '</div>';
+        if (nivel) html += '<div style="font-size:0.68rem;color:var(--primary);">' + nivel + '</div>';
+        html += '</div>';
+        html += '<span onclick="event.stopPropagation();showEswuEditUsuario(' + u.id + ')" title="Editar" style="cursor:pointer;font-size:0.85rem;padding:0.15rem;border-radius:4px;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'">✏️</span>';
         html += '</div>';
     });
     html += '</div>';
+    // Add user button
+    html += '<div style="margin-top:0.3rem;text-align:center;">';
+    html += '<span onclick="showEswuAddUsuario()" style="color:var(--success);font-size:1.2rem;font-weight:700;cursor:pointer;padding:0.1rem 0.5rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'" title="Agregar usuario">+</span>';
     html += '</div>';
-    html += '</div>';
+    html += '</div></div>';
     
     div.innerHTML = html;
 }
 
 function toggleEswuContacts() {
     eswuContactsExpanded = !eswuContactsExpanded;
-    var detail = document.getElementById('eswuContactsDetail');
-    var arrow = document.getElementById('eswuContactsArrow');
-    if (detail) detail.style.display = eswuContactsExpanded ? '' : 'none';
-    if (arrow) arrow.textContent = eswuContactsExpanded ? '▲' : '▼';
-}
-
-function editEswuUsuarios() {
-    // Navegar a Admin > Usuarios
-    showSubMenu('admin');
-    setTimeout(function() {
-        if (typeof showAdminView === 'function') {
-            showAdminView('usuarios');
-        }
-    }, 100);
+    var d = document.getElementById('eswuContactsDetail');
+    var a = document.getElementById('eswuContactsArrow');
+    if (d) d.style.display = eswuContactsExpanded ? '' : 'none';
+    if (a) a.textContent = eswuContactsExpanded ? '▲' : '▼';
 }
 
 // ============================================
-// LOAD DOCS TAB
+// USUARIO EDIT MODAL (within ESWU)
+// ============================================
+
+function showEswuEditUsuario(id) {
+    var u = usuarios.find(function(x) { return x.id === id; });
+    if (!u) return;
+    
+    document.getElementById('eswuEditUsuarioTitle').textContent = 'Editar: ' + u.nombre;
+    document.getElementById('eswuUsuarioId').value = u.id;
+    document.getElementById('eswuUsuarioNombre').value = u.nombre;
+    document.getElementById('eswuUsuarioEmail').value = u.email || '';
+    document.getElementById('eswuUsuarioPassword').value = u.password || '';
+    document.getElementById('eswuUsuarioNivel').value = u.nivel || 4;
+    document.getElementById('eswuUsuarioActivo').checked = u.activo !== false;
+    document.getElementById('eswuDeleteUsuarioBtn').style.display = '';
+    
+    document.getElementById('eswuEditUsuarioModal').classList.add('active');
+}
+
+function showEswuAddUsuario() {
+    document.getElementById('eswuEditUsuarioTitle').textContent = 'Agregar Usuario';
+    document.getElementById('eswuUsuarioId').value = '';
+    document.getElementById('eswuUsuarioNombre').value = '';
+    document.getElementById('eswuUsuarioEmail').value = '';
+    document.getElementById('eswuUsuarioPassword').value = '';
+    document.getElementById('eswuUsuarioNivel').value = '3';
+    document.getElementById('eswuUsuarioActivo').checked = true;
+    document.getElementById('eswuDeleteUsuarioBtn').style.display = 'none';
+    
+    document.getElementById('eswuEditUsuarioModal').classList.add('active');
+}
+
+async function saveEswuUsuario(event) {
+    event.preventDefault();
+    var id = document.getElementById('eswuUsuarioId').value;
+    var data = {
+        nombre: document.getElementById('eswuUsuarioNombre').value.trim(),
+        email: document.getElementById('eswuUsuarioEmail').value.trim(),
+        password: document.getElementById('eswuUsuarioPassword').value,
+        nivel: parseInt(document.getElementById('eswuUsuarioNivel').value),
+        activo: document.getElementById('eswuUsuarioActivo').checked
+    };
+    
+    if (!data.nombre || !data.password) { alert('Nombre y password son requeridos'); return; }
+    
+    showLoading();
+    try {
+        if (id) {
+            var r = await supabaseClient.from('usuarios').update(data).eq('id', parseInt(id));
+            if (r.error) throw r.error;
+        } else {
+            var r = await supabaseClient.from('usuarios').insert([data]);
+            if (r.error) throw r.error;
+        }
+        
+        // Reload usuarios
+        var res = await supabaseClient.from('usuarios').select('*');
+        if (!res.error) usuarios = res.data || [];
+        
+        closeModal('eswuEditUsuarioModal');
+        renderEswuContacts();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function deleteEswuUsuario() {
+    var id = document.getElementById('eswuUsuarioId').value;
+    if (!id) return;
+    
+    var u = usuarios.find(function(x) { return x.id === parseInt(id); });
+    if (!confirm('¿Eliminar usuario "' + (u ? u.nombre : '') + '"?')) return;
+    
+    showLoading();
+    try {
+        var r = await supabaseClient.from('usuarios').delete().eq('id', parseInt(id));
+        if (r.error) throw r.error;
+        
+        var res = await supabaseClient.from('usuarios').select('*');
+        if (!res.error) usuarios = res.data || [];
+        
+        closeModal('eswuEditUsuarioModal');
+        renderEswuContacts();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function editEswuUsuarios() {
+    // Pencil icon: expand contacts
+    eswuContactsExpanded = true;
+    renderEswuContacts();
+}
+
+// ============================================
+// DOCS TABS - WITH SUBFOLDER NAVIGATION
 // ============================================
 
 async function loadEswuDocsTab(tipo) {
@@ -194,7 +256,7 @@ async function loadEswuDocsTab(tipo) {
     if (!contentDiv) return;
     
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);margin-bottom:0.5rem;">Conecta Google Drive para ver documentos.</p></div>';
+        contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);">Conecta Google Drive para ver documentos.</p></div>';
         return;
     }
     
@@ -204,21 +266,73 @@ async function loadEswuDocsTab(tipo) {
         if (!eswuFolderIds[tipo]) {
             eswuFolderIds[tipo] = await findEswuFolder(ESWU_FOLDER_NAMES[tipo]);
         }
-        
         if (!eswuFolderIds[tipo]) {
-            contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">No se encontró la carpeta "' + ESWU_FOLDER_NAMES[tipo] + '" en Google Drive.</p>';
+            contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">No se encontró "' + ESWU_FOLDER_NAMES[tipo] + '" en Drive.</p>';
             return;
         }
         
-        var result = await listDriveFolder(eswuFolderIds[tipo]);
-        var allItems = (result.folders || []).concat(result.files || []);
-        eswuFolderContents[tipo] = allItems;
-        renderEswuDocsList(tipo, allItems);
+        // Init nav stack
+        eswuNavStacks[tipo] = [{ label: ESWU_FOLDER_NAMES[tipo], folderId: eswuFolderIds[tipo] }];
+        eswuCurrentFolders[tipo] = eswuFolderIds[tipo];
+        
+        await renderEswuFolder(tipo, eswuFolderIds[tipo]);
         
     } catch (e) {
         console.error('Error cargando docs ESWU:', e);
         contentDiv.innerHTML = '<p style="color:var(--danger);text-align:center;padding:1rem;">Error: ' + e.message + '</p>';
     }
+}
+
+async function renderEswuFolder(tipo, folderId) {
+    var contentDiv = document.getElementById('eswu' + cap(tipo) + 'Content');
+    if (!contentDiv) return;
+    
+    contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:0.5rem;">Cargando...</p>';
+    
+    try {
+        var result = await listDriveFolder(folderId);
+        var allItems = (result.folders || []).concat(result.files || []);
+        eswuFolderContents[tipo] = allItems;
+        eswuCurrentFolders[tipo] = folderId;
+        
+        // Render breadcrumb
+        renderEswuBreadcrumb(tipo);
+        
+        // Render items
+        renderEswuDocsList(tipo, allItems);
+    } catch (e) {
+        contentDiv.innerHTML = '<p style="color:var(--danger);text-align:center;">Error: ' + e.message + '</p>';
+    }
+}
+
+function renderEswuBreadcrumb(tipo) {
+    var bcDiv = document.getElementById('eswu' + cap(tipo) + 'Breadcrumb');
+    if (!bcDiv) return;
+    
+    var stack = eswuNavStacks[tipo] || [];
+    if (stack.length <= 1) { bcDiv.innerHTML = ''; return; }
+    
+    var html = '';
+    stack.forEach(function(item, i) {
+        if (i > 0) html += ' <span style="color:var(--text-light);margin:0 0.15rem;">›</span> ';
+        if (i < stack.length - 1) {
+            html += '<span onclick="eswuNavTo(\'' + tipo + '\',' + i + ')" style="color:var(--primary);cursor:pointer;font-size:0.82rem;">' + item.label + '</span>';
+        } else {
+            html += '<span style="font-weight:600;font-size:0.82rem;">' + item.label + '</span>';
+        }
+    });
+    bcDiv.innerHTML = html;
+}
+
+function openEswuSubfolder(tipo, name, folderId) {
+    eswuNavStacks[tipo].push({ label: name, folderId: folderId });
+    renderEswuFolder(tipo, folderId);
+}
+
+function eswuNavTo(tipo, index) {
+    eswuNavStacks[tipo] = eswuNavStacks[tipo].slice(0, index + 1);
+    var fid = eswuNavStacks[tipo][index].folderId;
+    renderEswuFolder(tipo, fid);
 }
 
 function renderEswuDocsList(tipo, items) {
@@ -234,8 +348,8 @@ function renderEswuDocsList(tipo, items) {
     items.forEach(function(f) {
         var isFolder = f.mimeType === 'application/vnd.google-apps.folder';
         if (isFolder) {
-            var fUrl = f.webViewLink || ('https://drive.google.com/drive/folders/' + f.id);
-            html += '<div onclick="window.open(\'' + fUrl + '\', \'_blank\')" style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 6px rgba(0,0,0,0.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
+            // Click opens subfolder inline
+            html += '<div onclick="openEswuSubfolder(\'' + tipo + '\', \'' + f.name.replace(/'/g, "\\'") + '\', \'' + f.id + '\')" style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;display:flex;align-items:center;gap:0.5rem;cursor:pointer;transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow=\'0 2px 6px rgba(0,0,0,0.1)\'" onmouseout="this.style.boxShadow=\'none\'">';
             html += '<span style="font-size:1.1rem;">📁</span>';
             html += '<span style="font-size:0.88rem;font-weight:500;">' + f.name + '</span>';
             html += '</div>';
@@ -271,21 +385,17 @@ function filterEswuDocs(tipo) {
 }
 
 // ============================================
-// UPLOAD
+// UPLOAD TO CURRENT FOLDER
 // ============================================
 
 async function uploadToEswuFolder(tipo) {
-    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        alert('Conecta Google Drive primero');
-        return;
-    }
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
     
-    if (!eswuFolderIds[tipo]) {
+    var targetFolder = eswuCurrentFolders[tipo] || eswuFolderIds[tipo];
+    if (!targetFolder) {
         eswuFolderIds[tipo] = await findEswuFolder(ESWU_FOLDER_NAMES[tipo]);
-        if (!eswuFolderIds[tipo]) {
-            alert('No se encontró la carpeta "' + ESWU_FOLDER_NAMES[tipo] + '" en Google Drive.');
-            return;
-        }
+        targetFolder = eswuFolderIds[tipo];
+        if (!targetFolder) { alert('No se encontró "' + ESWU_FOLDER_NAMES[tipo] + '"'); return; }
     }
     
     var input = document.createElement('input');
@@ -297,10 +407,9 @@ async function uploadToEswuFolder(tipo) {
         showLoading();
         try {
             for (var i = 0; i < input.files.length; i++) {
-                await uploadFileToDrive(input.files[i], eswuFolderIds[tipo]);
+                await uploadFileToDrive(input.files[i], targetFolder);
             }
-            eswuFolderIds[tipo] = null;
-            await loadEswuDocsTab(tipo);
+            await renderEswuFolder(tipo, targetFolder);
         } catch (e) {
             alert('Error al subir: ' + e.message);
         } finally {
@@ -341,4 +450,4 @@ async function getOrCreateDocumentosGeneralesFolder() {
     return newFolder.id;
 }
 
-console.log('✅ ESWU-UI.JS v3 cargado');
+console.log('✅ ESWU-UI.JS v4 cargado');
