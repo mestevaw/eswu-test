@@ -367,6 +367,7 @@
                                         <input type="text" id="eswuLegalesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('legales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
                                         <span onclick="uploadToEswuFolder('legales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
                                     </div>
+                                    <div id="eswuLegalesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuLegalesContent"></div>
                                 </div>
                                 <div id="eswuGeneralesTab" class="tab-content">
@@ -374,6 +375,7 @@
                                         <input type="text" id="eswuGeneralesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('generales')" style="flex:1;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
                                         <span onclick="uploadToEswuFolder('generales')" title="Subir documento" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem;">+</span>
                                     </div>
+                                    <div id="eswuGeneralesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuGeneralesContent"></div>
                                 </div>
                                 <div id="eswuMensajesTab" class="tab-content">
@@ -1438,6 +1440,54 @@
     
     <!-- JavaScript Files -->
     <script>console.log('%c ESWU v22 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <!-- Modal: ESWU Editar Usuario -->
+    <div id="eswuEditUsuarioModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="eswuEditUsuarioTitle">Editar Usuario</h2>
+                <button class="close-modal" onclick="closeModal('eswuEditUsuarioModal')">×</button>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="eswuEditUsuarioForm" onsubmit="saveEswuUsuario(event)">
+                    <input type="hidden" id="eswuUsuarioId" value="">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Nombre:</label>
+                        <input type="text" id="eswuUsuarioNombre" required style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Email:</label>
+                        <input type="email" id="eswuUsuarioEmail" style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Password:</label>
+                        <input type="text" id="eswuUsuarioPassword" required style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Nivel:</label>
+                        <select id="eswuUsuarioNivel" style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                            <option value="1">1 - Admin</option>
+                            <option value="2">2 - Edita</option>
+                            <option value="3">3 - Consulta</option>
+                            <option value="4">4 - Contabilidad</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.75rem;">
+                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;">
+                            <input type="checkbox" id="eswuUsuarioActivo" checked> Activo
+                        </label>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <button type="button" id="eswuDeleteUsuarioBtn" onclick="deleteEswuUsuario()" style="background:none;border:1px solid var(--danger);color:var(--danger);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">Eliminar</button>
+                        <div style="display:flex;gap:0.4rem;">
+                            <button type="button" onclick="closeModal('eswuEditUsuarioModal')" style="background:none;border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">✕ Cancelar</button>
+                            <button type="submit" style="background:var(--primary);color:white;border:none;padding:0.3rem 0.6rem;border-radius:4px;font-size:0.82rem;cursor:pointer;">💾 Guardar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="js/config.js?v=22"></script>
     <script src="js/google-drive.js?v=23"></script>
     <script src="js/database/db-core.js?v=22"></script>
