@@ -43,7 +43,6 @@ function renderEswuFicha() {
     if (typeof renderMensajesFicha === 'function') {
         renderMensajesFicha('eswu', 0);
     }
-    setTimeout(initEswuDropZones, 200);
 }
 
 // ============================================
@@ -538,63 +537,8 @@ function renderBancosTable() {
 }
 
 // ============================================
-// DRAG & DROP for document tabs
+// DRAG & DROP for document tabs (inline handlers in HTML)
 // ============================================
-
-function initEswuDropZones() {
-    initDropZone('eswuLegalesTab', 'legales');
-    initDropZone('eswuGeneralesTab', 'generales');
-}
-
-function initDropZone(containerId, tipo) {
-    var container = document.getElementById(containerId);
-    if (!container || container._dropBound) return;
-    container._dropBound = true;
-    container.style.position = 'relative';
-    
-    // Create overlay
-    var overlay = document.createElement('div');
-    overlay.className = 'drop-overlay';
-    overlay.style.cssText = 'display:none; position:absolute; top:0; left:0; right:0; bottom:0; min-height:80px; background:rgba(59,130,246,0.08); border:2px dashed var(--primary); border-radius:8px; z-index:10; pointer-events:none; align-items:center; justify-content:center;';
-    overlay.innerHTML = '<span style="font-size:1rem; color:var(--primary); font-weight:600; background:white; padding:0.4rem 1rem; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">📁 Suelta aquí para subir</span>';
-    container.appendChild(overlay);
-    
-    var dragCounter = 0;
-    
-    container.addEventListener('dragenter', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter++;
-        overlay.style.display = 'flex';
-    });
-    
-    container.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter--;
-        if (dragCounter <= 0) {
-            dragCounter = 0;
-            overlay.style.display = 'none';
-        }
-    });
-    
-    container.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-    
-    container.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter = 0;
-        overlay.style.display = 'none';
-        
-        var files = e.dataTransfer.files;
-        if (!files || !files.length) return;
-        
-        handleEswuDrop(tipo, files);
-    });
-}
 
 async function handleEswuDrop(tipo, files) {
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
