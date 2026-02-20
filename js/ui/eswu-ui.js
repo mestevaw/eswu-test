@@ -43,6 +43,7 @@ function renderEswuFicha() {
     if (typeof renderMensajesFicha === 'function') {
         renderMensajesFicha('eswu', 0);
     }
+    setTimeout(initEswuDropZones, 200);
 }
 
 // ============================================
@@ -532,4 +533,92 @@ function renderBancosTable() {
     renderEswuBancosTable();
 }
 
-console.log('✅ ESWU-UI.JS v6 cargado');
+// ============================================
+// DRAG & DROP for document tabs
+// ============================================
+
+function initEswuDropZones() {
+    initDropZone('eswuLegalesTab', 'legales');
+    initDropZone('eswuGeneralesTab', 'generales');
+}
+
+function initDropZone(containerId, tipo) {
+    var container = document.getElementById(containerId);
+    if (!container || container._dropBound) return;
+    container._dropBound = true;
+    container.style.position = 'relative';
+    
+    // Create overlay
+    var overlay = document.createElement('div');
+    overlay.className = 'drop-overlay';
+    overlay.style.cssText = 'display:none; position:absolute; top:0; left:0; right:0; bottom:0; min-height:80px; background:rgba(59,130,246,0.08); border:2px dashed var(--primary); border-radius:8px; z-index:10; pointer-events:none; align-items:center; justify-content:center;';
+    overlay.innerHTML = '<span style="font-size:1rem; color:var(--primary); font-weight:600; background:white; padding:0.4rem 1rem; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">📁 Suelta aquí para subir</span>';
+    container.appendChild(overlay);
+    
+    var dragCounter = 0;
+    
+    container.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+        overlay.style.display = 'flex';
+    });
+    
+    container.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+        if (dragCounter <= 0) {
+            dragCounter = 0;
+            overlay.style.display = 'none';
+        }
+    });
+    
+    container.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    container.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        overlay.style.display = 'none';
+        
+        var files = e.dataTransfer.files;
+        if (!files || !files.length) return;
+        
+        handleEswuDrop(tipo, files);
+    });
+}
+
+async function handleEswuDrop(tipo, files) {
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        alert('Conecta Google Drive primero');
+        return;
+    }
+    
+    var targetFolder = eswuCurrentFolders[tipo] || eswuFolderIds[tipo];
+    if (!targetFolder) {
+        eswuFolderIds[tipo] = await findEswuFolder(ESWU_FOLDER_NAMES[tipo]);
+        targetFolder = eswuFolderIds[tipo];
+        if (!targetFolder) {
+            alert('No se encontró "' + ESWU_FOLDER_NAMES[tipo] + '"');
+            return;
+        }
+    }
+    
+    showLoading();
+    try {
+        for (var i = 0; i < files.length; i++) {
+            await uploadFileToDrive(files[i], targetFolder);
+        }
+        await renderEswuFolder(tipo, targetFolder);
+    } catch (e) {
+        alert('Error al subir: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+console.log('✅ ESWU-UI.JS v7 cargado');
