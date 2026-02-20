@@ -247,7 +247,6 @@ function abrirMensaje(msgId) {
 var mensajePendingFiles = [];      // Local files to upload
 var mensajePendingDriveFiles = [];  // Drive files (linked, no upload)
 var _adjuntoListenersBound = false;
-var _drivePickerTimer = null;
 
 function bindAdjuntoListeners() {
     if (_adjuntoListenersBound) return;
@@ -273,76 +272,103 @@ function bindAdjuntoListeners() {
 }
 
 // ============================================
-// DRIVE PICKER (search from index)
+// DRIVE PICKER (folder browser)
 // ============================================
 
+var _drivePickerStack = []; // [{label, folderId}]
+
 function toggleDrivePicker() {
+    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
+        alert('Conecta Google Drive primero');
+        return;
+    }
     var area = document.getElementById('drivePickerArea');
     if (!area) return;
     var isVisible = area.style.display !== 'none';
-    area.style.display = isVisible ? 'none' : 'block';
-    if (!isVisible) {
-        var input = document.getElementById('drivePickerSearch');
-        if (input) { input.value = ''; input.focus(); }
-        var results = document.getElementById('drivePickerResults');
-        if (results) { results.style.display = 'none'; results.innerHTML = ''; }
+    if (isVisible) {
+        area.style.display = 'none';
+    } else {
+        area.style.display = 'block';
+        _drivePickerStack = [{ label: 'Mi Drive', folderId: 'root' }];
+        loadDrivePickerFolder('root');
     }
 }
 
-function searchDrivePickerDebounced() {
-    if (_drivePickerTimer) clearTimeout(_drivePickerTimer);
-    _drivePickerTimer = setTimeout(searchDrivePicker, 300);
-}
-
-async function searchDrivePicker() {
-    var input = document.getElementById('drivePickerSearch');
-    var resultsDiv = document.getElementById('drivePickerResults');
-    if (!input || !resultsDiv) return;
+async function loadDrivePickerFolder(folderId) {
+    var contentsDiv = document.getElementById('drivePickerContents');
+    if (!contentsDiv) return;
+    contentsDiv.innerHTML = '<div style="padding:0.6rem;text-align:center;color:var(--text-light);font-size:0.82rem;">Cargando...</div>';
     
-    var q = input.value.trim();
-    if (q.length < 2) {
-        resultsDiv.style.display = 'none';
-        resultsDiv.innerHTML = '';
-        return;
-    }
+    renderDrivePickerBreadcrumb();
     
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = '<div style="padding:0.5rem;text-align:center;color:var(--text-light);font-size:0.82rem;">Buscando...</div>';
-    
-    var results = await searchDriveIndex(q);
-    
-    if (results.length === 0) {
-        resultsDiv.innerHTML = '<div style="padding:0.5rem;text-align:center;color:var(--text-light);font-size:0.82rem;">No se encontraron archivos</div>';
-        return;
-    }
-    
-    var html = '';
-    results.forEach(function(f) {
-        var icon = '📄';
-        if (f.mime_type && f.mime_type.includes('image')) icon = '🖼️';
-        if (f.mime_type && (f.mime_type.includes('spreadsheet') || f.mime_type.includes('excel'))) icon = '📊';
-        if (f.mime_type && (f.mime_type.includes('document') || f.mime_type.includes('word'))) icon = '📝';
+    try {
+        var result = await listDriveFolder(folderId);
+        var items = (result.folders || []).concat(result.files || []);
         
-        var size = '';
-        if (f.tamanio) {
-            size = f.tamanio < 1024*1024 ? Math.round(f.tamanio/1024) + ' KB' : (f.tamanio/(1024*1024)).toFixed(1) + ' MB';
+        if (items.length === 0) {
+            contentsDiv.innerHTML = '<div style="padding:0.6rem;text-align:center;color:var(--text-light);font-size:0.82rem;">Carpeta vacía</div>';
+            return;
         }
         
-        var ruta = f.ruta ? '<span style="font-size:0.7rem;color:var(--text-light);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.ruta + '</span>' : '';
-        
-        // Escape for onclick
-        var safeName = f.nombre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        
-        html += '<div onclick="selectDriveFile(\'' + f.drive_file_id + '\', \'' + safeName + '\')" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:0.4rem;transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'transparent\'">';
-        html += '<span>' + icon + '</span>';
-        html += '<div style="flex:1;min-width:0;">';
-        html += '<span style="font-size:0.83rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.nombre + '</span>';
-        html += ruta;
-        html += '</div>';
-        if (size) html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + size + '</span>';
-        html += '</div>';
+        var html = '';
+        items.forEach(function(f) {
+            var isFolder = f.mimeType === 'application/vnd.google-apps.folder';
+            var safeName = f.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            
+            if (isFolder) {
+                html += '<div onclick="drivePickerOpenFolder(\'' + f.id + '\', \'' + safeName + '\')" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:0.4rem;transition:background 0.15s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'transparent\'">';
+                html += '<span style="font-size:1rem;">📁</span>';
+                html += '<span style="font-size:0.83rem;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+                html += '<span style="font-size:0.75rem;color:var(--text-light);">›</span>';
+                html += '</div>';
+            } else {
+                var icon = '📄';
+                if (f.mimeType && f.mimeType.includes('image')) icon = '🖼️';
+                if (f.mimeType && (f.mimeType.includes('spreadsheet') || f.mimeType.includes('excel'))) icon = '📊';
+                if (f.mimeType && (f.mimeType.includes('document') || f.mimeType.includes('word'))) icon = '📝';
+                
+                var size = '';
+                if (f.size) {
+                    var s = parseInt(f.size);
+                    size = s < 1024*1024 ? Math.round(s/1024) + ' KB' : (s/(1024*1024)).toFixed(1) + ' MB';
+                }
+                
+                html += '<div onclick="selectDriveFile(\'' + f.id + '\', \'' + safeName + '\')" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:0.4rem;transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'transparent\'">';
+                html += '<span style="font-size:0.9rem;">' + icon + '</span>';
+                html += '<span style="font-size:0.83rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
+                if (size) html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + size + '</span>';
+                html += '</div>';
+            }
+        });
+        contentsDiv.innerHTML = html;
+    } catch (e) {
+        contentsDiv.innerHTML = '<div style="padding:0.6rem;text-align:center;color:var(--danger);font-size:0.82rem;">Error: ' + e.message + '</div>';
+    }
+}
+
+function renderDrivePickerBreadcrumb() {
+    var bcDiv = document.getElementById('drivePickerBreadcrumb');
+    if (!bcDiv) return;
+    var html = '';
+    _drivePickerStack.forEach(function(item, i) {
+        if (i > 0) html += ' <span style="color:var(--text-light);margin:0 0.1rem;">›</span> ';
+        if (i < _drivePickerStack.length - 1) {
+            html += '<span onclick="drivePickerNavTo(' + i + ')" style="color:var(--primary);cursor:pointer;">' + item.label + '</span>';
+        } else {
+            html += '<span style="font-weight:600;">' + item.label + '</span>';
+        }
     });
-    resultsDiv.innerHTML = html;
+    bcDiv.innerHTML = html;
+}
+
+function drivePickerOpenFolder(folderId, name) {
+    _drivePickerStack.push({ label: name, folderId: folderId });
+    loadDrivePickerFolder(folderId);
+}
+
+function drivePickerNavTo(index) {
+    _drivePickerStack = _drivePickerStack.slice(0, index + 1);
+    loadDrivePickerFolder(_drivePickerStack[index].folderId);
 }
 
 function selectDriveFile(driveFileId, fileName) {
@@ -355,12 +381,8 @@ function selectDriveFile(driveFileId, fileName) {
         nombre: fileName
     });
     
-    // Clear picker
-    var input = document.getElementById('drivePickerSearch');
-    var results = document.getElementById('drivePickerResults');
+    // Close picker
     var area = document.getElementById('drivePickerArea');
-    if (input) input.value = '';
-    if (results) { results.style.display = 'none'; results.innerHTML = ''; }
     if (area) area.style.display = 'none';
     
     renderMensajeAdjuntosList();
@@ -398,58 +420,14 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     
     // Bind listeners después de que el modal esté visible
     setTimeout(bindAdjuntoListeners, 50);
-    setTimeout(bindMensajeDropZone, 100);
 }
 
-function bindMensajeDropZone() {
-    var form = document.getElementById('nuevoMensajeForm');
-    if (!form || form._dropBound) return;
-    form._dropBound = true;
-    
-    var dropOverlay = document.createElement('div');
-    dropOverlay.id = 'mensajeDropOverlay';
-    dropOverlay.style.cssText = 'display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(59,130,246,0.08); border:2px dashed var(--primary); border-radius:8px; z-index:10; pointer-events:none; align-items:center; justify-content:center;';
-    dropOverlay.innerHTML = '<span style="font-size:1rem; color:var(--primary); font-weight:600; background:white; padding:0.4rem 1rem; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">📎 Suelta aquí para adjuntar</span>';
-    form.style.position = 'relative';
-    form.appendChild(dropOverlay);
-    
-    var dragCounter = 0;
-    
-    form.addEventListener('dragenter', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter++;
-        dropOverlay.style.display = 'flex';
-    });
-    
-    form.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter--;
-        if (dragCounter <= 0) {
-            dragCounter = 0;
-            dropOverlay.style.display = 'none';
-        }
-    });
-    
-    form.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    });
-    
-    form.addEventListener('drop', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dragCounter = 0;
-        dropOverlay.style.display = 'none';
-        
-        var files = e.dataTransfer.files;
-        if (!files || !files.length) return;
-        for (var i = 0; i < files.length; i++) {
-            mensajePendingFiles.push(files[i]);
-        }
-        renderMensajeAdjuntosList();
-    });
+function handleMensajeDrop(files) {
+    if (!files || !files.length) return;
+    for (var i = 0; i < files.length; i++) {
+        mensajePendingFiles.push(files[i]);
+    }
+    renderMensajeAdjuntosList();
 }
 
 function removeMensajeFile(idx) {
