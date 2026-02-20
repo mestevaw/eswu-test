@@ -422,10 +422,12 @@
                 <div id="contabilidadPage" class="page">
                     <div class="card">
                         <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
-                            <h2 class="card-title">Contabilidad - Documentos</h2>
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex:1; min-width:0;">
+                                <span id="contabilidadHomeBtn" onclick="contabilidadGoHome()" title="Inicio Contabilidad" style="display:none; font-size:1.1rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">←</span>
+                                <h2 id="contabilidadTitle" class="card-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Contabilidad</h2>
+                            </div>
                             <div style="display:flex; align-items:center; gap:0.4rem;">
                                 <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
-                                <span id="contabilidadHomeBtn" onclick="contabilidadGoHome()" title="Inicio Contabilidad" style="display:none; font-size:1.3rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🏠</span>
                             </div>
                         </div>
                         <div style="padding:1rem; position:relative;">
@@ -438,8 +440,6 @@
                                     <button onclick="searchContabilidadDocs()" style="padding:0.4rem 0.6rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.9rem;">🔍</button>
                                 </div>
                             </div>
-                            <!-- Breadcrumb -->
-                            <div id="contabilidadBreadcrumb" style="display:none; margin-bottom:0.75rem; font-size:0.85rem;"></div>
                             <!-- Años -->
                             <div id="contabilidadAnios" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
                             <!-- Content area (months, subfolders, files) -->
@@ -1510,7 +1510,7 @@
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
-    <script src="js/ui/admin-ui.js?v=24"></script>
+    <script src="js/ui/admin-ui.js?v=25"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
     <script src="js/ui/mensajes-ui.js?v=28"></script>
     <script src="js/modals/modals.js?v=22"></script>
