@@ -763,7 +763,6 @@ async function loadContabilidadCarpetas() {
 function renderContabilidadContent() {
     const connected = isGoogleConnected();
     
-    // Show/hide connect bar and search
     if (!connected) {
         document.getElementById('gdriveConnectBar').style.display = 'flex';
         document.getElementById('gdriveConnectBar').innerHTML = '<span style="font-size:0.85rem; color:var(--text-light);">Google Drive no conectado.</span> <span onclick="googleSignIn()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">Reconectar</span>';
@@ -772,16 +771,18 @@ function renderContabilidadContent() {
     }
     document.getElementById('contabilidadSearchBar').style.display = 'block';
     
-    // If we're navigating inside a Drive folder, show that
     if (connected && contabilidadNavStack.length > 0) {
-        renderBreadcrumb();
-        navigateToDriveFolder(currentDriveFolderId);
+        // Inside a folder
+        if (contabilidadNavStack.length >= 2) {
+            loadSubcarpetaFromSupabase();
+        } else {
+            navigateToDriveFolder(currentDriveFolderId);
+        }
         return;
     }
     
-    // Otherwise show years + months
-    document.getElementById('contabilidadBreadcrumb').style.display = 'none';
     document.getElementById('contabilidadUploadBtn').style.display = 'none';
+    updateContabilidadTitle('Contabilidad');
     renderContabilidadYearsAndMonths();
 }
 
@@ -866,15 +867,26 @@ function selectContabilidadAnio(anio) {
 function openMonthFolder(anio, mesNombre, folderId) {
     contabilidadNavStack = [{ label: anio + ' > ' + mesNombre, folderId: null }];
     currentDriveFolderId = folderId;
-    renderBreadcrumb();
+    document.getElementById('contabilidadAnios').style.display = 'none';
+    document.getElementById('contabilidadHomeBtn').style.display = 'inline';
+    updateContabilidadTitle(anio + ' › ' + mesNombre);
     navigateToDriveFolder(folderId);
 }
 
 function openDriveSubfolder(name, folderId) {
     contabilidadNavStack.push({ label: name, folderId: currentDriveFolderId });
     currentDriveFolderId = folderId;
-    renderBreadcrumb();
-    navigateToDriveFolder(folderId);
+    
+    // Build title from full path
+    var titleParts = contabilidadNavStack.map(function(s) { return s.label; });
+    updateContabilidadTitle(titleParts.join(' › ').replace(/ > /g, ' › '));
+    
+    // If we're at subcarpeta level (navStack >= 2), load from Supabase
+    if (contabilidadNavStack.length >= 2) {
+        loadSubcarpetaFromSupabase();
+    } else {
+        navigateToDriveFolder(folderId);
+    }
 }
 
 function contabilidadGoHome() {
@@ -886,22 +898,25 @@ function navigateBackTo(index) {
         // Go back to years/months view
         contabilidadNavStack = [];
         currentDriveFolderId = null;
-        document.getElementById('contabilidadBreadcrumb').style.display = 'none';
         document.getElementById('contabilidadUploadBtn').style.display = 'none';
         document.getElementById('contabilidadHomeBtn').style.display = 'none';
         document.getElementById('contabilidadAnios').style.display = 'flex';
-        // Clear search
         document.getElementById('contabilidadSearchInput').value = '';
+        updateContabilidadTitle('Contabilidad');
         renderContabilidadYearsAndMonths();
         return;
     }
     
-    // Navigate to specific breadcrumb level
+    // Navigate to specific level
     const target = contabilidadNavStack[index];
     contabilidadNavStack = contabilidadNavStack.slice(0, index + 1);
     
+    // Update title
+    var titleParts = contabilidadNavStack.map(function(s) { return s.label; });
+    updateContabilidadTitle(titleParts.join(' › ').replace(/ > /g, ' › '));
+    
     if (index === 0) {
-        // Back to month level - re-enter the month folder
+        // Back to month level
         const folderId = extractFolderId(
             contabilidadCarpetas.find(c => {
                 const label = c.anio + ' > ' + (['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'][c.mes] || '');
@@ -909,49 +924,32 @@ function navigateBackTo(index) {
             })?.google_drive_url
         );
         currentDriveFolderId = folderId;
+        navigateToDriveFolder(folderId);
     } else {
+        // Inside a subcarpeta
         currentDriveFolderId = contabilidadNavStack[index - 1]?.folderId || currentDriveFolderId;
+        loadSubcarpetaFromSupabase();
     }
-    
-    renderBreadcrumb();
-    navigateToDriveFolder(currentDriveFolderId);
 }
 
-function renderBreadcrumb() {
-    const bcDiv = document.getElementById('contabilidadBreadcrumb');
-    bcDiv.style.display = 'block';
-    document.getElementById('contabilidadAnios').style.display = 'none';
-    
-    let html = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#fed7d7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span>';
-    
-    contabilidadNavStack.forEach((item, i) => {
-        html += ' <span style="color:var(--text-light);"> › </span> ';
-        if (i < contabilidadNavStack.length - 1) {
-            html += `<span onclick="navigateBackTo(${i})" style="cursor:pointer; color:var(--primary);">${item.label}</span>`;
-        } else {
-            html += `<span style="font-weight:600; color:var(--text);">${item.label}</span>`;
-        }
-    });
-    
-    bcDiv.innerHTML = html;
+function updateContabilidadTitle(text) {
+    var el = document.getElementById('contabilidadTitle');
+    if (el) el.textContent = text || 'Contabilidad';
 }
 
 async function navigateToDriveFolder(folderId) {
     const contentDiv = document.getElementById('contabilidadContent');
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">⏳ Cargando...</p>';
     
-    // Show home button when navigating
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
+    document.getElementById('contabilidadUploadBtn').style.display = 'none';
     
     try {
         const { folders, files } = await listDriveFolder(folderId);
         
-        // Only show upload when there are NO subfolders (final folder)
-        document.getElementById('contabilidadUploadBtn').style.display = folders.length === 0 ? 'inline' : 'none';
-        
         let html = '';
         
-        // Subfolders
+        // Subfolders as cards
         if (folders.length > 0) {
             html += '<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.5rem; margin-bottom:1rem;">';
             folders.forEach(f => {
@@ -965,24 +963,11 @@ async function navigateToDriveFolder(folderId) {
             html += '</div>';
         }
         
-        // Files
-        if (files.length > 0) {
-            html += '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
-            files.forEach((f, i) => {
-                const icon = getFileIcon(f.name, f.mimeType);
-                const size = formatFileSize(f.size);
-                const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
-                html += `
-                    <div onclick="viewDriveFileInline('${f.id}', '${f.name.replace(/'/g, "\\'")}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
-                        <span style="font-size:1.1rem;">${icon}</span>
-                        <div style="flex:1; min-width:150px;">
-                            <div style="font-size:0.88rem; font-weight:500; word-break:break-word;">${f.name}</div>
-                        </div>
-                        <span style="font-size:0.75rem; color:var(--text-light); white-space:nowrap;">${size}</span>
-                    </div>
-                `;
-            });
-            html += '</div>';
+        // If there are also files at this level (month has direct files), show them simply
+        if (files.length > 0 && folders.length === 0) {
+            // This is a leaf folder — redirect to Supabase view
+            loadSubcarpetaFromSupabase();
+            return;
         }
         
         if (folders.length === 0 && files.length === 0) {
@@ -991,12 +976,7 @@ async function navigateToDriveFolder(folderId) {
         
         contentDiv.innerHTML = html;
         
-        // Add drop zone when inside a folder
-        if (contabilidadNavStack.length > 0) {
-            contentDiv.innerHTML += '<div class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">📁 Arrastra archivos aquí para subir</div>';
-        }
-        
-        // Silently index files in Supabase for fast search
+        // Background-index any files from Drive into Supabase
         if (files.length > 0 && contabilidadNavStack.length >= 2) {
             indexFilesToSupabase(files);
         }
@@ -1004,6 +984,163 @@ async function navigateToDriveFolder(folderId) {
     } catch (e) {
         console.error('Error navigating folder:', e);
         contentDiv.innerHTML = `<p style="text-align:center; color:var(--danger); padding:2rem;">Error: ${e.message}</p>`;
+    }
+}
+
+// ============================================
+// LOAD FILES FROM SUPABASE (fast)
+// ============================================
+
+async function loadSubcarpetaFromSupabase() {
+    var contentDiv = document.getElementById('contabilidadContent');
+    contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:1rem;">⏳ Cargando documentos...</p>';
+    
+    // Parse path info
+    var pathLabel = contabilidadNavStack[0] ? contabilidadNavStack[0].label : '';
+    var parts = pathLabel.split(' > ');
+    var anio = parseInt(parts[0]) || 0;
+    var mesNombre = (parts[1] || '').trim();
+    var mesNum = MESES_NOMBRES.indexOf(mesNombre);
+    var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[contabilidadNavStack.length - 1].label : '';
+    
+    // Build the path display for the upload area
+    var pathDisplay = mesNombre + ' ' + anio + (subcarpeta ? ' › ' + subcarpeta : '');
+    
+    document.getElementById('contabilidadUploadBtn').style.display = 'inline';
+    
+    try {
+        var query = supabaseClient
+            .from('contabilidad_documentos')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (anio) query = query.eq('anio', anio);
+        if (mesNum > 0) query = query.eq('mes', mesNum);
+        if (subcarpeta) query = query.eq('subcarpeta', subcarpeta);
+        
+        var { data: docs, error } = await query;
+        if (error) throw error;
+        
+        var html = '';
+        
+        // File list
+        if (docs && docs.length > 0) {
+            html += '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
+            docs.forEach(function(doc, i) {
+                var icon = getFileIcon(doc.nombre, doc.mime_type);
+                var bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
+                var safeName = doc.nombre.replace(/'/g, "\\'");
+                
+                // Date formatting
+                var fechaStr = '';
+                if (doc.created_at) {
+                    var d = new Date(doc.created_at);
+                    var dia = d.getDate();
+                    var mes = d.getMonth() + 1;
+                    var yr = d.getFullYear();
+                    fechaStr = dia + '/' + mes + '/' + yr;
+                }
+                
+                var usuario = doc.usuario_subio || '';
+                var metaInfo = '';
+                if (fechaStr || usuario) {
+                    metaInfo = '<span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">' + fechaStr + (usuario ? ' · ' + usuario : '') + '</span>';
+                }
+                
+                html += '<div onclick="viewDriveFileInline(\'' + doc.google_drive_file_id + '\', \'' + safeName + '\')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:' + bgColor + '; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'' + bgColor + '\'">';
+                html += '<span style="font-size:1.1rem;">' + icon + '</span>';
+                html += '<div style="flex:1; min-width:120px;"><div style="font-size:0.88rem; font-weight:500; word-break:break-word;">' + doc.nombre + '</div></div>';
+                html += metaInfo;
+                html += '</div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<p style="text-align:center; color:var(--text-light); padding:1rem;">No hay documentos registrados</p>';
+        }
+        
+        // Drop zone with clear path
+        html += '<div class="file-drop-zone" style="margin-top:0.75rem;" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">';
+        html += '📁 Arrastra archivos aquí para subir a <strong>' + pathDisplay + '</strong>';
+        html += '</div>';
+        
+        contentDiv.innerHTML = html;
+        
+        // Also sync from Drive in background (to catch files not yet indexed)
+        syncSubcarpetaFromDrive(anio, mesNum, subcarpeta);
+        
+    } catch (e) {
+        console.error('Error loading from Supabase:', e);
+        // Fallback to Drive
+        contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:1rem;">Cargando desde Drive...</p>';
+        loadSubcarpetaFromDriveFallback();
+    }
+}
+
+async function syncSubcarpetaFromDrive(anio, mesNum, subcarpeta) {
+    // Silently check if Drive has files not yet in Supabase
+    if (!currentDriveFolderId || !isGoogleConnected()) return;
+    try {
+        var { files } = await listDriveFolder(currentDriveFolderId);
+        if (files && files.length > 0) {
+            var newCount = 0;
+            for (var i = 0; i < files.length; i++) {
+                var f = files[i];
+                if (f.mimeType === 'application/vnd.google-apps.folder') continue;
+                var { data: existing } = await supabaseClient
+                    .from('contabilidad_documentos')
+                    .select('id')
+                    .eq('google_drive_file_id', f.id)
+                    .limit(1);
+                if (existing && existing.length > 0) continue;
+                
+                await supabaseClient.from('contabilidad_documentos').insert([{
+                    nombre: f.name,
+                    anio: anio,
+                    mes: mesNum,
+                    subcarpeta: subcarpeta,
+                    google_drive_file_id: f.id,
+                    size_bytes: parseInt(f.size) || 0,
+                    mime_type: f.mimeType || ''
+                }]);
+                newCount++;
+            }
+            if (newCount > 0) {
+                console.log('📇 Sincronizados ' + newCount + ' archivos nuevos de Drive');
+                // Reload the view with new data
+                loadSubcarpetaFromSupabase();
+            }
+        }
+    } catch (e) {
+        // Silent — best effort sync
+    }
+}
+
+async function loadSubcarpetaFromDriveFallback() {
+    // Fallback: load files directly from Drive (old behavior)
+    if (!currentDriveFolderId) return;
+    try {
+        var { files } = await listDriveFolder(currentDriveFolderId);
+        var contentDiv = document.getElementById('contabilidadContent');
+        var html = '';
+        if (files && files.length > 0) {
+            html += '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
+            files.forEach(function(f, i) {
+                var icon = getFileIcon(f.name, f.mimeType);
+                var bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
+                var safeName = f.name.replace(/'/g, "\\'");
+                html += '<div onclick="viewDriveFileInline(\'' + f.id + '\', \'' + safeName + '\')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:' + bgColor + '; cursor:pointer; border-bottom:1px solid var(--border);">';
+                html += '<span style="font-size:1.1rem;">' + icon + '</span>';
+                html += '<div style="flex:1;"><div style="font-size:0.88rem; font-weight:500; word-break:break-word;">' + f.name + '</div></div>';
+                html += '</div>';
+            });
+            html += '</div>';
+        } else {
+            html = '<p style="text-align:center; color:var(--text-light); padding:1rem;">📭 Carpeta vacía</p>';
+        }
+        html += '<div class="file-drop-zone" style="margin-top:0.75rem;" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">📁 Arrastra archivos aquí para subir</div>';
+        contentDiv.innerHTML = html;
+    } catch (e) {
+        console.error('Fallback drive load failed:', e);
     }
 }
 
@@ -1063,12 +1200,13 @@ function uploadToCurrentFolder() {
                             subcarpeta: subcarpeta,
                             google_drive_file_id: result.id,
                             size_bytes: file.size || 0,
-                            mime_type: file.type || ''
+                            mime_type: file.type || '',
+                            usuario_subio: currentUser ? currentUser.nombre : ''
                         }]);
                 }
             }
-            // Refresh folder view
-            await navigateToDriveFolder(currentDriveFolderId);
+            // Refresh from Supabase
+            loadSubcarpetaFromSupabase();
         } catch (e) {
             console.error('Error uploading:', e);
             alert('Error al subir: ' + e.message);
@@ -1091,11 +1229,11 @@ async function handleContabilidadDrop(files) {
         var anio = parseInt(parts[0]) || 0;
         var mesNombre = (parts[1] || '').trim();
         var mesNum = MESES_NOMBRES.indexOf(mesNombre);
-        var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[1].label : '';
+        var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[contabilidadNavStack.length - 1].label : '';
         
         for (var i = 0; i < files.length; i++) {
             var result = await uploadFileToDrive(files[i], currentDriveFolderId);
-            if (result && result.id && anio && mesNum > 0 && subcarpeta) {
+            if (result && result.id) {
                 await supabaseClient.from('contabilidad_documentos').insert([{
                     nombre: files[i].name,
                     anio: anio,
@@ -1103,11 +1241,13 @@ async function handleContabilidadDrop(files) {
                     subcarpeta: subcarpeta,
                     google_drive_file_id: result.id,
                     size_bytes: files[i].size || 0,
-                    mime_type: files[i].type || ''
+                    mime_type: files[i].type || '',
+                    usuario_subio: currentUser ? currentUser.nombre : ''
                 }]);
             }
         }
-        await navigateToDriveFolder(currentDriveFolderId);
+        // Reload from Supabase (fast)
+        loadSubcarpetaFromSupabase();
     } catch (e) {
         alert('Error al subir: ' + e.message);
     } finally {
@@ -1183,21 +1323,17 @@ async function searchContabilidadDocs() {
     const contentDiv = document.getElementById('contabilidadContent');
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">🔍 Buscando...</p>';
     
-    // Hide years, show breadcrumb
     document.getElementById('contabilidadAnios').style.display = 'none';
-    document.getElementById('contabilidadBreadcrumb').style.display = 'block';
-    document.getElementById('contabilidadBreadcrumb').innerHTML = '<span onclick="navigateBackTo(-1)" style="cursor:pointer; color:var(--primary); font-weight:600;"><span style="background:#fed7d7;padding:0.1rem 0.25rem;border-radius:3px;">📁</span> Contabilidad</span> <span style="color:var(--text-light);"> › </span> <span style="font-weight:600;">Búsqueda: "' + term + '"</span>';
     document.getElementById('contabilidadUploadBtn').style.display = 'none';
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
+    updateContabilidadTitle('Búsqueda: "' + term + '"');
     
     try {
-        // Search in Supabase
         const { data: results, error } = await supabaseClient
             .from('contabilidad_documentos')
             .select('*')
             .ilike('nombre', '%' + term + '%')
-            .order('anio', { ascending: false })
-            .order('mes', { ascending: true })
+            .order('created_at', { ascending: false })
             .limit(50);
         
         if (error) throw error;
@@ -1210,12 +1346,19 @@ async function searchContabilidadDocs() {
         let html = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">';
         results.forEach((doc, i) => {
             const icon = getFileIcon(doc.nombre, doc.mime_type);
-            const size = formatFileSize(doc.size_bytes);
             const bgColor = i % 2 === 0 ? 'white' : 'var(--bg)';
             const displayName = doc.nombre.length > 60 ? doc.nombre.substring(0, 57) + '...' : doc.nombre;
             const mesNombre = MESES_NOMBRES[doc.mes] || '';
             const monthYear = mesNombre + ' ' + doc.anio;
             const safeName = doc.nombre.replace(/'/g, "\\'");
+            
+            var fechaStr = '';
+            if (doc.created_at) {
+                var d = new Date(doc.created_at);
+                fechaStr = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+            }
+            var usuario = doc.usuario_subio || '';
+            
             html += `
                 <div onclick="viewDriveFileInline('${doc.google_drive_file_id}', '${safeName}')" style="display:flex; align-items:center; gap:0.6rem; padding:0.5rem 0.8rem; background:${bgColor}; cursor:pointer; border-bottom:1px solid var(--border); transition:background 0.15s; flex-wrap:wrap;" onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='${bgColor}'">
                     <span style="font-size:1.1rem;">${icon}</span>
@@ -1223,9 +1366,8 @@ async function searchContabilidadDocs() {
                         <div style="font-size:0.88rem; font-weight:500; word-break:break-word;" title="${doc.nombre}">${displayName}</div>
                     </div>
                     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-                        <span style="font-size:0.72rem; color:var(--primary); white-space:nowrap;">${monthYear}</span>
-                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${doc.subcarpeta}</span>
-                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${size}</span>
+                        <span style="font-size:0.72rem; color:var(--primary); white-space:nowrap;">${monthYear} › ${doc.subcarpeta}</span>
+                        <span style="font-size:0.72rem; color:var(--text-light); white-space:nowrap;">${fechaStr}${usuario ? ' · ' + usuario : ''}</span>
                     </div>
                 </div>
             `;
