@@ -991,6 +991,11 @@ async function navigateToDriveFolder(folderId) {
         
         contentDiv.innerHTML = html;
         
+        // Add drop zone when inside a folder
+        if (contabilidadNavStack.length > 0) {
+            contentDiv.innerHTML += '<div class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">📁 Arrastra archivos aquí para subir</div>';
+        }
+        
         // Silently index files in Supabase for fast search
         if (files.length > 0 && contabilidadNavStack.length >= 2) {
             indexFilesToSupabase(files);
@@ -1072,6 +1077,42 @@ function uploadToCurrentFolder() {
         }
     };
     input.click();
+}
+
+async function handleContabilidadDrop(files) {
+    if (!files || !files.length) return;
+    if (!currentDriveFolderId) { alert('Navega a una carpeta primero'); return; }
+    if (!isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+    
+    showLoading();
+    try {
+        var pathLabel = contabilidadNavStack[0] ? contabilidadNavStack[0].label : '';
+        var parts = pathLabel.split(' > ');
+        var anio = parseInt(parts[0]) || 0;
+        var mesNombre = (parts[1] || '').trim();
+        var mesNum = MESES_NOMBRES.indexOf(mesNombre);
+        var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[1].label : '';
+        
+        for (var i = 0; i < files.length; i++) {
+            var result = await uploadFileToDrive(files[i], currentDriveFolderId);
+            if (result && result.id && anio && mesNum > 0 && subcarpeta) {
+                await supabaseClient.from('contabilidad_documentos').insert([{
+                    nombre: files[i].name,
+                    anio: anio,
+                    mes: mesNum,
+                    subcarpeta: subcarpeta,
+                    google_drive_file_id: result.id,
+                    size_bytes: files[i].size || 0,
+                    mime_type: files[i].type || ''
+                }]);
+            }
+        }
+        await navigateToDriveFolder(currentDriveFolderId);
+    } catch (e) {
+        alert('Error al subir: ' + e.message);
+    } finally {
+        hideLoading();
+    }
 }
 
 // ============================================
