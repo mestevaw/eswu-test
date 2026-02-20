@@ -277,7 +277,7 @@ function bindAdjuntoListeners() {
 
 var _drivePickerStack = []; // [{label, folderId}]
 
-function toggleDrivePicker() {
+async function toggleDrivePicker() {
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
         alert('Conecta Google Drive primero');
         return;
@@ -289,8 +289,15 @@ function toggleDrivePicker() {
         area.style.display = 'none';
     } else {
         area.style.display = 'block';
-        _drivePickerStack = [{ label: 'Mi Drive', folderId: 'root' }];
-        loadDrivePickerFolder('root');
+        // Start at Inmobiliaris ESWU folder
+        var eswuFolderId = await findOrCreateSubfolder('Inmobiliaris ESWU', null);
+        if (eswuFolderId) {
+            _drivePickerStack = [{ label: 'Inmobiliaris ESWU', folderId: eswuFolderId }];
+            loadDrivePickerFolder(eswuFolderId);
+        } else {
+            _drivePickerStack = [{ label: 'Mi Drive', folderId: 'root' }];
+            loadDrivePickerFolder('root');
+        }
     }
 }
 
