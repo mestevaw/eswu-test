@@ -16,6 +16,24 @@
     <meta name="theme-color" content="#1a365d">
     <link rel="stylesheet" href="css/pages.css?v=22">
     <link rel="stylesheet" href="css/utilities.css?v=22">
+    <style>
+        .file-drop-zone {
+            margin-top: 0.5rem;
+            padding: 0.8rem;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        .file-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.06);
+            color: var(--primary);
+        }
+    </style>
 </head>
 <body>
     <div id="loadingOverlay" class="loading-overlay hidden">
@@ -367,6 +385,9 @@
                                     </div>
                                     <div id="eswuLegalesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuLegalesContent"></div>
+                                    <div id="dropZoneLegales" class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleEswuDrop('legales', event.dataTransfer.files);">
+                                        📁 Arrastra archivos aquí para subir
+                                    </div>
                                 </div>
                                 <div id="eswuGeneralesTab" class="tab-content">
                                     <div style="margin-bottom:0.5rem;">
@@ -374,6 +395,9 @@
                                     </div>
                                     <div id="eswuGeneralesBreadcrumb" style="margin-bottom:0.3rem;"></div>
                                     <div id="eswuGeneralesContent"></div>
+                                    <div id="dropZoneGenerales" class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleEswuDrop('generales', event.dataTransfer.files);">
+                                        📁 Arrastra archivos aquí para subir
+                                    </div>
                                 </div>
                                 <div id="eswuMensajesTab" class="tab-content">
                                     <div id="eswuMensajesFicha"></div>
@@ -1360,13 +1384,16 @@
                     </div>
                     <div style="margin-bottom:0.25rem;">
                         <input type="file" id="mensajeAdjuntoInput" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="display:none;">
-                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <span id="btnAdjuntarDocs" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar archivo</span>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+                            <span id="btnAdjuntarDocs" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar archivo local</span>
                             <span id="btnElegirDrive" onclick="toggleDrivePicker()" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📁 Elegir de Drive</span>
                         </div>
-                        <div id="drivePickerArea" style="display:none;margin-top:0.4rem;">
-                            <input type="text" id="drivePickerSearch" placeholder="🔍 Buscar archivo en Drive..." oninput="searchDrivePickerDebounced()" autocomplete="off" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
-                            <div id="drivePickerResults" style="max-height:180px;overflow-y:auto;margin-top:0.3rem;border:1px solid var(--border);border-radius:6px;display:none;"></div>
+                        <div id="drivePickerArea" style="display:none;margin-top:0.4rem;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+                            <div id="drivePickerBreadcrumb" style="padding:0.35rem 0.6rem;background:#f8fafc;border-bottom:1px solid var(--border);font-size:0.8rem;"></div>
+                            <div id="drivePickerContents" style="max-height:200px;overflow-y:auto;"></div>
+                        </div>
+                        <div id="mensajeDropZone" class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleMensajeDrop(event.dataTransfer.files);">
+                            📎 Arrastra archivos aquí para adjuntar
                         </div>
                         <div id="mensajeAdjuntosList" style="margin-top:0.4rem;"></div>
                     </div>
@@ -1466,7 +1493,7 @@
     </div>
 
     <script src="js/config.js?v=22"></script>
-    <script src="js/google-drive.js?v=29"></script>
+    <script src="js/google-drive.js?v=30"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=22"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
@@ -1479,10 +1506,10 @@
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
-    <script src="js/ui/eswu-ui.js?v=28"></script>
-    <script src="js/ui/admin-ui.js?v=22"></script>
+    <script src="js/ui/eswu-ui.js?v=29"></script>
+    <script src="js/ui/admin-ui.js?v=23"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
-    <script src="js/ui/mensajes-ui.js?v=26"></script>
+    <script src="js/ui/mensajes-ui.js?v=27"></script>
     <script src="js/modals/modals.js?v=22"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
