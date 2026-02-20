@@ -569,4 +569,31 @@ async function handleEswuDrop(tipo, files) {
     }
 }
 
-console.log('✅ ESWU-UI.JS v7 cargado');
+// Handle banco drop - open modal with file pre-loaded
+var bancoPendingDropFile = null;
+
+function handleBancoDrop(files) {
+    if (!files || !files.length) return;
+    bancoPendingDropFile = files[0]; // Take first file
+    
+    // Open modal
+    if (typeof showAddBancoModal === 'function') showAddBancoModal();
+    
+    // Pre-fill file name display and set current date
+    setTimeout(function() {
+        var nameEl = document.getElementById('bancoDocumentoFileName');
+        if (nameEl) nameEl.textContent = bancoPendingDropFile.name;
+        
+        // Remove required from file input since we have the drop file
+        var fileInput = document.getElementById('bancoDocumento');
+        if (fileInput) fileInput.removeAttribute('required');
+        
+        var now = new Date();
+        var anioEl = document.getElementById('bancoAnio');
+        if (anioEl && !anioEl.value) anioEl.value = now.getFullYear();
+        var mesEl = document.getElementById('bancoMes');
+        if (mesEl && !mesEl.value) mesEl.value = now.getMonth() + 1;
+    }, 100);
+}
+
+console.log('✅ ESWU-UI.JS v8 cargado');
