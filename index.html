@@ -1049,11 +1049,10 @@
                     <div class="form-group"><label>Notas</label><textarea id="activoNotas"></textarea></div>
                     <div class="form-group">
                         <label>Fotos</label>
-                        <div class="file-upload" onclick="document.getElementById('activoFotos').click()">
-                            <input type="file" id="activoFotos" accept="image/*" multiple>
-                            <p>Click para seleccionar fotos</p>
-                            <p id="activoFotosFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
+                        <div id="activoDropZone" class="file-drop-zone" style="cursor:pointer; min-height:60px; display:flex; align-items:center; justify-content:center;" onclick="activoSelectFotos()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); addActivoFotos(event.dataTransfer.files);">
+                            📷 Arrastra fotos aquí o haz clic para seleccionar
                         </div>
+                        <div id="activoPendingFotos" style="margin-top:0.3rem;"></div>
                     </div>
                 </form>
             </div>
@@ -1639,7 +1638,7 @@
     </div>
 
     <script src="js/config.js?v=22"></script>
-    <script src="js/google-drive.js?v=31"></script>
+    <script src="js/google-drive.js?v=32"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=22"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
@@ -1654,10 +1653,10 @@
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
-    <script src="js/ui/admin-ui.js?v=28"></script>
+    <script src="js/ui/admin-ui.js?v=29"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
     <script src="js/ui/mensajes-ui.js?v=28"></script>
-    <script src="js/modals/modals.js?v=22"></script>
+    <script src="js/modals/modals.js?v=23"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
     <script src="js/main.js?v=23"></script>
