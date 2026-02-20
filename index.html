@@ -1360,7 +1360,14 @@
                     </div>
                     <div style="margin-bottom:0.25rem;">
                         <input type="file" id="mensajeAdjuntoInput" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="display:none;">
-                        <span id="btnAdjuntarDocs" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar documentos</span>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                            <span id="btnAdjuntarDocs" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar archivo</span>
+                            <span id="btnElegirDrive" onclick="toggleDrivePicker()" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#16a34a';this.style.color='#16a34a'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📁 Elegir de Drive</span>
+                        </div>
+                        <div id="drivePickerArea" style="display:none;margin-top:0.4rem;">
+                            <input type="text" id="drivePickerSearch" placeholder="🔍 Buscar archivo en Drive..." oninput="searchDrivePickerDebounced()" autocomplete="off" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
+                            <div id="drivePickerResults" style="max-height:180px;overflow-y:auto;margin-top:0.3rem;border:1px solid var(--border);border-radius:6px;display:none;"></div>
+                        </div>
                         <div id="mensajeAdjuntosList" style="margin-top:0.4rem;"></div>
                     </div>
                 </form>
@@ -1459,7 +1466,7 @@
     </div>
 
     <script src="js/config.js?v=22"></script>
-    <script src="js/google-drive.js?v=28"></script>
+    <script src="js/google-drive.js?v=29"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=22"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
@@ -1472,10 +1479,10 @@
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
-    <script src="js/ui/eswu-ui.js?v=27"></script>
+    <script src="js/ui/eswu-ui.js?v=28"></script>
     <script src="js/ui/admin-ui.js?v=22"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
-    <script src="js/ui/mensajes-ui.js?v=25"></script>
+    <script src="js/ui/mensajes-ui.js?v=26"></script>
     <script src="js/modals/modals.js?v=22"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
