@@ -1058,11 +1058,6 @@ async function loadSubcarpetaFromSupabase() {
             html += '<p style="text-align:center; color:var(--text-light); padding:1rem;">No hay documentos registrados</p>';
         }
         
-        // Drop zone with clear path
-        html += '<div class="file-drop-zone" style="margin-top:0.75rem;" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">';
-        html += '📁 Arrastra archivos aquí para subir a <strong>' + pathDisplay + '</strong>';
-        html += '</div>';
-        
         contentDiv.innerHTML = html;
         
         // Also sync from Drive in background (to catch files not yet indexed)
@@ -1137,7 +1132,6 @@ async function loadSubcarpetaFromDriveFallback() {
         } else {
             html = '<p style="text-align:center; color:var(--text-light); padding:1rem;">📭 Carpeta vacía</p>';
         }
-        html += '<div class="file-drop-zone" style="margin-top:0.75rem;" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); handleContabilidadDrop(event.dataTransfer.files);">📁 Arrastra archivos aquí para subir</div>';
         contentDiv.innerHTML = html;
     } catch (e) {
         console.error('Fallback drive load failed:', e);
@@ -1160,6 +1154,8 @@ function getFileIcon(name, mimeType) {
 // UPLOAD TO CURRENT FOLDER
 // ============================================
 
+var contabilidadPendingFiles = [];
+
 function uploadToCurrentFolder() {
     if (!currentDriveFolderId) {
         alert('Navega a una carpeta primero');
@@ -1170,57 +1166,102 @@ function uploadToCurrentFolder() {
         return;
     }
     
-    const input = document.createElement('input');
+    // Toggle upload panel
+    var existing = document.getElementById('contabilidadUploadPanel');
+    if (existing) {
+        cancelContabilidadUpload();
+        return;
+    }
+    
+    contabilidadPendingFiles = [];
+    
+    // Build path display
+    var pathParts = contabilidadNavStack.map(function(s) { return s.label; });
+    var pathDisplay = pathParts.join(' › ').replace(/ > /g, ' › ');
+    
+    var contentDiv = document.getElementById('contabilidadContent');
+    
+    var panel = document.createElement('div');
+    panel.id = 'contabilidadUploadPanel';
+    panel.style.cssText = 'margin-top:0.75rem; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:white;';
+    
+    panel.innerHTML = '' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.75rem; background:var(--bg); border-bottom:1px solid var(--border);">' +
+            '<span style="font-size:0.85rem; font-weight:600; color:var(--text);">Subir a: <span style="color:var(--primary);">' + pathDisplay + '</span></span>' +
+            '<div style="display:flex; gap:0.3rem;">' +
+                '<span id="btnSaveContabilidadUpload" onclick="saveContabilidadUpload()" title="Guardar" style="font-size:1.4rem; cursor:pointer; padding:0.1rem 0.3rem; border-radius:4px; transition:background 0.2s; opacity:0.4; pointer-events:none;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'">💾</span>' +
+                '<span onclick="cancelContabilidadUpload()" title="Cancelar" style="font-size:1.2rem; cursor:pointer; padding:0.1rem 0.3rem; border-radius:4px; color:var(--danger); font-weight:700; transition:background 0.2s;" onmouseover="this.style.background=\'#fed7d7\'" onmouseout="this.style.background=\'transparent\'">✕</span>' +
+            '</div>' +
+        '</div>' +
+        '<div style="padding:0.75rem;">' +
+            '<div id="contabilidadDropArea" class="file-drop-zone" style="margin:0; cursor:pointer;" onclick="contabilidadSelectFiles()" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); addContabilidadFiles(event.dataTransfer.files);">' +
+                '📁 Arrastra archivos aquí o haz clic para seleccionar' +
+            '</div>' +
+            '<div id="contabilidadPendingList" style="margin-top:0.4rem;"></div>' +
+        '</div>';
+    
+    contentDiv.appendChild(panel);
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function contabilidadSelectFiles() {
+    var input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png';
     input.multiple = true;
-    input.onchange = async function() {
-        if (!input.files.length) return;
-        showLoading();
-        try {
-            // Parse path info
-            var pathLabel = contabilidadNavStack[0] ? contabilidadNavStack[0].label : '';
-            var parts = pathLabel.split(' > ');
-            var anio = parseInt(parts[0]) || 0;
-            var mesNombre = (parts[1] || '').trim();
-            var mesNum = MESES_NOMBRES.indexOf(mesNombre);
-            var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[1].label : '';
-            
-            for (const file of input.files) {
-                var result = await uploadFileToDrive(file, currentDriveFolderId);
-                
-                // Index in Supabase
-                if (result && result.id && anio && mesNum > 0 && subcarpeta) {
-                    await supabaseClient
-                        .from('contabilidad_documentos')
-                        .insert([{
-                            nombre: file.name,
-                            anio: anio,
-                            mes: mesNum,
-                            subcarpeta: subcarpeta,
-                            google_drive_file_id: result.id,
-                            size_bytes: file.size || 0,
-                            mime_type: file.type || '',
-                            usuario_subio: currentUser ? currentUser.nombre : ''
-                        }]);
-                }
-            }
-            // Refresh from Supabase
-            loadSubcarpetaFromSupabase();
-        } catch (e) {
-            console.error('Error uploading:', e);
-            alert('Error al subir: ' + e.message);
-        } finally {
-            hideLoading();
-        }
+    input.onchange = function() {
+        if (input.files.length) addContabilidadFiles(input.files);
     };
     input.click();
 }
 
-async function handleContabilidadDrop(files) {
-    if (!files || !files.length) return;
-    if (!currentDriveFolderId) { alert('Navega a una carpeta primero'); return; }
-    if (!isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+function addContabilidadFiles(fileList) {
+    for (var i = 0; i < fileList.length; i++) {
+        contabilidadPendingFiles.push(fileList[i]);
+    }
+    renderContabilidadPendingList();
+}
+
+function removeContabilidadFile(idx) {
+    contabilidadPendingFiles.splice(idx, 1);
+    renderContabilidadPendingList();
+}
+
+function renderContabilidadPendingList() {
+    var listDiv = document.getElementById('contabilidadPendingList');
+    var saveBtn = document.getElementById('btnSaveContabilidadUpload');
+    if (!listDiv) return;
+    
+    if (contabilidadPendingFiles.length === 0) {
+        listDiv.innerHTML = '';
+        if (saveBtn) { saveBtn.style.opacity = '0.4'; saveBtn.style.pointerEvents = 'none'; }
+        return;
+    }
+    
+    if (saveBtn) { saveBtn.style.opacity = '1'; saveBtn.style.pointerEvents = 'auto'; }
+    
+    var html = '';
+    contabilidadPendingFiles.forEach(function(f, i) {
+        var size = f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB';
+        html += '<div style="display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0; border-bottom:1px solid #f1f5f9;">';
+        html += '<span style="font-size:0.85rem;">📄</span>';
+        html += '<span style="flex:1; font-size:0.83rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + f.name + '</span>';
+        html += '<span style="font-size:0.72rem; color:var(--text-light);">' + size + '</span>';
+        html += '<span onclick="removeContabilidadFile(' + i + ')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.85rem; padding:0 0.2rem;">✕</span>';
+        html += '</div>';
+    });
+    listDiv.innerHTML = html;
+}
+
+function cancelContabilidadUpload() {
+    contabilidadPendingFiles = [];
+    var panel = document.getElementById('contabilidadUploadPanel');
+    if (panel) panel.remove();
+}
+
+async function saveContabilidadUpload() {
+    if (contabilidadPendingFiles.length === 0) return;
+    if (!currentDriveFolderId) return;
     
     showLoading();
     try {
@@ -1231,28 +1272,44 @@ async function handleContabilidadDrop(files) {
         var mesNum = MESES_NOMBRES.indexOf(mesNombre);
         var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[contabilidadNavStack.length - 1].label : '';
         
-        for (var i = 0; i < files.length; i++) {
-            var result = await uploadFileToDrive(files[i], currentDriveFolderId);
+        for (var i = 0; i < contabilidadPendingFiles.length; i++) {
+            var file = contabilidadPendingFiles[i];
+            var result = await uploadFileToDrive(file, currentDriveFolderId);
             if (result && result.id) {
                 await supabaseClient.from('contabilidad_documentos').insert([{
-                    nombre: files[i].name,
+                    nombre: file.name,
                     anio: anio,
                     mes: mesNum,
                     subcarpeta: subcarpeta,
                     google_drive_file_id: result.id,
-                    size_bytes: files[i].size || 0,
-                    mime_type: files[i].type || '',
+                    size_bytes: file.size || 0,
+                    mime_type: file.type || '',
                     usuario_subio: currentUser ? currentUser.nombre : ''
                 }]);
             }
         }
-        // Reload from Supabase (fast)
+        
+        contabilidadPendingFiles = [];
+        var panel = document.getElementById('contabilidadUploadPanel');
+        if (panel) panel.remove();
+        
+        // Refresh from Supabase
         loadSubcarpetaFromSupabase();
     } catch (e) {
         alert('Error al subir: ' + e.message);
     } finally {
         hideLoading();
     }
+}
+
+// Legacy: handleContabilidadDrop still works if someone drops on old zones
+async function handleContabilidadDrop(files) {
+    if (!files || !files.length) return;
+    // Open upload panel and add files there
+    if (!document.getElementById('contabilidadUploadPanel')) {
+        uploadToCurrentFolder();
+    }
+    setTimeout(function() { addContabilidadFiles(files); }, 100);
 }
 
 // ============================================
