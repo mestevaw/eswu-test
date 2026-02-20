@@ -316,29 +316,406 @@ function calcularProximaFecha(fechaBase, frecuencia) {
 }
 
 // ============================================
-// PLACEHOLDER: Detalle trabajo (Fase C)
+// MODAL: Detalle Trabajo
 // ============================================
 
-function showTrabajoDetail(trabajoId) {
+var currentTrabajoId = null;
+var currentTrabajoBitacora = [];
+var currentTrabajoFotos = [];
+
+async function showTrabajoDetail(trabajoId) {
+    currentTrabajoId = trabajoId;
+    
+    // Refresh data
+    await loadMantenimientoTrabajos();
     var t = mantenimientoTrabajos.find(function(w) { return w.id === trabajoId; });
-    if (!t) return;
+    if (!t) { alert('Trabajo no encontrado'); return; }
     
     var activo = activos.find(function(a) { return a.id === t.activo_id; });
-    var activoNombre = activo ? activo.nombre : '—';
     var prov = proveedores.find(function(p) { return p.id === t.proveedor_id; });
-    var provNombre = prov ? prov.nombre : '—';
     
-    // For now, simple alert with details - will be full modal in Fase C
-    var msg = '📋 ' + t.descripcion + '\n\n';
-    msg += 'Proveedor: ' + provNombre + '\n';
-    msg += 'Activo: ' + activoNombre + '\n';
-    msg += 'Estado: ' + t.estado + '\n';
-    if (t.fecha_solicitud) msg += 'Solicitado: ' + t.fecha_solicitud + '\n';
-    if (t.fecha_entrega_estimada) msg += 'Entrega estimada: ' + t.fecha_entrega_estimada + '\n';
-    if (t.es_recurrente) msg += 'Recurrente: ' + t.frecuencia + '\n';
-    if (t.notas) msg += '\nNotas: ' + t.notas;
+    // Title
+    document.getElementById('trabajoDetailTitle').textContent = t.descripcion;
     
-    alert(msg);
+    // Estado bar
+    renderEstadoBar(t.estado);
+    
+    // Info
+    document.getElementById('trabajoDetailActivo').textContent = activo ? activo.nombre : '—';
+    document.getElementById('trabajoDetailProveedor').textContent = prov ? prov.nombre : '—';
+    document.getElementById('trabajoDetailFechaSolicitud').textContent = t.fecha_solicitud ? formatDateShort(t.fecha_solicitud) : '—';
+    document.getElementById('trabajoDetailFechaEntrega').textContent = t.fecha_entrega_estimada ? formatDateShort(t.fecha_entrega_estimada) : '—';
+    
+    // Recurrencia
+    var recDiv = document.getElementById('trabajoDetailRecurrencia');
+    if (t.es_recurrente) {
+        recDiv.style.display = 'block';
+        recDiv.textContent = '🔄 Recurrente: ' + (t.frecuencia || '—') + (t.proxima_fecha ? ' · Próximo: ' + formatDateShort(t.proxima_fecha) : '');
+    } else {
+        recDiv.style.display = 'none';
+    }
+    
+    // Notas
+    var notasDiv = document.getElementById('trabajoDetailNotas');
+    if (t.notas) {
+        notasDiv.innerHTML = '<div style="padding:0.4rem 0.5rem; background:#f8fafc; border:1px solid var(--border); border-radius:4px; font-size:0.83rem; color:var(--text); white-space:pre-wrap;">' + escapeHtml(t.notas) + '</div>';
+    } else {
+        notasDiv.innerHTML = '';
+    }
+    
+    // Load bitácora
+    await loadTrabajoBitacora(trabajoId);
+    renderBitacora();
+    
+    // Load fotos
+    await loadTrabajoFotos(trabajoId);
+    renderTrabajoFotosList();
+    
+    // Factura section
+    renderTrabajoFactura(t);
+    
+    // Clear input
+    document.getElementById('trabajoBitacoraInput').value = '';
+    
+    document.getElementById('trabajoDetailModal').classList.add('active');
+}
+
+function formatDateShort(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear();
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ============================================
+// ESTADO BAR
+// ============================================
+
+function renderEstadoBar(estado) {
+    var bar = document.getElementById('trabajoEstadoBar');
+    var estados = [
+        { key: 'pendiente', label: 'Pendiente', bg: '#fef3c7', color: '#92400e' },
+        { key: 'en_proceso', label: 'En proceso', bg: '#dbeafe', color: '#1e40af' },
+        { key: 'completado', label: 'Completado', bg: '#dcfce7', color: '#166534' },
+        { key: 'cancelado', label: 'Cancelado', bg: '#f1f5f9', color: '#64748b' }
+    ];
+    
+    var html = '';
+    estados.forEach(function(e) {
+        var isActive = e.key === estado;
+        var style = isActive
+            ? 'background:' + e.bg + '; color:' + e.color + '; font-weight:600; border:2px solid ' + e.color + ';'
+            : 'background:#f8fafc; color:var(--text-light); border:2px solid transparent; cursor:pointer;';
+        html += '<span onclick="cambiarEstadoTrabajo(\'' + e.key + '\')" style="' + style + ' padding:0.25rem 0.6rem; border-radius:4px; font-size:0.8rem; transition:all 0.2s;">' + e.label + '</span>';
+    });
+    bar.innerHTML = html;
+}
+
+async function cambiarEstadoTrabajo(nuevoEstado) {
+    if (!currentTrabajoId) return;
+    
+    var t = mantenimientoTrabajos.find(function(w) { return w.id === currentTrabajoId; });
+    if (!t || t.estado === nuevoEstado) return;
+    
+    var updates = { estado: nuevoEstado, updated_at: new Date().toISOString() };
+    
+    if (nuevoEstado === 'completado') {
+        updates.fecha_completado = new Date().toISOString().split('T')[0];
+        
+        // If recurrent, ask about generating next
+        if (t.es_recurrente && t.frecuencia) {
+            var proxFecha = calcularProximaFecha(
+                updates.fecha_completado,
+                t.frecuencia
+            );
+            if (confirm('Este trabajo es recurrente (' + t.frecuencia + ').\n¿Generar próximo trabajo para ' + formatDateShort(proxFecha) + '?')) {
+                await generarSiguienteTrabajo(t, proxFecha);
+            }
+        }
+    }
+    
+    showLoading();
+    try {
+        var { error } = await supabaseClient
+            .from('mantenimiento_trabajos')
+            .update(updates)
+            .eq('id', currentTrabajoId);
+        
+        if (error) throw error;
+        
+        // Add bitácora entry
+        await supabaseClient.from('mantenimiento_bitacora').insert([{
+            trabajo_id: currentTrabajoId,
+            nota: 'Estado cambiado a: ' + nuevoEstado,
+            usuario: currentUser ? currentUser.nombre : ''
+        }]);
+        
+        await showTrabajoDetail(currentTrabajoId);
+        
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function generarSiguienteTrabajo(trabajoOriginal, fechaEntrega) {
+    try {
+        var record = {
+            proveedor_id: trabajoOriginal.proveedor_id,
+            activo_id: trabajoOriginal.activo_id,
+            descripcion: trabajoOriginal.descripcion,
+            estado: 'pendiente',
+            fecha_solicitud: null,
+            fecha_entrega_estimada: fechaEntrega,
+            es_recurrente: true,
+            frecuencia: trabajoOriginal.frecuencia,
+            proxima_fecha: calcularProximaFecha(fechaEntrega, trabajoOriginal.frecuencia),
+            trabajo_padre_id: trabajoOriginal.id,
+            notas: trabajoOriginal.notas,
+            usuario_creo: currentUser ? currentUser.nombre : ''
+        };
+        
+        await supabaseClient.from('mantenimiento_trabajos').insert([record]);
+    } catch (e) {
+        console.error('Error generando siguiente trabajo:', e);
+    }
+}
+
+async function deleteTrabajo() {
+    if (!currentTrabajoId) return;
+    if (!confirm('¿Eliminar este trabajo de mantenimiento?')) return;
+    
+    showLoading();
+    try {
+        var { error } = await supabaseClient
+            .from('mantenimiento_trabajos')
+            .delete()
+            .eq('id', currentTrabajoId);
+        
+        if (error) throw error;
+        
+        closeModal('trabajoDetailModal');
+        currentTrabajoId = null;
+        
+        // Refresh wherever we came from
+        if (typeof renderProveedorMantenimiento === 'function') renderProveedorMantenimiento();
+        
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// BITÁCORA
+// ============================================
+
+async function loadTrabajoBitacora(trabajoId) {
+    try {
+        var { data, error } = await supabaseClient
+            .from('mantenimiento_bitacora')
+            .select('*')
+            .eq('trabajo_id', trabajoId)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        currentTrabajoBitacora = data || [];
+    } catch (e) {
+        currentTrabajoBitacora = [];
+    }
+}
+
+function renderBitacora() {
+    var div = document.getElementById('trabajoDetailBitacora');
+    if (!div) return;
+    
+    if (currentTrabajoBitacora.length === 0) {
+        div.innerHTML = '<p style="text-align:center; color:var(--text-light); font-size:0.8rem; padding:0.5rem;">Sin notas aún</p>';
+        return;
+    }
+    
+    var html = '';
+    currentTrabajoBitacora.forEach(function(b) {
+        var d = new Date(b.created_at);
+        var fechaStr = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear() + ' ' + d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+        html += '<div style="padding:0.3rem 0; border-bottom:1px solid #f1f5f9; font-size:0.82rem;">';
+        html += '<div style="color:var(--text);">' + escapeHtml(b.nota) + '</div>';
+        html += '<div style="font-size:0.7rem; color:var(--text-light);">' + fechaStr + (b.usuario ? ' · ' + b.usuario : '') + '</div>';
+        html += '</div>';
+    });
+    div.innerHTML = html;
+}
+
+async function addBitacoraNota() {
+    var input = document.getElementById('trabajoBitacoraInput');
+    var nota = input.value.trim();
+    if (!nota || !currentTrabajoId) return;
+    
+    try {
+        var { error } = await supabaseClient.from('mantenimiento_bitacora').insert([{
+            trabajo_id: currentTrabajoId,
+            nota: nota,
+            usuario: currentUser ? currentUser.nombre : ''
+        }]);
+        
+        if (error) throw error;
+        
+        input.value = '';
+        await loadTrabajoBitacora(currentTrabajoId);
+        renderBitacora();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+}
+
+// ============================================
+// FOTOS
+// ============================================
+
+async function loadTrabajoFotos(trabajoId) {
+    try {
+        var { data, error } = await supabaseClient
+            .from('mantenimiento_fotos')
+            .select('*')
+            .eq('trabajo_id', trabajoId)
+            .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        currentTrabajoFotos = data || [];
+    } catch (e) {
+        currentTrabajoFotos = [];
+    }
+}
+
+function renderTrabajoFotosList() {
+    var div = document.getElementById('trabajoDetailFotos');
+    if (!div) return;
+    
+    if (currentTrabajoFotos.length === 0) {
+        div.innerHTML = '<p style="font-size:0.8rem; color:var(--text-light);">Sin fotos</p>';
+        return;
+    }
+    
+    var html = '<div style="display:flex; flex-wrap:wrap; gap:0.3rem;">';
+    currentTrabajoFotos.forEach(function(f) {
+        html += '<div style="padding:0.25rem 0.5rem; background:#f8fafc; border:1px solid var(--border); border-radius:4px; font-size:0.78rem; cursor:pointer; display:flex; align-items:center; gap:0.25rem;" onclick="viewDriveFileInline(\'' + f.google_drive_file_id + '\', \'' + f.nombre.replace(/'/g, "\\'") + '\')">';
+        html += '📷 ' + f.nombre;
+        html += '</div>';
+    });
+    html += '</div>';
+    div.innerHTML = html;
+}
+
+function selectTrabajoFotos() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = function() {
+        if (input.files.length) uploadTrabajoFotos(input.files);
+    };
+    input.click();
+}
+
+function handleTrabajoFotosDrop(files) {
+    if (files && files.length) uploadTrabajoFotos(files);
+}
+
+async function uploadTrabajoFotos(files) {
+    if (!currentTrabajoId || !isGoogleConnected()) {
+        alert('Conecta Google Drive primero');
+        return;
+    }
+    
+    var t = mantenimientoTrabajos.find(function(w) { return w.id === currentTrabajoId; });
+    if (!t) return;
+    
+    var prov = proveedores.find(function(p) { return p.id === t.proveedor_id; });
+    var activo = activos.find(function(a) { return a.id === t.activo_id; });
+    var provNombre = prov ? prov.nombre.replace(/[\/\\]/g, '-') : 'Proveedor';
+    var activoNombre = activo ? activo.nombre.replace(/[\/\\]/g, '-') : 'Activo';
+    var fechaHoy = new Date().toISOString().split('T')[0];
+    
+    showLoading();
+    try {
+        // Ensure folder: Proveedores/{Proveedor}/Mantenimiento/
+        var provFolder = await findOrCreateSubfolder('Proveedores', null);
+        var provSubFolder = await findOrCreateSubfolder(provNombre, provFolder);
+        var mantFolder = await findOrCreateSubfolder('Mantenimiento', provSubFolder);
+        
+        var existingCount = currentTrabajoFotos.length;
+        
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            var num = existingCount + i + 1;
+            var ext = file.name.split('.').pop() || 'jpg';
+            var autoName = provNombre + ' ' + activoNombre + ' ' + fechaHoy + ' (' + num + ').' + ext;
+            
+            // Rename file
+            var renamedFile = new File([file], autoName, { type: file.type });
+            var result = await uploadFileToDrive(renamedFile, mantFolder);
+            
+            if (result && result.id) {
+                await supabaseClient.from('mantenimiento_fotos').insert([{
+                    trabajo_id: currentTrabajoId,
+                    tipo: 'trabajo',
+                    nombre: autoName,
+                    google_drive_file_id: result.id
+                }]);
+            }
+        }
+        
+        await loadTrabajoFotos(currentTrabajoId);
+        renderTrabajoFotosList();
+        
+    } catch (e) {
+        alert('Error subiendo fotos: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
+// FACTURA / PAGO
+// ============================================
+
+function renderTrabajoFactura(t) {
+    var div = document.getElementById('trabajoDetailFactura');
+    if (!div) return;
+    
+    var html = '<div style="font-size:0.85rem;">';
+    
+    if (t.factura_id) {
+        // Linked to existing factura
+        var factura = null;
+        proveedores.forEach(function(p) {
+            if (p.facturas) {
+                var f = p.facturas.find(function(f) { return f.id === t.factura_id; });
+                if (f) factura = f;
+            }
+        });
+        if (factura) {
+            html += '<div style="padding:0.3rem 0;">📄 Factura #' + (factura.numero_factura || '—') + ' · ' + formatCurrency(factura.monto) + '</div>';
+        }
+    } else if (t.monto) {
+        html += '<div style="padding:0.3rem 0;">💰 Monto: ' + formatCurrency(t.monto) + '</div>';
+    }
+    
+    if (t.pagado) {
+        html += '<div style="color:var(--success); font-weight:500;">✅ Pagado' + (t.fecha_pago ? ' · ' + formatDateShort(t.fecha_pago) : '') + '</div>';
+    } else if (t.monto || t.factura_id) {
+        html += '<div style="color:var(--danger);">⏳ Pendiente de pago</div>';
+    } else {
+        html += '<div style="color:var(--text-light);">Sin factura asignada</div>';
+    }
+    
+    html += '</div>';
+    div.innerHTML = html;
 }
 
 // ============================================
@@ -386,4 +763,4 @@ function toggleDocSort(tableId, columnIdx) {
     });
 }
 
-console.log('✅ MANTENIMIENTO-UI.JS v1 cargado');
+console.log('✅ MANTENIMIENTO-UI.JS v2 cargado');
