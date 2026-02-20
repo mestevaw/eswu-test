@@ -498,6 +498,200 @@ function showActivoDetail(id) {
 }
 
 // ============================================
+// ACTIVOS: SAVE / EDIT / DELETE
+// ============================================
+
+var activoPendingFotoFiles = [];
+
+function activoSelectFotos() {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.multiple = true;
+    input.onchange = function() {
+        if (input.files.length) addActivoFotos(input.files);
+    };
+    input.click();
+}
+
+function addActivoFotos(fileList) {
+    for (var i = 0; i < fileList.length; i++) {
+        activoPendingFotoFiles.push(fileList[i]);
+    }
+    renderActivoPendingFotos();
+}
+
+function removeActivoFoto(idx) {
+    activoPendingFotoFiles.splice(idx, 1);
+    renderActivoPendingFotos();
+}
+
+function renderActivoPendingFotos() {
+    var div = document.getElementById('activoPendingFotos');
+    if (!div) return;
+    if (activoPendingFotoFiles.length === 0) { div.innerHTML = ''; return; }
+    var html = '';
+    activoPendingFotoFiles.forEach(function(f, i) {
+        html += '<div style="display:flex; align-items:center; gap:0.4rem; padding:0.25rem 0; border-bottom:1px solid #f1f5f9; font-size:0.82rem;">';
+        html += '<span>📷</span><span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + f.name + '</span>';
+        html += '<span onclick="removeActivoFoto(' + i + ')" style="cursor:pointer; color:var(--danger); font-weight:700;">✕</span>';
+        html += '</div>';
+    });
+    div.innerHTML = html;
+}
+
+async function saveActivo(event) {
+    event.preventDefault();
+    
+    var nombre = document.getElementById('activoNombre').value.trim();
+    var ultimoMant = document.getElementById('activoUltimoMant').value;
+    var proximoMant = document.getElementById('activoProximoMant').value;
+    var proveedor = document.getElementById('activoProveedor').value;
+    var notas = document.getElementById('activoNotas').value.trim();
+    
+    if (!nombre) { alert('Ingresa un nombre'); return; }
+    
+    showLoading();
+    try {
+        var record = {
+            nombre: nombre,
+            ultimo_mant: ultimoMant || null,
+            proximo_mant: proximoMant || null,
+            proveedor: proveedor || null,
+            notas: notas || null
+        };
+        
+        var activoId;
+        
+        if (isEditMode && currentActivoId) {
+            var { error } = await supabaseClient
+                .from('activos')
+                .update(record)
+                .eq('id', currentActivoId);
+            if (error) throw error;
+            activoId = currentActivoId;
+        } else {
+            var { data, error } = await supabaseClient
+                .from('activos')
+                .insert([record])
+                .select('id');
+            if (error) throw error;
+            activoId = data && data[0] ? data[0].id : null;
+        }
+        
+        // Upload photos to Drive if any
+        if (activoPendingFotoFiles.length > 0 && activoId && isGoogleConnected()) {
+            var provNombre = (proveedor || 'General').replace(/[\/\\]/g, '-');
+            var activoNombreSafe = nombre.replace(/[\/\\]/g, '-');
+            var fechaHoy = new Date().toISOString().split('T')[0];
+            
+            // Folder: Activos/{NombreActivo}/
+            var activosFolder = await findOrCreateSubfolder('Activos', null);
+            var activoFolder = await findOrCreateSubfolder(activoNombreSafe, activosFolder);
+            
+            // Count existing photos
+            var { data: existingFotos } = await supabaseClient
+                .from('activos_fotos')
+                .select('id')
+                .eq('activo_id', activoId);
+            var existingCount = (existingFotos || []).length;
+            
+            for (var i = 0; i < activoPendingFotoFiles.length; i++) {
+                var file = activoPendingFotoFiles[i];
+                var num = existingCount + i + 1;
+                var ext = file.name.split('.').pop() || 'jpg';
+                var autoName = activoNombreSafe + ' ' + fechaHoy + ' (' + num + ').' + ext;
+                
+                var renamedFile = new File([file], autoName, { type: file.type });
+                var result = await uploadFileToDrive(renamedFile, activoFolder);
+                
+                if (result && result.id) {
+                    await supabaseClient.from('activos_fotos').insert([{
+                        activo_id: activoId,
+                        foto_name: autoName,
+                        foto_data: 'drive:' + result.id
+                    }]);
+                }
+            }
+        } else if (activoPendingFotoFiles.length > 0 && activoId) {
+            // Fallback: store as base64 if Drive not connected
+            for (var j = 0; j < activoPendingFotoFiles.length; j++) {
+                var fotoFile = activoPendingFotoFiles[j];
+                var base64 = await fileToBase64(fotoFile);
+                await supabaseClient.from('activos_fotos').insert([{
+                    activo_id: activoId,
+                    foto_name: fotoFile.name,
+                    foto_data: base64
+                }]);
+            }
+        }
+        
+        activoPendingFotoFiles = [];
+        closeModal('addActivoModal');
+        await loadActivos();
+        renderActivosTable();
+        
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function editActivo() {
+    var act = activos.find(function(a) { return a.id === currentActivoId; });
+    if (!act) return;
+    
+    isEditMode = true;
+    document.getElementById('addActivoTitle').textContent = 'Editar Activo';
+    document.getElementById('activoNombre').value = act.nombre || '';
+    document.getElementById('activoUltimoMant').value = act.ultimo_mant || '';
+    document.getElementById('activoProximoMant').value = act.proximo_mant || '';
+    document.getElementById('activoNotas').value = act.notas || '';
+    
+    populateProveedoresDropdown();
+    document.getElementById('activoProveedor').value = act.proveedor || '';
+    
+    activoPendingFotoFiles = [];
+    var pendingDiv = document.getElementById('activoPendingFotos');
+    if (pendingDiv) pendingDiv.innerHTML = '';
+    
+    closeModal('activoDetailModal');
+    document.getElementById('addActivoModal').classList.add('active');
+}
+
+async function deleteActivo() {
+    if (!currentActivoId) return;
+    if (!confirm('¿Eliminar este activo y todas sus fotos?')) return;
+    
+    showLoading();
+    try {
+        // Delete fotos first
+        await supabaseClient.from('activos_fotos').delete().eq('activo_id', currentActivoId);
+        
+        var { error } = await supabaseClient.from('activos').delete().eq('id', currentActivoId);
+        if (error) throw error;
+        
+        closeModal('activoDetailModal');
+        await loadActivos();
+        renderActivosTable();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// ============================================
 // ESTACIONAMIENTO
 // ============================================
 
