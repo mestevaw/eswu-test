@@ -101,6 +101,7 @@
                 <button class="submenu-btn" onclick="showProveedoresView('list')">Listado</button>
                 <button class="submenu-btn" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</button>
                 <button class="submenu-btn" onclick="showProveedoresView('facturasPorPagar')">Facturas X Pagar</button>
+                <button class="submenu-btn" onclick="showProveedoresView('mantenimiento')">Mantenimiento</button>
             </div>
 
             <div id="adminSubMenu" class="submenu-container">
@@ -337,6 +338,20 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Mantenimiento Global -->
+                <div id="proveedoresMantenimientoView" class="hidden">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Mantenimiento — Trabajos Pendientes</h2>
+                        </div>
+                        <div style="padding:1rem;">
+                            <div id="mantenimientoGlobalContent">
+                                <p style="text-align:center; color:var(--text-light); padding:2rem;">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
                 <div id="activosPage" class="page">
@@ -405,7 +420,7 @@
                                 <div id="eswuBancosTab" class="tab-content">
                                     <div class="table-container">
                                         <table id="eswuBancosTable" class="sticky-header-table">
-                                            <thead><tr><th>Archivo</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
+                                            <thead><tr><th style="cursor:pointer;" onclick="toggleDocSort('eswuBancosTable', 0)">Archivo ▲</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
                                             <tbody></tbody>
                                         </table>
                                     </div>
@@ -775,7 +790,8 @@
                     <div class="tabs" id="proveedorTabs">
                         <button class="tab active" onclick="switchTab('proveedor', 'pagadas')">Facturas Pagadas</button>
                         <button class="tab" onclick="switchTab('proveedor', 'porpagar')">Facturas X Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
-                        <button class="tab" onclick="switchTab('proveedor', 'docs')">Documentos Adicionales<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
+                        <button class="tab" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
+                        <button class="tab" onclick="switchTab('proveedor', 'mantenimiento')">Mantenimiento<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
                         <button class="tab" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="proveedorPagadasTab" class="tab-content active">
@@ -786,6 +802,9 @@
                     </div>
                     <div id="proveedorDocsTab" class="tab-content">
                         <div id="proveedorDocumentosAdicionales"></div>
+                    </div>
+                    <div id="proveedorMantenimientoTab" class="tab-content">
+                        <div id="proveedorMantenimientoContent"></div>
                     </div>
                     <div id="proveedorNotasTab" class="tab-content">
                         <div id="proveedorMensajesFicha"></div>
@@ -1125,6 +1144,62 @@
                     📁 Arrastra archivos aquí o haz clic para seleccionar
                 </div>
                 <div id="contabilidadPendingList" style="margin-top:0.5rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Trabajo Mantenimiento -->
+    <div id="nuevoTrabajoModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Trabajo</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoTrabajoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('nuevoTrabajoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <form id="nuevoTrabajoForm" onsubmit="saveNuevoTrabajo(event)">
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Activo</label>
+                        <select id="trabajoActivo" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="">-- Sin activo específico --</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Descripción *</label>
+                        <input type="text" id="trabajoDescripcion" required placeholder="Ej: Mantenimiento elevador" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.6rem;">
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Fecha solicitud</label>
+                            <input type="date" id="trabajoFechaSolicitud" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Entrega estimada</label>
+                            <input type="date" id="trabajoFechaEntrega" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; cursor:pointer;">
+                            <input type="checkbox" id="trabajoEsRecurrente" onchange="toggleRecurrenciaFields()">
+                            <span style="font-weight:500;">Es recurrente</span>
+                        </label>
+                    </div>
+                    <div id="trabajoRecurrenciaFields" style="display:none; margin-bottom:0.6rem; padding:0.5rem; background:#f8fafc; border:1px solid var(--border); border-radius:4px;">
+                        <label style="font-weight:500; font-size:0.85rem; display:block; margin-bottom:0.2rem;">Frecuencia</label>
+                        <select id="trabajoFrecuencia" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="">-- Seleccione --</option>
+                            <option value="mensual">Mensual</option>
+                            <option value="semestral">Semestral</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.4rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Notas</label>
+                        <textarea id="trabajoNotas" rows="2" placeholder="Notas adicionales..." style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1524,13 +1599,14 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=23"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=25"></script>
+    <script src="js/ui/navigation.js?v=26"></script>
     <script src="js/ui/tables.js?v=22"></script>
-    <script src="js/ui/inquilinos-ui.js?v=22"></script>
-    <script src="js/ui/proveedores-ui.js?v=22"></script>
+    <script src="js/ui/inquilinos-ui.js?v=23"></script>
+    <script src="js/ui/proveedores-ui.js?v=23"></script>
+    <script src="js/ui/mantenimiento-ui.js?v=1"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
-    <script src="js/ui/admin-ui.js?v=27"></script>
+    <script src="js/ui/admin-ui.js?v=28"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
     <script src="js/ui/mensajes-ui.js?v=28"></script>
     <script src="js/modals/modals.js?v=22"></script>
