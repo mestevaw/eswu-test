@@ -202,7 +202,7 @@ function sanitizeDriveId(id) {
     return id;
 }
 
-async function listDriveFolder(folderId) {
+async function listDriveFolder(folderId, ruta) {
     if (!gdriveAccessToken) throw new Error('No conectado a Google Drive');
     folderId = sanitizeDriveId(folderId);
     
@@ -228,7 +228,63 @@ async function listDriveFolder(folderId) {
         .filter(f => f.mimeType !== 'application/vnd.google-apps.folder')
         .sort((a, b) => a.name.localeCompare(b.name));
     
+    // Index files to Supabase (non-blocking)
+    if (files.length > 0 || folders.length > 0) {
+        indexDriveItems(data.files || [], folderId, ruta || '');
+    }
+    
     return { folders, files };
+}
+
+// ============================================
+// DRIVE INDEX - Index files to Supabase
+// ============================================
+
+function indexDriveItems(items, parentFolderId, ruta) {
+    if (!items || !items.length) return;
+    if (typeof supabaseClient === 'undefined') return;
+    
+    var rows = items.map(function(f) {
+        return {
+            drive_file_id: f.id,
+            nombre: f.name,
+            mime_type: f.mimeType || '',
+            tamanio: parseInt(f.size) || 0,
+            parent_folder_id: parentFolderId || '',
+            ruta: ruta || '',
+            fecha_modificacion: f.modifiedTime || null,
+            fecha_indexado: new Date().toISOString()
+        };
+    });
+    
+    // Upsert in background (non-blocking)
+    supabaseClient.from('drive_index')
+        .upsert(rows, { onConflict: 'drive_file_id' })
+        .then(function(res) {
+            if (res.error) {
+                console.warn('Index error:', res.error.message);
+            } else {
+                console.log('📇 Indexados ' + rows.length + ' items' + (ruta ? ' en ' + ruta : ''));
+            }
+        });
+}
+
+async function searchDriveIndex(query) {
+    if (!query || query.length < 2) return [];
+    
+    var { data, error } = await supabaseClient
+        .from('drive_index')
+        .select('drive_file_id, nombre, mime_type, tamanio, ruta')
+        .neq('mime_type', 'application/vnd.google-apps.folder')
+        .ilike('nombre', '%' + query + '%')
+        .order('fecha_indexado', { ascending: false })
+        .limit(20);
+    
+    if (error) {
+        console.error('Search index error:', error);
+        return [];
+    }
+    return data || [];
 }
 
 // ============================================
