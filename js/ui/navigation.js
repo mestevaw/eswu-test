@@ -23,12 +23,10 @@ function showSubMenu(menu) {
     document.getElementById('menuInquilinos').classList.remove('active');
     document.getElementById('menuProveedores').classList.remove('active');
     document.getElementById('menuAdmin').classList.remove('active');
-    document.getElementById('menuEswu').classList.remove('active');
     
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.getElementById('adminSubMenu').classList.remove('active');
-    document.getElementById('eswuSubMenu').classList.remove('active');
     
     if (menu === 'inquilinos') {
         document.getElementById('inquilinosSubMenu').classList.add('active');
@@ -42,10 +40,6 @@ function showSubMenu(menu) {
         document.getElementById('adminSubMenu').classList.add('active');
         document.getElementById('menuAdmin').classList.add('active');
         currentMenuContext = 'admin';
-    } else if (menu === 'eswu') {
-        document.getElementById('eswuSubMenu').classList.add('active');
-        document.getElementById('menuEswu').classList.add('active');
-        currentMenuContext = 'eswu';
     }
     
     document.getElementById('btnRegresa').classList.add('hidden');
@@ -69,8 +63,6 @@ function handleRegresa() {
             document.getElementById('proveedoresSubMenu').classList.add('active');
         } else if (currentMenuContext === 'admin') {
             document.getElementById('adminSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'eswu') {
-            document.getElementById('eswuSubMenu').classList.add('active');
         }
         
         currentSubContext = null;
@@ -87,7 +79,6 @@ function showPageFromMenu(pageName) {
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.getElementById('adminSubMenu').classList.remove('active');
-    document.getElementById('eswuSubMenu').classList.remove('active');
     
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageName + 'Page').classList.add('active');
@@ -230,30 +221,13 @@ function switchTab(type, tabName) {
         } else if (tabName === 'docs') {
             document.querySelector('#proveedorDetailModal .tab:nth-child(3)').classList.add('active');
             document.getElementById('proveedorDocsTab').classList.add('active');
-        } else if (tabName === 'notas') {
+        } else if (tabName === 'mantenimiento') {
             document.querySelector('#proveedorDetailModal .tab:nth-child(4)').classList.add('active');
+            document.getElementById('proveedorMantenimientoTab').classList.add('active');
+            if (typeof renderProveedorMantenimiento === 'function') renderProveedorMantenimiento();
+        } else if (tabName === 'notas') {
+            document.querySelector('#proveedorDetailModal .tab:nth-child(5)').classList.add('active');
             document.getElementById('proveedorNotasTab').classList.add('active');
-        }
-    } else if (type === 'eswu') {
-        document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
-        
-        // Track active tab for subject/folder logic
-        window.eswuActiveTab = tabName;
-        
-        if (tabName === 'legales') {
-            document.querySelector('#eswuDocsPage .tab:nth-child(1)').classList.add('active');
-            document.getElementById('eswuLegalesTab').classList.add('active');
-        } else if (tabName === 'generales') {
-            document.querySelector('#eswuDocsPage .tab:nth-child(2)').classList.add('active');
-            document.getElementById('eswuGeneralesTab').classList.add('active');
-        } else if (tabName === 'mensajes') {
-            document.querySelector('#eswuDocsPage .tab:nth-child(3)').classList.add('active');
-            document.getElementById('eswuMensajesTab').classList.add('active');
-        } else if (tabName === 'bancos') {
-            document.querySelector('#eswuDocsPage .tab:nth-child(4)').classList.add('active');
-            document.getElementById('eswuBancosTab').classList.add('active');
-            if (typeof renderEswuBancosTable === 'function') renderEswuBancosTable();
         }
     }
 }
