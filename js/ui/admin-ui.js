@@ -1166,42 +1166,21 @@ function uploadToCurrentFolder() {
         return;
     }
     
-    // Toggle upload panel
-    var existing = document.getElementById('contabilidadUploadPanel');
-    if (existing) {
-        cancelContabilidadUpload();
-        return;
-    }
-    
     contabilidadPendingFiles = [];
     
     // Build path display
     var pathParts = contabilidadNavStack.map(function(s) { return s.label; });
     var pathDisplay = pathParts.join(' › ').replace(/ > /g, ' › ');
     
-    var contentDiv = document.getElementById('contabilidadContent');
+    document.getElementById('contabilidadUploadTitle').textContent = 'Subir Documento';
+    document.getElementById('contabilidadUploadPath').innerHTML = '📂 ' + pathDisplay;
+    document.getElementById('contabilidadPendingList').innerHTML = '';
+    document.getElementById('contabilidadDropArea').innerHTML = '📁 Arrastra archivos aquí o haz clic para seleccionar';
     
-    var panel = document.createElement('div');
-    panel.id = 'contabilidadUploadPanel';
-    panel.style.cssText = 'margin-top:0.75rem; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:white;';
+    var saveBtn = document.getElementById('btnSaveContabilidadUpload');
+    if (saveBtn) { saveBtn.style.opacity = '0.4'; saveBtn.style.pointerEvents = 'none'; }
     
-    panel.innerHTML = '' +
-        '<div style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.75rem; background:var(--bg); border-bottom:1px solid var(--border);">' +
-            '<span style="font-size:0.85rem; font-weight:600; color:var(--text);">Subir a: <span style="color:var(--primary);">' + pathDisplay + '</span></span>' +
-            '<div style="display:flex; gap:0.3rem;">' +
-                '<span id="btnSaveContabilidadUpload" onclick="saveContabilidadUpload()" title="Guardar" style="font-size:1.4rem; cursor:pointer; padding:0.1rem 0.3rem; border-radius:4px; transition:background 0.2s; opacity:0.4; pointer-events:none;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'">💾</span>' +
-                '<span onclick="cancelContabilidadUpload()" title="Cancelar" style="font-size:1.2rem; cursor:pointer; padding:0.1rem 0.3rem; border-radius:4px; color:var(--danger); font-weight:700; transition:background 0.2s;" onmouseover="this.style.background=\'#fed7d7\'" onmouseout="this.style.background=\'transparent\'">✕</span>' +
-            '</div>' +
-        '</div>' +
-        '<div style="padding:0.75rem;">' +
-            '<div id="contabilidadDropArea" class="file-drop-zone" style="margin:0; cursor:pointer;" onclick="contabilidadSelectFiles()" ondragover="event.preventDefault(); this.classList.add(\'drag-over\');" ondragleave="this.classList.remove(\'drag-over\');" ondrop="event.preventDefault(); this.classList.remove(\'drag-over\'); addContabilidadFiles(event.dataTransfer.files);">' +
-                '📁 Arrastra archivos aquí o haz clic para seleccionar' +
-            '</div>' +
-            '<div id="contabilidadPendingList" style="margin-top:0.4rem;"></div>' +
-        '</div>';
-    
-    contentDiv.appendChild(panel);
-    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('contabilidadUploadModal').classList.add('active');
 }
 
 function contabilidadSelectFiles() {
@@ -1243,11 +1222,11 @@ function renderContabilidadPendingList() {
     var html = '';
     contabilidadPendingFiles.forEach(function(f, i) {
         var size = f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB';
-        html += '<div style="display:flex; align-items:center; gap:0.4rem; padding:0.3rem 0; border-bottom:1px solid #f1f5f9;">';
+        html += '<div style="display:flex; align-items:center; gap:0.4rem; padding:0.35rem 0; border-bottom:1px solid #f1f5f9;">';
         html += '<span style="font-size:0.85rem;">📄</span>';
         html += '<span style="flex:1; font-size:0.83rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + f.name + '</span>';
         html += '<span style="font-size:0.72rem; color:var(--text-light);">' + size + '</span>';
-        html += '<span onclick="removeContabilidadFile(' + i + ')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.85rem; padding:0 0.2rem;">✕</span>';
+        html += '<span onclick="removeContabilidadFile(' + i + ')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.85rem; padding:0 0.25rem;">✕</span>';
         html += '</div>';
     });
     listDiv.innerHTML = html;
@@ -1255,8 +1234,7 @@ function renderContabilidadPendingList() {
 
 function cancelContabilidadUpload() {
     contabilidadPendingFiles = [];
-    var panel = document.getElementById('contabilidadUploadPanel');
-    if (panel) panel.remove();
+    closeModal('contabilidadUploadModal');
 }
 
 async function saveContabilidadUpload() {
@@ -1290,10 +1268,7 @@ async function saveContabilidadUpload() {
         }
         
         contabilidadPendingFiles = [];
-        var panel = document.getElementById('contabilidadUploadPanel');
-        if (panel) panel.remove();
-        
-        // Refresh from Supabase
+        closeModal('contabilidadUploadModal');
         loadSubcarpetaFromSupabase();
     } catch (e) {
         alert('Error al subir: ' + e.message);
@@ -1302,14 +1277,13 @@ async function saveContabilidadUpload() {
     }
 }
 
-// Legacy: handleContabilidadDrop still works if someone drops on old zones
+// Handle drag&drop from ESWU bancos or anywhere — opens modal
 async function handleContabilidadDrop(files) {
     if (!files || !files.length) return;
-    // Open upload panel and add files there
-    if (!document.getElementById('contabilidadUploadPanel')) {
+    if (!document.getElementById('contabilidadUploadModal').classList.contains('active')) {
         uploadToCurrentFolder();
     }
-    setTimeout(function() { addContabilidadFiles(files); }, 100);
+    setTimeout(function() { addContabilidadFiles(files); }, 150);
 }
 
 // ============================================
