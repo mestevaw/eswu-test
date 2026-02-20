@@ -360,6 +360,12 @@ async function searchDriveFiles(queryText) {
     return data.files || [];
 }
 
+function extractFolderId(url) {
+    if (!url) return null;
+    var match = url.match(/folders\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+}
+
 function extractFileId(url) {
     if (!url) return null;
     const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
