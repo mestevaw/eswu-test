@@ -1012,7 +1012,7 @@ async function loadSubcarpetaFromSupabase() {
         var query = supabaseClient
             .from('contabilidad_documentos')
             .select('*')
-            .order('created_at', { ascending: false });
+            .order('nombre', { ascending: true });
         
         if (anio) query = query.eq('anio', anio);
         if (mesNum > 0) query = query.eq('mes', mesNum);
