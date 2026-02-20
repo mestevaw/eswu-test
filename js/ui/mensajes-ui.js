@@ -244,8 +244,10 @@ function abrirMensaje(msgId) {
 // ============================================
 
 // Archivos pendientes para adjuntar
-var mensajePendingFiles = [];
+var mensajePendingFiles = [];      // Local files to upload
+var mensajePendingDriveFiles = [];  // Drive files (linked, no upload)
 var _adjuntoListenersBound = false;
+var _drivePickerTimer = null;
 
 function bindAdjuntoListeners() {
     if (_adjuntoListenersBound) return;
@@ -270,6 +272,100 @@ function bindAdjuntoListeners() {
     _adjuntoListenersBound = true;
 }
 
+// ============================================
+// DRIVE PICKER (search from index)
+// ============================================
+
+function toggleDrivePicker() {
+    var area = document.getElementById('drivePickerArea');
+    if (!area) return;
+    var isVisible = area.style.display !== 'none';
+    area.style.display = isVisible ? 'none' : 'block';
+    if (!isVisible) {
+        var input = document.getElementById('drivePickerSearch');
+        if (input) { input.value = ''; input.focus(); }
+        var results = document.getElementById('drivePickerResults');
+        if (results) { results.style.display = 'none'; results.innerHTML = ''; }
+    }
+}
+
+function searchDrivePickerDebounced() {
+    if (_drivePickerTimer) clearTimeout(_drivePickerTimer);
+    _drivePickerTimer = setTimeout(searchDrivePicker, 300);
+}
+
+async function searchDrivePicker() {
+    var input = document.getElementById('drivePickerSearch');
+    var resultsDiv = document.getElementById('drivePickerResults');
+    if (!input || !resultsDiv) return;
+    
+    var q = input.value.trim();
+    if (q.length < 2) {
+        resultsDiv.style.display = 'none';
+        resultsDiv.innerHTML = '';
+        return;
+    }
+    
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = '<div style="padding:0.5rem;text-align:center;color:var(--text-light);font-size:0.82rem;">Buscando...</div>';
+    
+    var results = await searchDriveIndex(q);
+    
+    if (results.length === 0) {
+        resultsDiv.innerHTML = '<div style="padding:0.5rem;text-align:center;color:var(--text-light);font-size:0.82rem;">No se encontraron archivos</div>';
+        return;
+    }
+    
+    var html = '';
+    results.forEach(function(f) {
+        var icon = '📄';
+        if (f.mime_type && f.mime_type.includes('image')) icon = '🖼️';
+        if (f.mime_type && (f.mime_type.includes('spreadsheet') || f.mime_type.includes('excel'))) icon = '📊';
+        if (f.mime_type && (f.mime_type.includes('document') || f.mime_type.includes('word'))) icon = '📝';
+        
+        var size = '';
+        if (f.tamanio) {
+            size = f.tamanio < 1024*1024 ? Math.round(f.tamanio/1024) + ' KB' : (f.tamanio/(1024*1024)).toFixed(1) + ' MB';
+        }
+        
+        var ruta = f.ruta ? '<span style="font-size:0.7rem;color:var(--text-light);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.ruta + '</span>' : '';
+        
+        // Escape for onclick
+        var safeName = f.nombre.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        
+        html += '<div onclick="selectDriveFile(\'' + f.drive_file_id + '\', \'' + safeName + '\')" style="padding:0.4rem 0.6rem;cursor:pointer;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:0.4rem;transition:background 0.15s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'transparent\'">';
+        html += '<span>' + icon + '</span>';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<span style="font-size:0.83rem;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.nombre + '</span>';
+        html += ruta;
+        html += '</div>';
+        if (size) html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">' + size + '</span>';
+        html += '</div>';
+    });
+    resultsDiv.innerHTML = html;
+}
+
+function selectDriveFile(driveFileId, fileName) {
+    // Check if already added
+    var exists = mensajePendingDriveFiles.some(function(f) { return f.drive_file_id === driveFileId; });
+    if (exists) return;
+    
+    mensajePendingDriveFiles.push({
+        drive_file_id: driveFileId,
+        nombre: fileName
+    });
+    
+    // Clear picker
+    var input = document.getElementById('drivePickerSearch');
+    var results = document.getElementById('drivePickerResults');
+    var area = document.getElementById('drivePickerArea');
+    if (input) input.value = '';
+    if (results) { results.style.display = 'none'; results.innerHTML = ''; }
+    if (area) area.style.display = 'none';
+    
+    renderMensajeAdjuntosList();
+}
+
 function showNuevoMensajeModal(paraId, asuntoPrefill) {
     const select = document.getElementById('mensajeDestinatario');
     select.innerHTML = '<option value="todos">📢 Todos los usuarios</option>';
@@ -290,8 +386,12 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     
     // Limpiar adjuntos
     mensajePendingFiles = [];
+    mensajePendingDriveFiles = [];
     var fileInput = document.getElementById('mensajeAdjuntoInput');
     if (fileInput) fileInput.value = '';
+    // Hide drive picker
+    var pickerArea = document.getElementById('drivePickerArea');
+    if (pickerArea) pickerArea.style.display = 'none';
     renderMensajeAdjuntosList();
     
     document.getElementById('nuevoMensajeModal').classList.add('active');
@@ -357,23 +457,41 @@ function removeMensajeFile(idx) {
     renderMensajeAdjuntosList();
 }
 
+function removeMensajeDriveFile(idx) {
+    mensajePendingDriveFiles.splice(idx, 1);
+    renderMensajeAdjuntosList();
+}
+
 function renderMensajeAdjuntosList() {
     var div = document.getElementById('mensajeAdjuntosList');
     if (!div) return;
-    if (mensajePendingFiles.length === 0) {
+    if (mensajePendingFiles.length === 0 && mensajePendingDriveFiles.length === 0) {
         div.innerHTML = '';
         return;
     }
     var html = '';
+    
+    // Local files (will be uploaded)
     mensajePendingFiles.forEach(function(f, i) {
         var size = f.size < 1024*1024 ? Math.round(f.size/1024) + ' KB' : (f.size/(1024*1024)).toFixed(1) + ' MB';
         html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;margin-bottom:0.2rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;">';
         html += '<span style="font-size:0.85rem;">📄</span>';
         html += '<span style="font-size:0.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
-        html += '<span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">' + size + '</span>';
+        html += '<span style="font-size:0.7rem;color:var(--text-light);white-space:nowrap;">⬆ ' + size + '</span>';
         html += '<span onclick="removeMensajeFile(' + i + ')" style="color:var(--danger);cursor:pointer;font-weight:700;font-size:0.95rem;padding:0 0.25rem;line-height:1;" title="Quitar">✕</span>';
         html += '</div>';
     });
+    
+    // Drive files (linked, no upload)
+    mensajePendingDriveFiles.forEach(function(f, i) {
+        html += '<div style="display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;margin-bottom:0.2rem;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;">';
+        html += '<span style="font-size:0.85rem;">🔗</span>';
+        html += '<span style="font-size:0.82rem;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.nombre + '</span>';
+        html += '<span style="font-size:0.7rem;color:#16a34a;white-space:nowrap;">Drive</span>';
+        html += '<span onclick="removeMensajeDriveFile(' + i + ')" style="color:var(--danger);cursor:pointer;font-weight:700;font-size:0.95rem;padding:0 0.25rem;line-height:1;" title="Quitar">✕</span>';
+        html += '</div>';
+    });
+    
     div.innerHTML = html;
 }
 
@@ -512,9 +630,15 @@ async function submitNuevoMensaje(event) {
         hideLoading();
     }
     
+    // Add Drive-linked files (no upload needed)
+    mensajePendingDriveFiles.forEach(function(df) {
+        adjuntos.push({ drive_file_id: df.drive_file_id, nombre: df.nombre });
+    });
+    
     const ok = await enviarMensaje(para, asunto, contenido, refTipo || null, refId || null, adjuntos);
     if (ok) {
         mensajePendingFiles = [];
+        mensajePendingDriveFiles = [];
         closeModal('nuevoMensajeModal');
         
         // Si vino de una ficha, refrescar mensajes Y recargar datos para documentos
