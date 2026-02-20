@@ -14,12 +14,7 @@ function showAddInquilinoModal() {
     document.getElementById('addInquilinoTitle').textContent = 'Agregar Inquilino';
     document.getElementById('inquilinoForm').reset();
     document.getElementById('inquilinoContactosList').innerHTML = '<p style="color:var(--text-light);font-size:0.875rem">No hay contactos agregados</p>';
-    var cfn = document.getElementById('contratoFileName');
-    if (cfn) cfn.textContent = '';
-    
-    // Ocultar sección terminar contrato (solo en edición)
-    var termSection = document.getElementById('terminarContratoSection');
-    if (termSection) termSection.classList.add('hidden');
+    document.getElementById('contratoFileName').textContent = '';
     
     document.getElementById('addInquilinoModal').classList.add('active');
 }
@@ -49,7 +44,11 @@ function showAddActivoModal() {
     
     document.getElementById('addActivoTitle').textContent = 'Agregar Activo';
     document.getElementById('activoForm').reset();
-    document.getElementById('activoFotosFileName').textContent = '';
+    
+    // Reset drag & drop pending fotos
+    if (typeof activoPendingFotoFiles !== 'undefined') activoPendingFotoFiles = [];
+    var pendingDiv = document.getElementById('activoPendingFotos');
+    if (pendingDiv) pendingDiv.innerHTML = '';
     
     populateProveedoresDropdown();
     
