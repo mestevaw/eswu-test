@@ -54,6 +54,7 @@ function showProveedoresView(view) {
     document.getElementById('proveedoresListView').classList.add('hidden');
     document.getElementById('proveedoresFacturasPagadasView').classList.add('hidden');
     document.getElementById('proveedoresFacturasPorPagarView').classList.add('hidden');
+    document.getElementById('proveedoresMantenimientoView').classList.add('hidden');
     
     currentSubContext = 'proveedores-' + view;
     
@@ -80,6 +81,9 @@ function showProveedoresView(view) {
     } else if (view === 'facturasPorPagar') {
         document.getElementById('proveedoresFacturasPorPagarView').classList.remove('hidden');
         renderProveedoresFacturasPorPagar();
+    } else if (view === 'mantenimiento') {
+        document.getElementById('proveedoresMantenimientoView').classList.remove('hidden');
+        renderMantenimientoGlobal();
     }
 }
 
@@ -272,7 +276,6 @@ function renderProveedoresFacturasPorPagar() {
                             provId: prov.id,
                             factId: f.id,
                             proveedor: prov.nombre,
-                            clabe: prov.clabe || '',
                             numero: f.numero || 'S/N',
                             monto: f.monto,
                             vencimiento: f.vencimiento,
@@ -291,7 +294,6 @@ function renderProveedoresFacturasPorPagar() {
         const escapedNum = (f.numero).replace(/'/g, "\\'");
         row.innerHTML = `
             <td>${f.proveedor}</td>
-            <td style="font-size:0.8rem; font-family:monospace; white-space:nowrap;">${f.clabe || '<span style="color:var(--text-light)">—</span>'}</td>
             <td>${f.numero}</td>
             <td class="currency">${formatCurrency(f.monto)}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
@@ -313,11 +315,11 @@ function renderProveedoresFacturasPorPagar() {
     });
     
     if (porPagar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td colspan="2" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
     }
 }
 
@@ -389,11 +391,6 @@ function showProveedorDetail(id) {
         `;
     } else {
         additionalDiv.innerHTML = '';
-    }
-    
-    // MENSAJES DE FICHA
-    if (typeof renderMensajesFicha === 'function') {
-        renderMensajesFicha('proveedor', prov.id);
     }
     
     // ── Pestaña: Facturas Pagadas (tabla 3 columnas con encabezado sticky) ──
@@ -487,7 +484,7 @@ function showProveedorDetail(id) {
         facturasPorPagarDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay facturas por pagar</p>';
     }
     
-    // ── Pestaña: Documentos Adicionales (con ✏️ y ✕) ──
+    // ── Pestaña: Documentos ──
     const docsDiv = document.getElementById('proveedorDocumentosAdicionales');
     if (prov.documentos && prov.documentos.length > 0) {
         const escapedDocs = prov.documentos.map(d => {
@@ -504,14 +501,14 @@ function showProveedorDetail(id) {
                 </tr>
             `;
         }).join('');
-        docsDiv.innerHTML = '<table style="width:100%;table-layout:fixed"><thead><tr><th style="width:38%">Nombre</th><th style="width:20%">Fecha</th><th style="width:20%">Usuario</th><th style="width:60px"></th></tr></thead><tbody>' + escapedDocs + '</tbody></table>';
+        docsDiv.innerHTML = '<table id="provDocsTable" style="width:100%;table-layout:fixed"><thead><tr><th style="width:38%; cursor:pointer;" onclick="toggleDocSort(\'provDocsTable\', 0)">Nombre ▲</th><th style="width:20%">Fecha</th><th style="width:20%">Usuario</th><th style="width:60px"></th></tr></thead><tbody>' + escapedDocs + '</tbody></table>';
     } else {
-        docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos adicionales</p>';
+        docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos</p>';
     }
     
     // ── Altura fija con scroll: header y pestañas no se mueven ──
     const tabHeight = '260px';
-    ['proveedorPagadasTab','proveedorPorPagarTab','proveedorDocsTab','proveedorNotasTab'].forEach(id => {
+    ['proveedorPagadasTab','proveedorPorPagarTab','proveedorDocsTab','proveedorMantenimientoTab','proveedorNotasTab'].forEach(id => {
         const el = document.getElementById(id);
         el.style.minHeight = tabHeight;
         el.style.maxHeight = tabHeight;
@@ -802,7 +799,6 @@ function exportFacturasPorPagarToExcel() {
                 if (!f.fecha_pago) {
                     rows.push({
                         'Proveedor': prov.nombre,
-                        'CLABE': prov.clabe || '',
                         'No. Factura': f.numero || 'S/N',
                         'Fecha Factura': f.fecha,
                         'Vencimiento': f.vencimiento,
@@ -818,7 +814,7 @@ function exportFacturasPorPagarToExcel() {
     rows.sort((a, b) => new Date(a['Vencimiento']) - new Date(b['Vencimiento']));
     
     const ws = XLSX.utils.json_to_sheet(rows);
-    ws['!cols'] = [{ wch: 30 }, { wch: 22 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
+    ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Facturas Por Pagar');
     XLSX.writeFile(wb, `Facturas_Por_Pagar_${new Date().toISOString().split('T')[0]}.xlsx`);
