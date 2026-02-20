@@ -440,15 +440,13 @@ function showInquilinoDetail(id) {
                     </tr>
                 `;
             }).join('');
-            docsDiv.innerHTML = '<table style="width:100%"><thead><tr><th>Nombre</th><th>Fecha</th><th>Usuario</th><th style="width:70px;"></th></tr></thead><tbody>' + docRows + '</tbody></table>';
+            docsDiv.innerHTML = '<table id="inqDocsTable" style="width:100%"><thead><tr><th style="cursor:pointer;" onclick="toggleDocSort(\'inqDocsTable\', 0)">Nombre ▲</th><th>Fecha</th><th>Usuario</th><th style="width:70px;"></th></tr></thead><tbody>' + docRows + '</tbody></table>';
         } else {
             docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos</p>';
         }
         
-        // MENSAJES DE FICHA
-        if (typeof renderMensajesFicha === 'function') {
-            renderMensajesFicha('inquilino', inq.id);
-        }
+        // NOTAS
+        document.getElementById('notasInquilino').textContent = inq.notas || 'No hay notas para este inquilino.';
         
         document.getElementById('inquilinoDetailModal').classList.add('active');
         
