@@ -575,4 +575,31 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
     return newFolder.id;
 }
 
-console.log('✅ GOOGLE-DRIVE.JS v3 cargado');
+// ============================================
+// GENERIC: Find or create subfolder
+// ============================================
+
+async function findOrCreateSubfolder(folderName, parentId) {
+    var safeName = folderName.replace(/'/g, "\\'");
+    var q;
+    if (parentId) {
+        q = "'" + parentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    } else {
+        q = "name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    }
+    
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    
+    if (data.files && data.files.length > 0) {
+        return data.files[0].id;
+    }
+    
+    // Create it
+    var result = await createDriveFolder(folderName, parentId);
+    return result.id;
+}
+
+console.log('✅ GOOGLE-DRIVE.JS v4 cargado');
