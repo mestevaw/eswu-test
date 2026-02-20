@@ -1109,6 +1109,26 @@
     </div>
 
     <!-- Modal Add Banco -->
+    <!-- Modal Subir Documento Contabilidad -->
+    <div id="contabilidadUploadModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="contabilidadUploadTitle">Subir Documento</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span id="btnSaveContabilidadUpload" onclick="saveContabilidadUpload()" title="Guardar" style="font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s; opacity:0.4; pointer-events:none;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</span>
+                    <button class="close-modal" onclick="cancelContabilidadUpload()">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <div id="contabilidadUploadPath" style="margin-bottom:0.75rem; padding:0.4rem 0.6rem; background:#f0f9ff; border:1px solid #bfdbfe; border-radius:6px; font-size:0.82rem; color:var(--primary); font-weight:500;"></div>
+                <div id="contabilidadDropArea" class="file-drop-zone" style="cursor:pointer; min-height:80px; display:flex; align-items:center; justify-content:center;" onclick="contabilidadSelectFiles()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); addContabilidadFiles(event.dataTransfer.files);">
+                    📁 Arrastra archivos aquí o haz clic para seleccionar
+                </div>
+                <div id="contabilidadPendingList" style="margin-top:0.5rem;"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="addBancoModal" class="modal">
         <div class="modal-content" style="max-width:400px;">
             <div class="modal-header">
@@ -1510,7 +1530,7 @@
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
-    <script src="js/ui/admin-ui.js?v=26"></script>
+    <script src="js/ui/admin-ui.js?v=27"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
     <script src="js/ui/mensajes-ui.js?v=28"></script>
     <script src="js/modals/modals.js?v=22"></script>
