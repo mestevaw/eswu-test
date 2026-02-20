@@ -252,8 +252,12 @@ async function renderEswuFolder(tipo, folderId) {
     
     contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:0.5rem;">Cargando...</p>';
     
+    // Build ruta from nav stack
+    var stack = eswuNavStacks[tipo] || [];
+    var ruta = stack.map(function(s) { return s.label; }).join('/');
+    
     try {
-        var result = await listDriveFolder(folderId);
+        var result = await listDriveFolder(folderId, ruta);
         var allItems = (result.folders || []).concat(result.files || []);
         eswuFolderContents[tipo] = allItems;
         eswuCurrentFolders[tipo] = folderId;
