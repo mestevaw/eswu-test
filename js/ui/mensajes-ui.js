@@ -298,6 +298,58 @@ function showNuevoMensajeModal(paraId, asuntoPrefill) {
     
     // Bind listeners después de que el modal esté visible
     setTimeout(bindAdjuntoListeners, 50);
+    setTimeout(bindMensajeDropZone, 100);
+}
+
+function bindMensajeDropZone() {
+    var form = document.getElementById('nuevoMensajeForm');
+    if (!form || form._dropBound) return;
+    form._dropBound = true;
+    
+    var dropOverlay = document.createElement('div');
+    dropOverlay.id = 'mensajeDropOverlay';
+    dropOverlay.style.cssText = 'display:none; position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(59,130,246,0.08); border:2px dashed var(--primary); border-radius:8px; z-index:10; pointer-events:none; align-items:center; justify-content:center;';
+    dropOverlay.innerHTML = '<span style="font-size:1rem; color:var(--primary); font-weight:600; background:white; padding:0.4rem 1rem; border-radius:6px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">📎 Suelta aquí para adjuntar</span>';
+    form.style.position = 'relative';
+    form.appendChild(dropOverlay);
+    
+    var dragCounter = 0;
+    
+    form.addEventListener('dragenter', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter++;
+        dropOverlay.style.display = 'flex';
+    });
+    
+    form.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter--;
+        if (dragCounter <= 0) {
+            dragCounter = 0;
+            dropOverlay.style.display = 'none';
+        }
+    });
+    
+    form.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    form.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dragCounter = 0;
+        dropOverlay.style.display = 'none';
+        
+        var files = e.dataTransfer.files;
+        if (!files || !files.length) return;
+        for (var i = 0; i < files.length; i++) {
+            mensajePendingFiles.push(files[i]);
+        }
+        renderMensajeAdjuntosList();
+    });
 }
 
 function removeMensajeFile(idx) {
