@@ -358,7 +358,7 @@
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">Activos</h2>
-                            <button class="btn btn-primary" onclick="showAddActivoModal()">+ Agregar</button>
+                            <span class="btn-add-inline" onclick="showAddActivoModal()" title="Agregar activo" style="font-size:1.5rem; cursor:pointer;">+</span>
                         </div>
                         <div class="table-container">
                             <table id="activosTable" class="sticky-header-table">
@@ -1030,7 +1030,10 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title" id="addActivoTitle">Agregar Activo</h2>
-                <button class="close-modal" onclick="closeModal('addActivoModal')">×</button>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="activoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addActivoModal')">×</button>
+                </div>
             </div>
             <div style="padding: 1.5rem;">
                 <form id="activoForm" onsubmit="saveActivo(event)">
@@ -1052,10 +1055,6 @@
                             <p id="activoFotosFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
                         </div>
                     </div>
-                    <div class="modal-actions">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal('addActivoModal')">Cancelar</button>
-                        <button type="submit" class="btn btn-success">Guardar</button>
-                    </div>
                 </form>
             </div>
         </div>
@@ -1066,7 +1065,11 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title" id="activoDetailNombre"></h2>
-                <button class="close-modal" onclick="closeModal('activoDetailModal')">×</button>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span onclick="editActivo()" title="Editar" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                    <span onclick="deleteActivo()" title="Eliminar" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">🗑️</span>
+                    <button class="close-modal" onclick="closeModal('activoDetailModal')">×</button>
+                </div>
             </div>
             <div style="padding: 1.5rem;">
                 <div class="info-grid">
@@ -1077,10 +1080,6 @@
                 <div class="info-item" style="margin-top: 1rem;"><div class="info-label">Notas</div><div class="info-value" id="detailActivoNotas"></div></div>
                 <h3 style="margin: 1.5rem 0 1rem 0;">Fotos</h3>
                 <div id="photoGallery" class="photo-gallery"></div>
-                <div class="modal-actions" style="margin-top: 1.5rem;">
-                    <button class="btn btn-primary" onclick="editActivo()">Editar</button>
-                    <button class="btn btn-danger" onclick="deleteActivo()">Eliminar</button>
-                </div>
             </div>
         </div>
     </div>
@@ -1200,6 +1199,55 @@
                         <textarea id="trabajoNotas" rows="2" placeholder="Notas adicionales..." style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle Trabajo Mantenimiento -->
+    <div id="trabajoDetailModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="trabajoDetailTitle">Detalle Trabajo</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span id="btnDeleteTrabajo" onclick="deleteTrabajo()" title="Eliminar trabajo" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">🗑️</span>
+                    <button class="close-modal" onclick="closeModal('trabajoDetailModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <!-- Estado -->
+                <div id="trabajoEstadoBar" style="display:flex; gap:0.3rem; margin-bottom:1rem; flex-wrap:wrap;"></div>
+                <!-- Info -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Activo</span><div id="trabajoDetailActivo" style="font-size:0.88rem; font-weight:500;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Proveedor</span><div id="trabajoDetailProveedor" style="font-size:0.88rem; font-weight:500;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Solicitud</span><div id="trabajoDetailFechaSolicitud" style="font-size:0.88rem;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Entrega estimada</span><div id="trabajoDetailFechaEntrega" style="font-size:0.88rem;">—</div></div>
+                </div>
+                <div id="trabajoDetailRecurrencia" style="display:none; margin-bottom:0.75rem; padding:0.3rem 0.5rem; background:#f0f9ff; border-radius:4px; font-size:0.82rem; color:var(--primary);">🔄 Recurrente</div>
+                <!-- Notas del trabajo -->
+                <div id="trabajoDetailNotas" style="margin-bottom:1rem;"></div>
+                <!-- Bitácora -->
+                <div style="margin-bottom:0.75rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Bitácora</div>
+                    <div id="trabajoDetailBitacora" style="max-height:150px; overflow-y:auto; margin-bottom:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.4rem;"></div>
+                    <div style="display:flex; gap:0.3rem;">
+                        <input type="text" id="trabajoBitacoraInput" placeholder="Agregar nota..." style="flex:1; padding:0.35rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;" onkeypress="if(event.key==='Enter') addBitacoraNota()">
+                        <button onclick="addBitacoraNota()" style="padding:0.35rem 0.6rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">+</button>
+                    </div>
+                </div>
+                <!-- Fotos placeholder -->
+                <div style="margin-bottom:0.75rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Fotos</div>
+                    <div id="trabajoDetailFotos" style="min-height:40px;"></div>
+                    <div class="file-drop-zone" style="margin-top:0.3rem; cursor:pointer; font-size:0.82rem;" onclick="selectTrabajoFotos()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleTrabajoFotosDrop(event.dataTransfer.files);">
+                        📷 Arrastra fotos aquí o haz clic
+                    </div>
+                </div>
+                <!-- Factura -->
+                <div style="margin-bottom:0.5rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Factura / Pago</div>
+                    <div id="trabajoDetailFactura"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -1603,7 +1651,7 @@
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=23"></script>
     <script src="js/ui/proveedores-ui.js?v=23"></script>
-    <script src="js/ui/mantenimiento-ui.js?v=1"></script>
+    <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
     <script src="js/ui/admin-ui.js?v=28"></script>
