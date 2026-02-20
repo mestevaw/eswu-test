@@ -1472,14 +1472,19 @@
     <script src="js/ui/inquilinos-ui.js?v=22"></script>
     <script src="js/ui/proveedores-ui.js?v=22"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
-    <script src="js/ui/eswu-ui.js?v=26"></script>
+    <script src="js/ui/eswu-ui.js?v=27"></script>
     <script src="js/ui/admin-ui.js?v=22"></script>
     <script src="js/ui/numeros-ui.js?v=22"></script>
-    <script src="js/ui/mensajes-ui.js?v=24"></script>
+    <script src="js/ui/mensajes-ui.js?v=25"></script>
     <script src="js/modals/modals.js?v=22"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
     <script src="js/main.js?v=22"></script>
+    <script>
+        // Prevent browser from opening files dropped outside drop zones
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('drop', function(e) { e.preventDefault(); });
+    </script>
 </body>
 </html>
 
