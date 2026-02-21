@@ -338,12 +338,12 @@ function renderProveedoresFacturasPagadas() {
         <div onclick="currentProveedorId=${f.proveedorId}; window.facturaActionContext='standalone-pagadas'; showProveedorDetail(${f.proveedorId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
             <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
                 <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${formatDate(f.fecha)}</span>
+                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${pagoIcon}${formatDate(f.fecha)}</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
                 <div style="display:flex; align-items:baseline; gap:0.25rem; font-size:0.68rem; color:var(--text-light);">
                     <span>${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
-                    ${docIcon}${pagoIcon}
+                    ${docIcon}
                 </div>
                 <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(f.monto)}</span>
             </div>
@@ -456,8 +456,8 @@ function renderProveedoresFacturasPorPagar() {
     }
     
     var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Vencimiento</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Monto</span></div>';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Monto</span></div>';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Vencimiento</span></div>';
     cardsHtml += '</div>';
     
     porPagar.forEach((f, idx) => {
@@ -474,12 +474,12 @@ function renderProveedoresFacturasPorPagar() {
         <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
             <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
                 <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                <span style="font-size:0.68rem; ${fechaColor} flex-shrink:0; white-space:nowrap;">${formatDateVencimiento(f.vencimiento)}</span>
+                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(f.monto)}</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
                 <span style="font-size:0.68rem; color:var(--text-light);">${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
                 <div style="display:flex; align-items:baseline; gap:0.15rem; flex-shrink:0;">
-                    <span style="font-weight:600; font-size:0.78rem; color:var(--text);">${formatCurrency(f.monto)}</span>
+                    <span style="font-size:0.68rem; ${fechaColor} white-space:nowrap;">${formatDateVencimiento(f.vencimiento)}</span>
                     <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">✏️</span>
                     <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showPagarFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">🏦</span>
                     <span onclick="event.stopPropagation(); window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.75rem;">✕</span>
@@ -1172,6 +1172,10 @@ async function selectLinkFile(fileId, fileName) {
         
         await loadProveedores();
         closeLinkModal();
+        
+        // Refresh both standalone tables and detail view
+        renderProveedoresFacturasPagadas();
+        renderProveedoresFacturasPorPagar();
         showProveedorDetail(currentProveedorId);
         
     } catch (e) {
