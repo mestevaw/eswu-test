@@ -205,7 +205,7 @@ function _renderInquilinosMobileCards(lista, mobileDiv) {
         const inactivo = !inq.contrato_activo;
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
         const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
-        const nombre40 = inq.nombre.length > 40 ? inq.nombre.substring(0, 38) + '…' : inq.nombre;
+        const nombre40 = inq.nombre.length > 45 ? inq.nombre.substring(0, 43) + '…' : inq.nombre;
         const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
         const contacto30 = contacto.length > 30 ? contacto.substring(0, 28) + '…' : contacto;
         
