@@ -140,30 +140,7 @@ function renderInquilinosTable() {
         }
         
         // ── MOBILE: Card list ──
-        if (sortedInquilinos.length === 0) {
-            mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay inquilinos</p>';
-        } else {
-            var cardsHtml = '';
-            sortedInquilinos.forEach((inq, idx) => {
-                const inactivo = !inq.contrato_activo;
-                const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
-                const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
-                
-                cardsHtml += `
-                <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                        <div style="font-weight:600; font-size:0.88rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${inq.nombre}</div>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
-                        <div style="font-size:0.78rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}${contacto ? ' · ' + contacto : ''}</div>
-                        <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(inq.renta)}</div>
-                    </div>
-                </div>`;
-            });
-            
-            mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
-        }
+        _renderInquilinosMobileCards(sortedInquilinos, mobileDiv);
     }, 100);
 }
 
@@ -209,29 +186,43 @@ function filtrarInquilinos(query) {
     
     // Mobile cards
     var mobileDiv = document.getElementById('inquilinosMobileCards');
-    if (mobileDiv) {
-        if (filtrados.length === 0) {
-            mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No se encontraron resultados</p>';
-        } else {
-            var cardsHtml = '';
-            filtrados.forEach((inq, idx) => {
-                const inactivo = !inq.contrato_activo;
-                const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-                const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
-                const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
-                
-                cardsHtml += `
-                <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-                    <div style="font-weight:600; font-size:0.88rem; ${nameStyle} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${inq.nombre}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
-                        <div style="font-size:0.78rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}${contacto ? ' · ' + contacto : ''}</div>
-                        <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(inq.renta)}</div>
-                    </div>
-                </div>`;
-            });
-            mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
-        }
+    if (mobileDiv) _renderInquilinosMobileCards(filtrados, mobileDiv);
+}
+
+function _renderInquilinosMobileCards(lista, mobileDiv) {
+    if (lista.length === 0) {
+        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay inquilinos</p>';
+        return;
     }
+    
+    // Header row
+    var cardsHtml = '<div style="display:flex; justify-content:space-between; padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.72rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    cardsHtml += '<span>Inquilino</span>';
+    cardsHtml += '<span>Vencimiento · Renta</span>';
+    cardsHtml += '</div>';
+    
+    lista.forEach((inq, idx) => {
+        const inactivo = !inq.contrato_activo;
+        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+        const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
+        const nombre30 = inq.nombre.length > 30 ? inq.nombre.substring(0, 28) + '…' : inq.nombre;
+        const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
+        const contacto30 = contacto.length > 30 ? contacto.substring(0, 28) + '…' : contacto;
+        
+        cardsHtml += `
+        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.45rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-weight:600; font-size:0.82rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre30}</div>
+                <div style="display:flex; align-items:baseline; gap:0.4rem; flex-shrink:0; margin-left:0.3rem;">
+                    <span style="font-size:0.72rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
+                    <span style="font-weight:600; font-size:0.82rem; color:var(--text);">${formatCurrency(inq.renta)}</span>
+                </div>
+            </div>
+            ${contacto30 ? '<div style="font-size:0.72rem; color:var(--text-light); margin-top:0.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + contacto30 + '</div>' : ''}
+        </div>`;
+    });
+    
+    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
 }
 
 // ============================================
