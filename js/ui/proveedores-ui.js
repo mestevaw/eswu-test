@@ -252,6 +252,17 @@ function renderProveedoresFacturasPorPagar() {
     const tbody = document.getElementById('proveedoresFacturasPorPagarTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile cards container
+    var mobileDiv = document.getElementById('porPagarMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'porPagarMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('proveedoresFacturasPorPagarTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     const filterType = document.getElementById('provFactPorPagFilter').value;
     const year = parseInt(document.getElementById('provFactPorPagYear').value);
     const monthSelect = document.getElementById('provFactPorPagMonth');
@@ -289,12 +300,14 @@ function renderProveedoresFacturasPorPagar() {
     });
     
     porPagar.sort((a, b) => new Date(a.vencimiento) - new Date(b.vencimiento));
+    
+    // ── DESKTOP: Table rows ──
     porPagar.forEach(f => {
         const row = tbody.insertRow();
         const escapedNum = (f.numero).replace(/'/g, "\\'");
         row.innerHTML = `
             <td>${f.proveedor}</td>
-            <td class="hide-mobile">${f.numero}</td>
+            <td>${f.numero}</td>
             <td class="currency">${formatCurrency(f.monto)}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
             <td style="white-space:nowrap;" onclick="event.stopPropagation()">
@@ -303,7 +316,6 @@ function renderProveedoresFacturasPorPagar() {
                 <span onclick="window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" title="Eliminar factura" style="cursor:pointer; color:var(--danger); font-size:1.1rem; font-weight:700; padding:0.15rem 0.3rem; border-radius:4px;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
             </td>
         `;
-        
         row.style.cursor = 'pointer';
         row.onclick = ((provId) => {
             return () => {
@@ -319,8 +331,50 @@ function renderProveedoresFacturasPorPagar() {
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td class="hide-mobile"></td><td style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td colspan="2" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
     }
+    
+    // ── MOBILE: Card list ──
+    if (porPagar.length === 0) {
+        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay facturas por pagar</p>';
+        return;
+    }
+    
+    var cardsHtml = '';
+    porPagar.forEach((f, idx) => {
+        const escapedNum = (f.numero).replace(/'/g, "\\'");
+        const vencDate = new Date(f.vencimiento + 'T00:00:00');
+        const hoy = new Date(); hoy.setHours(0,0,0,0);
+        const isVencida = vencDate < hoy;
+        const isProxima = !isVencida && (vencDate - hoy) < 7 * 86400000;
+        const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : 'color:var(--text-light);';
+        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+        
+        cardsHtml += `
+        <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-weight:600; font-size:0.88rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.proveedor}</div>
+                <div onclick="event.stopPropagation();" style="display:flex; gap:0.15rem; margin-left:0.3rem; flex-shrink:0;">
+                    <span onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.9rem;">✏️</span>
+                    <span onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showPagarFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.95rem;">🏦</span>
+                    <span onclick="window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.95rem;">✕</span>
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
+                <div style="font-size:0.78rem; ${fechaColor}">${formatDateVencimiento(f.vencimiento)}${f.numero !== 'S/N' ? ' · #' + f.numero : ''}</div>
+                <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(f.monto)}</div>
+            </div>
+        </div>`;
+    });
+    
+    // Total bar
+    cardsHtml += `
+    <div style="padding:0.7rem 0.75rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:0.9rem;">TOTAL:</strong>
+        <strong style="font-size:1rem;">${formatCurrency(totalPorPagar)}</strong>
+    </div>`;
+    
+    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
 }
 
 // ============================================
