@@ -184,29 +184,35 @@ function _renderProveedoresMobileCards(lista, mobileDiv) {
         return;
     }
     
-    // Two-line header (same style as inquilinos)
-    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Servicio</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto</span><span>Teléfono</span></div>';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto · Email</span><span>Teléfono</span></div>';
     cardsHtml += '</div>';
     
     lista.forEach((prov, idx) => {
         const c = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = prov.nombre.length > 35 ? prov.nombre.substring(0, 33) + '…' : prov.nombre;
-        const servicio = prov.servicio || '—';
-        const contacto30 = c.nombre ? (c.nombre.length > 30 ? c.nombre.substring(0, 28) + '…' : c.nombre) : '—';
+        const nombre = prov.nombre.length > 35 ? prov.nombre.substring(0, 33) + '…' : prov.nombre;
+        const servicio = prov.servicio ? (prov.servicio.length > 18 ? prov.servicio.substring(0, 16) + '…' : prov.servicio) : '';
+        const contacto = c.nombre ? (c.nombre.length > 20 ? c.nombre.substring(0, 18) + '…' : c.nombre) : '—';
+        const email = c.email ? (c.email.length > 18 ? c.email.substring(0, 16) + '…' : c.email) : '';
         const tel = c.telefono || '';
         
+        // Line 2: contacto · email (clickable) | teléfono (clickable)
+        var line2Left = contacto;
+        if (email && c.email) {
+            line2Left += ' · <a href="mailto:' + c.email + '" onclick="event.stopPropagation();" style="color:var(--primary);text-decoration:none;">' + email + '</a>';
+        }
+        
         cardsHtml += `
-        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <div style="font-weight:600; font-size:0.82rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre45}</div>
-                <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">${servicio}</span>
+        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
+                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
+                ${servicio ? '<span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:35%;">' + servicio + '</span>' : ''}
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
-                <div style="font-size:0.72rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto30}</div>
-                ${tel ? '<a href="tel:' + tel + '" onclick="event.stopPropagation();" style="font-size:0.72rem; color:var(--primary); text-decoration:none; flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">' + tel + '</a>' : '<span style="font-size:0.72rem; color:var(--text-light);">—</span>'}
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
+                <div style="font-size:0.68rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${line2Left}</div>
+                ${tel ? '<a href="tel:' + tel + '" onclick="event.stopPropagation();" style="font-size:0.68rem; color:var(--primary); text-decoration:none; flex-shrink:0; white-space:nowrap;">' + tel + '</a>' : ''}
             </div>
         </div>`;
     });
@@ -315,40 +321,39 @@ function renderProveedoresFacturasPagadas() {
         return;
     }
     
-    // Two-line header (same style as inquilinos)
-    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Fecha Pago</span></div>';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Monto</span></div>';
     cardsHtml += '</div>';
     
     pagadas.forEach((f, idx) => {
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
+        const nombre = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         const docIcon = f.has_documento 
-            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" style="cursor:pointer; font-size:0.8rem;">📄</span>` : '';
+            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" style="cursor:pointer; font-size:0.75rem;">📄</span>` : '';
         const pagoIcon = f.has_pago
-            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'pago')" style="cursor:pointer; font-size:0.8rem;">🧾</span>` : '';
+            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'pago')" style="cursor:pointer; font-size:0.75rem;">🧾</span>` : '';
         
         cardsHtml += `
-        <div onclick="currentProveedorId=${f.proveedorId}; window.facturaActionContext='standalone-pagadas'; showProveedorDetail(${f.proveedorId});" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <div style="font-weight:600; font-size:0.82rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre45}</div>
-                <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">${formatDate(f.fecha)}</span>
+        <div onclick="currentProveedorId=${f.proveedorId}; window.facturaActionContext='standalone-pagadas'; showProveedorDetail(${f.proveedorId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
+                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
+                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${formatDate(f.fecha)}</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
-                <div style="display:flex; align-items:baseline; gap:0.3rem; font-size:0.72rem; color:var(--text-light);">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
+                <div style="display:flex; align-items:baseline; gap:0.25rem; font-size:0.68rem; color:var(--text-light);">
                     <span>${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
                     ${docIcon}${pagoIcon}
                 </div>
-                <span style="font-weight:600; font-size:0.82rem; color:var(--text); flex-shrink:0; margin-left:0.3rem;">${formatCurrency(f.monto)}</span>
+                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(f.monto)}</span>
             </div>
         </div>`;
     });
     
     cardsHtml += `
-    <div style="padding:0.5rem 0.75rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:0.82rem;">TOTAL:</strong>
-        <strong style="font-size:0.82rem;">${formatCurrency(totalPagadas)}</strong>
+    <div style="padding:0.5rem 0.6rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:0.78rem;">TOTAL:</strong>
+        <strong style="font-size:0.78rem;">${formatCurrency(totalPagadas)}</strong>
     </div>`;
     
     mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
@@ -450,8 +455,7 @@ function renderProveedoresFacturasPorPagar() {
         return;
     }
     
-    // Two-line header (same style as inquilinos)
-    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Vencimiento</span></div>';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Monto</span></div>';
     cardsHtml += '</div>';
@@ -464,31 +468,30 @@ function renderProveedoresFacturasPorPagar() {
         const isProxima = !isVencida && (vencDate - hoy) < 7 * 86400000;
         const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : 'color:var(--text-light);';
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
+        const nombre = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         
         cardsHtml += `
-        <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <div style="font-weight:600; font-size:0.82rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre45}</div>
-                <span style="font-size:0.72rem; ${fechaColor} flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">${formatDateVencimiento(f.vencimiento)}</span>
+        <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
+                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
+                <span style="font-size:0.68rem; ${fechaColor} flex-shrink:0; white-space:nowrap;">${formatDateVencimiento(f.vencimiento)}</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
-                <div style="display:flex; align-items:baseline; gap:0.3rem; flex:1; min-width:0;">
-                    <span style="font-size:0.72rem; color:var(--text-light);">${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
-                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.8rem;">✏️</span>
-                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showPagarFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.85rem;">🏦</span>
-                    <span onclick="event.stopPropagation(); window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.85rem;">✕</span>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
+                <span style="font-size:0.68rem; color:var(--text-light);">${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
+                <div style="display:flex; align-items:baseline; gap:0.15rem; flex-shrink:0;">
+                    <span style="font-weight:600; font-size:0.78rem; color:var(--text);">${formatCurrency(f.monto)}</span>
+                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">✏️</span>
+                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showPagarFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">🏦</span>
+                    <span onclick="event.stopPropagation(); window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.75rem;">✕</span>
                 </div>
-                <span style="font-weight:600; font-size:0.82rem; color:var(--text); flex-shrink:0; margin-left:0.3rem;">${formatCurrency(f.monto)}</span>
             </div>
         </div>`;
     });
     
-    // Total bar
     cardsHtml += `
-    <div style="padding:0.5rem 0.75rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:0.82rem;">TOTAL:</strong>
-        <strong style="font-size:0.82rem;">${formatCurrency(totalPorPagar)}</strong>
+    <div style="padding:0.5rem 0.6rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:0.78rem;">TOTAL:</strong>
+        <strong style="font-size:0.78rem;">${formatCurrency(totalPorPagar)}</strong>
     </div>`;
     
     mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
