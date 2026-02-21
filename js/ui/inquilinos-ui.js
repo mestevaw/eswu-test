@@ -195,8 +195,7 @@ function _renderInquilinosMobileCards(lista, mobileDiv) {
         return;
     }
     
-    // Two-line header
-    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Inquilino</span><span>Vencimiento</span></div>';
     cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto</span><span>Renta</span></div>';
     cardsHtml += '</div>';
@@ -205,19 +204,19 @@ function _renderInquilinosMobileCards(lista, mobileDiv) {
         const inactivo = !inq.contrato_activo;
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
         const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
-        const nombre40 = inq.nombre.length > 35 ? inq.nombre.substring(0, 33) + '…' : inq.nombre;
+        const nombre = inq.nombre.length > 35 ? inq.nombre.substring(0, 33) + '…' : inq.nombre;
         const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
-        const contacto30 = contacto.length > 30 ? contacto.substring(0, 28) + '…' : contacto;
+        const contacto20 = contacto.length > 20 ? contacto.substring(0, 18) + '…' : contacto;
         
         cardsHtml += `
-        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <div style="font-weight:600; font-size:0.82rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre40}</div>
-                <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
+        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
+                <div style="font-weight:600; font-size:0.78rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
+                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
-                <div style="font-size:0.72rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto30 || '—'}</div>
-                <span style="font-weight:600; font-size:0.82rem; color:var(--text); flex-shrink:0; margin-left:0.3rem;">${formatCurrency(inq.renta)}</span>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
+                <div style="font-size:0.68rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto20 || '—'}</div>
+                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(inq.renta)}</span>
             </div>
         </div>`;
     });
