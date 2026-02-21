@@ -294,7 +294,7 @@ function renderProveedoresFacturasPorPagar() {
         const escapedNum = (f.numero).replace(/'/g, "\\'");
         row.innerHTML = `
             <td>${f.proveedor}</td>
-            <td>${f.numero}</td>
+            <td class="hide-mobile">${f.numero}</td>
             <td class="currency">${formatCurrency(f.monto)}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
             <td style="white-space:nowrap;" onclick="event.stopPropagation()">
@@ -319,7 +319,7 @@ function renderProveedoresFacturasPorPagar() {
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td colspan="2" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td class="hide-mobile"></td><td style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
     }
 }
 
