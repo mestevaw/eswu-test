@@ -35,14 +35,14 @@
         }
         @media (max-width: 600px) {
             .hide-mobile { display: none !important; }
+            .show-mobile-only { display: block !important; }
+            #proveedoresFacturasPorPagarTable { display: none !important; }
             .filter-section { flex-wrap: wrap; gap: 0.3rem; }
             .filter-section label { font-size: 0.85rem; }
             .filter-section select { font-size: 0.85rem; min-width: 0; }
-            #proveedoresFacturasPorPagarTable td,
-            #proveedoresFacturasPorPagarTable th { 
-                padding: 0.4rem 0.3rem; 
-                font-size: 0.8rem; 
-            }
+        }
+        @media (min-width: 601px) {
+            .show-mobile-only { display: none !important; }
         }
     </style>
 </head>
@@ -342,7 +342,7 @@
                             </div>
                             <div class="table-container">
                              <table id="proveedoresFacturasPorPagarTable" style="width:100%;">
-    <thead><tr><th>Proveedor</th><th class="hide-mobile">Número</th><th style="text-align:right">Monto</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
+    <thead><tr><th>Proveedor</th><th>Número</th><th style="text-align:right">Monto</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
     <tbody></tbody>
 </table>
                             </div>
@@ -1660,7 +1660,7 @@
     <script src="js/ui/navigation.js?v=26"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=23"></script>
-    <script src="js/ui/proveedores-ui.js?v=24"></script>
+    <script src="js/ui/proveedores-ui.js?v=25"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
