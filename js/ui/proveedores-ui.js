@@ -184,31 +184,30 @@ function _renderProveedoresMobileCards(lista, mobileDiv) {
         return;
     }
     
-    var cardsHtml = '';
+    // Two-line header matching inquilinos style
+    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Servicio</span></div>';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto</span><span>Teléfono</span></div>';
+    cardsHtml += '</div>';
+    
     lista.forEach((prov, idx) => {
         const c = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre30 = prov.nombre.length > 30 ? prov.nombre.substring(0, 28) + '…' : prov.nombre;
+        const nombre40 = prov.nombre.length > 40 ? prov.nombre.substring(0, 38) + '…' : prov.nombre;
         const servicio = prov.servicio || '';
-        const contacto30 = c.nombre ? (c.nombre.length > 30 ? c.nombre.substring(0, 28) + '…' : c.nombre) : '';
-        
-        // Line 2: contacto · tel · email
-        var line2Parts = [];
-        if (contacto30) line2Parts.push(contacto30);
-        if (c.telefono) line2Parts.push('<a href="tel:' + c.telefono + '" onclick="event.stopPropagation();" style="color:var(--primary); text-decoration:none;">' + c.telefono + '</a>');
-        if (c.email) {
-            var emailShort = c.email.length > 22 ? c.email.substring(0, 20) + '…' : c.email;
-            line2Parts.push('<a href="mailto:' + c.email + '" onclick="event.stopPropagation();" style="color:var(--primary); text-decoration:none;">' + emailShort + '</a>');
-        }
-        var line2 = line2Parts.join(' · ');
+        const contacto30 = c.nombre ? (c.nombre.length > 30 ? c.nombre.substring(0, 28) + '…' : c.nombre) : '—';
+        const tel = c.telefono || '';
         
         cardsHtml += `
-        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.55rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.4rem;">
-                <div style="font-weight:600; font-size:0.92rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre30}</div>
-                ${servicio ? '<div style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + servicio + '</div>' : ''}
+        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-weight:600; font-size:0.82rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre40}</div>
+                ${servicio ? '<span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; margin-left:0.3rem; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + servicio + '</span>' : ''}
             </div>
-            ${line2 ? '<div style="font-size:0.75rem; color:var(--text-light); margin-top:0.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + line2 + '</div>' : ''}
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
+                <div style="font-size:0.72rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto30}</div>
+                ${tel ? '<a href="tel:' + tel + '" onclick="event.stopPropagation();" style="font-size:0.72rem; color:var(--primary); text-decoration:none; flex-shrink:0; margin-left:0.3rem;">' + tel + '</a>' : ''}
+            </div>
         </div>`;
     });
     
