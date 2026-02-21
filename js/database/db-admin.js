@@ -5,19 +5,7 @@
    ======================================== */
 
 // ============================================
-// VARIABLES DE CONTROL DE CARGA
-// ============================================
-
-var inquilinosFullLoaded = false;
-var proveedoresFullLoaded = false;
-var activosLoaded = false;
-var usuariosLoaded = false;
-var bancosLoaded = false;
-var estacionamientoLoaded = false;
-var bitacoraLoaded = false;
-
-// ============================================
-// LOADERS
+// LOADERS (variables de control en config.js)
 // ============================================
 
 async function loadActivos() {
@@ -322,7 +310,7 @@ async function saveBancoDoc(event) {
         const tipo = document.getElementById('bancoTipo').value;
         const anio = parseInt(document.getElementById('bancoAnio').value);
         const mes = parseInt(document.getElementById('bancoMes').value);
-        const file = document.getElementById('bancoDocumento').files[0];
+        const file = (typeof bancoPendingDropFile !== 'undefined' && bancoPendingDropFile) || document.getElementById('bancoDocumento').files[0];
         
         if (!file) {
             throw new Error('Seleccione un archivo PDF');
@@ -370,6 +358,7 @@ async function saveBancoDoc(event) {
         await loadBancosDocumentos();
         renderBancosTable();
         closeModal('addBancoModal');
+        if (typeof bancoPendingDropFile !== 'undefined') bancoPendingDropFile = null;
         
     } catch (error) {
         console.error('Error:', error);
