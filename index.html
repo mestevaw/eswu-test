@@ -43,6 +43,15 @@
             .filter-section { flex-wrap: wrap; gap: 0.3rem; }
             .filter-section label { font-size: 0.85rem; }
             .filter-section select { font-size: 0.85rem; min-width: 0; }
+            .card { padding: 0; overflow: hidden; }
+            .card-header { padding: 0.6rem 0.6rem; }
+            .card .table-container { padding: 0; }
+            .card > div[style*="padding: 1.5rem"] { padding: 0.3rem !important; }
+            /* Prevent iOS text auto-sizing */
+            .show-mobile-only, .show-mobile-only * {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
         }
         @media (min-width: 601px) {
             .show-mobile-only { display: none !important; }
@@ -1662,8 +1671,8 @@
     <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=26"></script>
     <script src="js/ui/tables.js?v=22"></script>
-    <script src="js/ui/inquilinos-ui.js?v=28"></script>
-    <script src="js/ui/proveedores-ui.js?v=30"></script>
+    <script src="js/ui/inquilinos-ui.js?v=29"></script>
+    <script src="js/ui/proveedores-ui.js?v=31"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=23"></script>
     <script src="js/ui/eswu-ui.js?v=30"></script>
