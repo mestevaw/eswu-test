@@ -163,6 +163,17 @@ function renderProveedoresFacturasPagadas() {
     const tbody = document.getElementById('proveedoresFacturasPagadasTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile cards container
+    var mobileDiv = document.getElementById('pagadasMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'pagadasMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('proveedoresFacturasPagadasTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     const filterType = document.getElementById('provFactPagFilter').value;
     const year = parseInt(document.getElementById('provFactPagYear').value);
     const monthSelect = document.getElementById('provFactPagMonth');
@@ -180,7 +191,6 @@ function renderProveedoresFacturasPagadas() {
     let totalPagadas = 0;
     
     proveedores.forEach(prov => {
-        // Filtrar por nombre de proveedor si hay búsqueda
         if (searchQuery && !prov.nombre.toLowerCase().includes(searchQuery)) return;
         
         if (prov.facturas) {
@@ -206,10 +216,11 @@ function renderProveedoresFacturasPagadas() {
     });
     
     pagadas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    // ── DESKTOP: Table rows ──
     pagadas.forEach(f => {
         const row = tbody.insertRow();
         
-        // Icono 📄 clickeable si hay PDF
         const docIcon = f.has_documento 
             ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" title="Ver factura PDF" style="cursor:pointer; margin-right:0.3rem; font-size:0.9rem;">📄</span>`
             : '';
@@ -242,6 +253,43 @@ function renderProveedoresFacturasPagadas() {
         row.className = 'total-row';
         row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPagadas)}</strong></td>`;
     }
+    
+    // ── MOBILE: Card list ──
+    if (pagadas.length === 0) {
+        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay facturas pagadas</p>';
+        return;
+    }
+    
+    var cardsHtml = '';
+    pagadas.forEach((f, idx) => {
+        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+        const docIcon = f.has_documento 
+            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" style="cursor:pointer; font-size:0.85rem;">📄</span>` : '';
+        const pagoIcon = f.has_pago
+            ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'pago')" style="cursor:pointer; font-size:0.85rem;">🧾</span>` : '';
+        
+        cardsHtml += `
+        <div onclick="currentProveedorId=${f.proveedorId}; window.facturaActionContext='standalone-pagadas'; showProveedorDetail(${f.proveedorId});" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-weight:600; font-size:0.88rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${f.proveedor}</div>
+                <div onclick="event.stopPropagation();" style="display:flex; gap:0.25rem; margin-left:0.3rem; flex-shrink:0;">
+                    ${docIcon}${pagoIcon}
+                </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
+                <div style="font-size:0.78rem; color:var(--text-light);">${formatDate(f.fecha)}${f.numero !== 'S/N' ? ' · #' + f.numero : ''}</div>
+                <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(f.monto)}</div>
+            </div>
+        </div>`;
+    });
+    
+    cardsHtml += `
+    <div style="padding:0.7rem 0.75rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
+        <strong style="font-size:0.9rem;">TOTAL:</strong>
+        <strong style="font-size:1rem;">${formatCurrency(totalPagadas)}</strong>
+    </div>`;
+    
+    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
 }
 
 // ============================================
