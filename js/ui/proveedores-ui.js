@@ -95,6 +95,18 @@ function renderProveedoresTable() {
     const tbody = document.getElementById('proveedoresTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile cards container
+    var mobileDiv = document.getElementById('proveedoresMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'proveedoresMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('proveedoresTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
+    // Desktop table
     proveedores.forEach(prov => {
         const primerContacto = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
         const row = tbody.insertRow();
@@ -120,6 +132,9 @@ function renderProveedoresTable() {
     if (proveedores.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay proveedores</td></tr>';
     }
+    
+    // Mobile cards
+    _renderProveedoresMobileCards(proveedores, mobileDiv);
 }
 
 function filtrarProveedores(query) {
@@ -157,6 +172,47 @@ function filtrarProveedores(query) {
     if (filtrados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:2rem">No se encontraron proveedores</td></tr>';
     }
+    
+    // Mobile cards
+    var mobileDiv = document.getElementById('proveedoresMobileCards');
+    if (mobileDiv) _renderProveedoresMobileCards(filtrados, mobileDiv);
+}
+
+function _renderProveedoresMobileCards(lista, mobileDiv) {
+    if (lista.length === 0) {
+        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay proveedores</p>';
+        return;
+    }
+    
+    var cardsHtml = '';
+    lista.forEach((prov, idx) => {
+        const c = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
+        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+        const nombre30 = prov.nombre.length > 30 ? prov.nombre.substring(0, 28) + '…' : prov.nombre;
+        const servicio = prov.servicio || '';
+        const contacto30 = c.nombre ? (c.nombre.length > 30 ? c.nombre.substring(0, 28) + '…' : c.nombre) : '';
+        
+        // Line 2: contacto · tel · email
+        var line2Parts = [];
+        if (contacto30) line2Parts.push(contacto30);
+        if (c.telefono) line2Parts.push('<a href="tel:' + c.telefono + '" onclick="event.stopPropagation();" style="color:var(--primary); text-decoration:none;">' + c.telefono + '</a>');
+        if (c.email) {
+            var emailShort = c.email.length > 22 ? c.email.substring(0, 20) + '…' : c.email;
+            line2Parts.push('<a href="mailto:' + c.email + '" onclick="event.stopPropagation();" style="color:var(--primary); text-decoration:none;">' + emailShort + '</a>');
+        }
+        var line2 = line2Parts.join(' · ');
+        
+        cardsHtml += `
+        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.55rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.4rem;">
+                <div style="font-weight:600; font-size:0.92rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre30}</div>
+                ${servicio ? '<div style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + servicio + '</div>' : ''}
+            </div>
+            ${line2 ? '<div style="font-size:0.75rem; color:var(--text-light); margin-top:0.1rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + line2 + '</div>' : ''}
+        </div>`;
+    });
+    
+    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
 }
 
 function renderProveedoresFacturasPagadas() {
