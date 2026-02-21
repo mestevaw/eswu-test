@@ -193,7 +193,7 @@ function _renderProveedoresMobileCards(lista, mobileDiv) {
     lista.forEach((prov, idx) => {
         const c = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = prov.nombre.length > 45 ? prov.nombre.substring(0, 43) + '…' : prov.nombre;
+        const nombre45 = prov.nombre.length > 35 ? prov.nombre.substring(0, 33) + '…' : prov.nombre;
         const servicio = prov.servicio || '—';
         const contacto30 = c.nombre ? (c.nombre.length > 30 ? c.nombre.substring(0, 28) + '…' : c.nombre) : '—';
         const tel = c.telefono || '';
@@ -323,7 +323,7 @@ function renderProveedoresFacturasPagadas() {
     
     pagadas.forEach((f, idx) => {
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = f.proveedor.length > 45 ? f.proveedor.substring(0, 43) + '…' : f.proveedor;
+        const nombre45 = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         const docIcon = f.has_documento 
             ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" style="cursor:pointer; font-size:0.8rem;">📄</span>` : '';
         const pagoIcon = f.has_pago
@@ -464,7 +464,7 @@ function renderProveedoresFacturasPorPagar() {
         const isProxima = !isVencida && (vencDate - hoy) < 7 * 86400000;
         const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : 'color:var(--text-light);';
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nombre45 = f.proveedor.length > 45 ? f.proveedor.substring(0, 43) + '…' : f.proveedor;
+        const nombre45 = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         
         cardsHtml += `
         <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
