@@ -57,6 +57,17 @@ function renderInquilinosTable() {
     
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:var(--primary)">⏳ Cargando inquilinos...</td></tr>';
     
+    // Mobile cards container
+    var mobileDiv = document.getElementById('inquilinosMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'inquilinosMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('inquilinosTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     setTimeout(() => {
         let sortedInquilinos = [...inquilinos];
         
@@ -87,6 +98,7 @@ function renderInquilinosTable() {
             });
         }
         
+        // ── DESKTOP: Table rows ──
         const rows = sortedInquilinos.map(inq => {
             const nombreCorto = inq.nombre.length > 25 ? inq.nombre.substring(0, 25) + '...' : inq.nombre;
             const inactivo = !inq.contrato_activo;
@@ -126,6 +138,32 @@ function renderInquilinosTable() {
                 th.classList.add(inquilinosSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
             }
         }
+        
+        // ── MOBILE: Card list ──
+        if (sortedInquilinos.length === 0) {
+            mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay inquilinos</p>';
+        } else {
+            var cardsHtml = '';
+            sortedInquilinos.forEach((inq, idx) => {
+                const inactivo = !inq.contrato_activo;
+                const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
+                const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
+                
+                cardsHtml += `
+                <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                        <div style="font-weight:600; font-size:0.88rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${inq.nombre}</div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
+                        <div style="font-size:0.78rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}${contacto ? ' · ' + contacto : ''}</div>
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(inq.renta)}</div>
+                    </div>
+                </div>`;
+            });
+            
+            mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+        }
     }, 100);
 }
 
@@ -151,6 +189,7 @@ function filtrarInquilinos(query) {
         return nombre.includes(query) || contacto.includes(query);
     });
     
+    // Desktop table
     filtrados.forEach(inq => {
         const nombreCorto = inq.nombre.length > 25 ? inq.nombre.substring(0, 25) + '...' : inq.nombre;
         const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
@@ -166,6 +205,32 @@ function filtrarInquilinos(query) {
     
     if (filtrados.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:2rem">No se encontraron resultados</td></tr>';
+    }
+    
+    // Mobile cards
+    var mobileDiv = document.getElementById('inquilinosMobileCards');
+    if (mobileDiv) {
+        if (filtrados.length === 0) {
+            mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No se encontraron resultados</p>';
+        } else {
+            var cardsHtml = '';
+            filtrados.forEach((inq, idx) => {
+                const inactivo = !inq.contrato_activo;
+                const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+                const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
+                const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
+                
+                cardsHtml += `
+                <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.6rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+                    <div style="font-weight:600; font-size:0.88rem; ${nameStyle} overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${inq.nombre}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.15rem;">
+                        <div style="font-size:0.78rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}${contacto ? ' · ' + contacto : ''}</div>
+                        <div style="font-weight:600; font-size:0.9rem; color:var(--text);">${formatCurrency(inq.renta)}</div>
+                    </div>
+                </div>`;
+            });
+            mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+        }
     }
 }
 
