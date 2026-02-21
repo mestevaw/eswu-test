@@ -38,3 +38,31 @@ let isEditMode = false;
 // Variables temporales para contactos
 let tempInquilinoContactos = [];
 let tempProveedorContactos = [];
+
+// Variables de control de carga
+var inquilinosFullLoaded = false;
+var proveedoresFullLoaded = false;
+var activosLoaded = false;
+var usuariosLoaded = false;
+var bancosLoaded = false;
+var estacionamientoLoaded = false;
+var bitacoraLoaded = false;
+
+// Variables de contabilidad (compartidas entre admin-ui y contabilidad-ui)
+var contabilidadCarpetas = [];
+var contabilidadAnioSeleccionado = null;
+var editingCarpetaId = null;
+var contabilidadNavStack = [];
+var currentDriveFolderId = null;
+var contabilidadPendingFiles = [];
+
+var SUBCARPETAS_MES = [
+    'Evidencias para materialidad',
+    'Facturas emitidas',
+    'Facturas proveedores',
+    'Pagos proveedores',
+    'Repse empresas',
+    'Reportes financieros'
+];
+
+var MESES_NOMBRES = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
