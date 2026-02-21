@@ -195,30 +195,30 @@ function _renderInquilinosMobileCards(lista, mobileDiv) {
         return;
     }
     
-    // Header row
-    var cardsHtml = '<div style="display:flex; justify-content:space-between; padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.72rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<span>Inquilino</span>';
-    cardsHtml += '<span>Vencimiento · Renta</span>';
+    // Two-line header
+    var cardsHtml = '<div style="padding:0.4rem 0.75rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Inquilino</span><span>Vencimiento</span></div>';
+    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto</span><span>Renta</span></div>';
     cardsHtml += '</div>';
     
     lista.forEach((inq, idx) => {
         const inactivo = !inq.contrato_activo;
         const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
         const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
-        const nombre30 = inq.nombre.length > 30 ? inq.nombre.substring(0, 28) + '…' : inq.nombre;
+        const nombre40 = inq.nombre.length > 40 ? inq.nombre.substring(0, 38) + '…' : inq.nombre;
         const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
         const contacto30 = contacto.length > 30 ? contacto.substring(0, 28) + '…' : contacto;
         
         cardsHtml += `
-        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.45rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
+        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.4rem 0.75rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
             <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                <div style="font-weight:600; font-size:0.82rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre30}</div>
-                <div style="display:flex; align-items:baseline; gap:0.4rem; flex-shrink:0; margin-left:0.3rem;">
-                    <span style="font-size:0.72rem; color:var(--text-light);">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
-                    <span style="font-weight:600; font-size:0.82rem; color:var(--text);">${formatCurrency(inq.renta)}</span>
-                </div>
+                <div style="font-weight:600; font-size:0.82rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre40}</div>
+                <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0; margin-left:0.3rem; white-space:nowrap;">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
             </div>
-            ${contacto30 ? '<div style="font-size:0.72rem; color:var(--text-light); margin-top:0.05rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + contacto30 + '</div>' : ''}
+            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.05rem;">
+                <div style="font-size:0.72rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto30 || '—'}</div>
+                <span style="font-weight:600; font-size:0.82rem; color:var(--text); flex-shrink:0; margin-left:0.3rem;">${formatCurrency(inq.renta)}</span>
+            </div>
         </div>`;
     });
     
@@ -502,7 +502,8 @@ function showInquilinoDetail(id) {
         }
         
         // NOTAS
-        document.getElementById('notasInquilino').textContent = inq.notas || 'No hay notas para este inquilino.';
+        var notasEl = document.getElementById('notasInquilino');
+        if (notasEl) notasEl.textContent = inq.notas || 'No hay notas para este inquilino.';
         
         document.getElementById('inquilinoDetailModal').classList.add('active');
         
