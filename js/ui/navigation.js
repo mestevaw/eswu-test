@@ -58,11 +58,13 @@ function showMobileMenu() {
     document.getElementById('mobileMenuMain').style.display = '';
     document.getElementById('mobileMenuSub').style.display = 'none';
     
-    // Reset all button classes
+    // Reset all button classes and inline styles
     var btns = document.querySelectorAll('.mm-btn');
     btns.forEach(function(b) {
-        b.classList.remove('mm-fadeout', 'mm-slideup');
+        b.classList.remove('mm-fadeout');
         b.style.display = '';
+        b.style.transition = '';
+        b.style.transform = '';
     });
     
     mobileMenuCurrentSection = null;
@@ -76,6 +78,16 @@ function hideMobileMenu() {
 }
 
 function mobileMenuSelect(menu) {
+    // ESWU: ir directo a ficha (solo tiene 1 opción)
+    if (menu === 'eswu') {
+        mobileMenuCurrentSection = 'eswu';
+        currentMenuContext = 'eswu';
+        var btns = document.querySelectorAll('.mm-btn');
+        btns.forEach(function(b) { b.classList.add('mm-fadeout'); });
+        setTimeout(function() { showEswuFicha(); }, 300);
+        return;
+    }
+    
     mobileMenuCurrentSection = menu;
     currentMenuContext = menu;
     
@@ -86,17 +98,39 @@ function mobileMenuSelect(menu) {
         var btnMenu = b.getAttribute('onclick').match(/mobileMenuSelect\('(\w+)'\)/);
         if (btnMenu && btnMenu[1] === menu) {
             selectedBtn = b;
-            b.classList.add('mm-slideup');
         } else {
             b.classList.add('mm-fadeout');
         }
     });
     
-    // After animation, switch to sub view
+    if (!selectedBtn) return;
+    
+    // Medir posición actual del botón
+    var btnRect = selectedBtn.getBoundingClientRect();
+    
+    // Renderizar submenú invisible para medir posición del título
+    var subDiv = document.getElementById('mobileMenuSub');
+    var mainDiv = document.getElementById('mobileMenuMain');
+    _renderMobileSubMenu(menu);
+    subDiv.style.display = '';
+    subDiv.style.visibility = 'hidden';
+    
+    var titleRect = document.getElementById('mmSubTitle').getBoundingClientRect();
+    var deltaY = titleRect.top - btnRect.top;
+    
+    subDiv.style.display = 'none';
+    subDiv.style.visibility = '';
+    
+    // Animar botón a posición exacta del título
+    selectedBtn.style.transition = 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)';
+    selectedBtn.style.transform = 'translateY(' + deltaY + 'px)';
+    
+    // Después de animación, mostrar submenú
     setTimeout(function() {
-        document.getElementById('mobileMenuMain').style.display = 'none';
-        _renderMobileSubMenu(menu);
-        document.getElementById('mobileMenuSub').style.display = '';
+        mainDiv.style.display = 'none';
+        selectedBtn.style.transition = '';
+        selectedBtn.style.transform = '';
+        subDiv.style.display = '';
     }, 350);
 }
 
@@ -141,11 +175,13 @@ function mobileMenuBack() {
     document.getElementById('mobileMenuSub').style.display = 'none';
     document.getElementById('mobileMenuMain').style.display = '';
     
-    // Reset button animations
+    // Reset button animations and inline styles
     var btns = document.querySelectorAll('.mm-btn');
     btns.forEach(function(b) {
-        b.classList.remove('mm-fadeout', 'mm-slideup');
+        b.classList.remove('mm-fadeout');
         b.style.display = '';
+        b.style.transition = '';
+        b.style.transform = '';
     });
     
     mobileMenuCurrentSection = null;
@@ -199,7 +235,7 @@ function handleRegresa() {
     if (currentSubContext) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
-        // On mobile: show mobile submenu
+        // On mobile: show mobile submenu (or main menu for eswu)
         if (isMobile()) {
             currentSubContext = null;
             currentSearchContext = null;
@@ -207,7 +243,10 @@ function handleRegresa() {
             document.getElementById('btnSearch').classList.add('hidden');
             document.getElementById('contentArea').classList.remove('fullwidth');
             
-            if (mobileMenuCurrentSection || currentMenuContext !== 'main') {
+            if (currentMenuContext === 'eswu') {
+                // ESWU no tiene submenú, regresar al menú principal
+                showMobileMenu();
+            } else if (mobileMenuCurrentSection || currentMenuContext !== 'main') {
                 showMobileSubMenu(mobileMenuCurrentSection || currentMenuContext);
             } else {
                 showMobileMenu();
