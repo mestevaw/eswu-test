@@ -118,6 +118,24 @@
                 <button class="menu-btn menu-btn-secondary" onclick="logout()">Salir</button>
             </div>
 
+            <!-- MOBILE MENU (solo visible en celular) -->
+            <div id="mobileMenu" class="mobile-menu">
+                <div id="mobileMenuMain" class="mm-main">
+                    <div class="mm-buttons">
+                        <button class="mm-btn" onclick="mobileMenuSelect('admin')"><span class="mm-icon">⚙️</span> Admin</button>
+                        <button class="mm-btn" id="mmBtnEswu" onclick="mobileMenuSelect('eswu')"><span class="mm-icon">🏢</span> ESWU</button>
+                        <button class="mm-btn" id="mmBtnInquilinos" onclick="mobileMenuSelect('inquilinos')"><span class="mm-icon">👥</span> Inquilinos</button>
+                        <button class="mm-btn" id="mmBtnProveedores" onclick="mobileMenuSelect('proveedores')"><span class="mm-icon">🔧</span> Proveedores</button>
+                    </div>
+                    <div class="mm-footer"><span onclick="logout()" style="cursor:pointer; color:var(--text-light); font-size:0.82rem;">Cerrar sesión</span></div>
+                </div>
+                <div id="mobileMenuSub" class="mm-sub" style="display:none;">
+                    <div id="mmSubTitle" class="mm-sub-title"></div>
+                    <div id="mmSubButtons" class="mm-sub-buttons"></div>
+                    <button class="mm-back" onclick="mobileMenuBack()">← Menú principal</button>
+                </div>
+            </div>
+
             <div id="eswuSubMenu" class="submenu-container" style="display:none;"></div>
 
             <div id="inquilinosSubMenu" class="submenu-container">
@@ -1675,15 +1693,15 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=24"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=26"></script>
+    <script src="js/ui/navigation.js?v=27"></script>
     <script src="js/ui/tables.js?v=22"></script>
-    <script src="js/ui/inquilinos-ui.js?v=30"></script>
-    <script src="js/ui/proveedores-ui.js?v=33"></script>
+    <script src="js/ui/inquilinos-ui.js?v=31"></script>
+    <script src="js/ui/proveedores-ui.js?v=34"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
-    <script src="js/ui/contabilidad-ui.js?v=24"></script>
-    <script src="js/ui/eswu-ui.js?v=30"></script>
-    <script src="js/ui/admin-ui.js?v=31"></script>
-    <script src="js/ui/numeros-ui.js?v=22"></script>
+    <script src="js/ui/contabilidad-ui.js?v=25"></script>
+    <script src="js/ui/eswu-ui.js?v=31"></script>
+    <script src="js/ui/admin-ui.js?v=32"></script>
+    <script src="js/ui/numeros-ui.js?v=23"></script>
     <script src="js/ui/mensajes-ui.js?v=28"></script>
     <script src="js/modals/modals.js?v=23"></script>
     <script src="js/modals/inquilino-modals.js?v=22"></script>
