@@ -47,6 +47,7 @@ function viewDocumento(docId) {
 // ============================================
 
 function showProveedoresView(view) {
+    if (isMobile()) hideMobileMenu();
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('proveedoresPage').classList.add('active');
