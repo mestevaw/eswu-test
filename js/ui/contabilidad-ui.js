@@ -18,6 +18,7 @@
 // ============================================
 
 function showContabilidadPage() {
+    if (isMobile()) hideMobileMenu();
     document.getElementById('adminSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('contabilidadPage').classList.add('active');
@@ -1102,6 +1103,14 @@ function applyUserLevel() {
         adminBtn.textContent = 'Contabilidad';
         adminBtn.onclick = function() { showContabilidadPage(); };
         
+        // Mobile: hide buttons for nivel 4
+        var mmInq = document.getElementById('mmBtnInquilinos');
+        var mmProv = document.getElementById('mmBtnProveedores');
+        var mmEswu = document.getElementById('mmBtnEswu');
+        if (mmInq) mmInq.style.display = 'none';
+        if (mmProv) mmProv.style.display = 'none';
+        if (mmEswu) mmEswu.style.display = 'none';
+        
         // Auto-navigate to Contabilidad
         showContabilidadPage();
     } else {
@@ -1111,6 +1120,14 @@ function applyUserLevel() {
         const adminBtn = document.getElementById('menuAdmin');
         adminBtn.textContent = 'Admin';
         adminBtn.onclick = function() { showSubMenu('admin'); };
+        
+        // Mobile: show all buttons
+        var mmInq = document.getElementById('mmBtnInquilinos');
+        var mmProv = document.getElementById('mmBtnProveedores');
+        var mmEswu = document.getElementById('mmBtnEswu');
+        if (mmInq) mmInq.style.display = '';
+        if (mmProv) mmProv.style.display = '';
+        if (mmEswu) mmEswu.style.display = '';
     }
 }
 
