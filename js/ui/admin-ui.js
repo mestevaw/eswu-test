@@ -33,6 +33,7 @@ function showAdminView(view) {
 }
 
 function showActivosPage() {
+    if (isMobile()) hideMobileMenu();
     document.getElementById('adminSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('activosPage').classList.add('active');
