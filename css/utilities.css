@@ -45,11 +45,6 @@
     to { opacity: 0; transform: scale(0.95); }
 }
 
-@keyframes mmSlideUp {
-    from { transform: translateY(0); }
-    to { transform: translateY(-70px); }
-}
-
 @media (max-width: 768px) {
     /* Hide desktop sidebar & submenus on mobile */
     .menu-sidebar,
@@ -126,12 +121,6 @@
     /* Animation: other buttons fade out */
     .mm-btn.mm-fadeout {
         animation: mmFadeOut 0.3s ease forwards;
-        pointer-events: none;
-    }
-    
-    /* Animation: selected button slides up */
-    .mm-btn.mm-slideup {
-        animation: mmSlideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         pointer-events: none;
     }
     
