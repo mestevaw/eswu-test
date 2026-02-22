@@ -1,5 +1,5 @@
 /* ========================================
-   NAVIGATION.JS v1
+   NAVIGATION.JS v2 — Mobile menu support
    ======================================== */
 
 // ============================================
@@ -11,15 +11,157 @@ let currentSubContext = null;
 let currentSearchContext = null;
 
 // ============================================
-// PDF VIEWER - MOVIDO A db-fetch-docs.js
-// (versión con blob URLs compatible con iOS Safari)
+// MOBILE MENU DATA & HELPERS
 // ============================================
 
+var mobileMenuData = {
+    admin:       { icon: '⚙️', label: 'Admin', subs: [
+        { label: 'Activos',          action: 'showActivosPage()' },
+        { label: 'Bitácora',         action: "showPageFromMenu('bitacora')" },
+        { label: 'Contabilidad',     action: 'showContabilidadPage()' },
+        { label: 'Estacionamiento',  action: "showPageFromMenu('estacionamiento')" },
+        { label: 'Números',          action: 'showNumerosPage()' }
+    ]},
+    eswu:        { icon: '🏢', label: 'ESWU', subs: [
+        { label: 'Ficha',            action: 'showEswuFicha()' }
+    ]},
+    inquilinos:  { icon: '👥', label: 'Inquilinos', subs: [
+        { label: 'Listado',          action: "showInquilinosView('list')" },
+        { label: 'Rentas',           action: "showInquilinosView('rentasRecibidas')" },
+        { label: 'Contratos',        action: "showInquilinosView('vencimientoContratos')" }
+    ]},
+    proveedores: { icon: '🔧', label: 'Proveedores', subs: [
+        { label: 'Listado',          action: "showProveedoresView('list')" },
+        { label: 'Facturas Pagadas', action: "showProveedoresView('facturasPagadas')" },
+        { label: 'Facturas X Pagar', action: "showProveedoresView('facturasPorPagar')" },
+        { label: 'Mantenimiento',    action: "showProveedoresView('mantenimiento')" }
+    ]}
+};
+
+var mobileMenuCurrentSection = null;
+
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
 // ============================================
-// MENU NAVIGATION
+// MOBILE MENU FUNCTIONS
+// ============================================
+
+function showMobileMenu() {
+    var mm = document.getElementById('mobileMenu');
+    if (!mm) return;
+    mm.classList.remove('hidden');
+    mm.style.display = '';
+    
+    // Reset to main menu
+    document.getElementById('mobileMenuMain').style.display = '';
+    document.getElementById('mobileMenuSub').style.display = 'none';
+    
+    // Reset all button classes
+    var btns = document.querySelectorAll('.mm-btn');
+    btns.forEach(function(b) {
+        b.classList.remove('mm-fadeout', 'mm-slideup');
+        b.style.display = '';
+    });
+    
+    mobileMenuCurrentSection = null;
+}
+
+function hideMobileMenu() {
+    var mm = document.getElementById('mobileMenu');
+    if (mm) {
+        mm.classList.add('hidden');
+    }
+}
+
+function mobileMenuSelect(menu) {
+    mobileMenuCurrentSection = menu;
+    currentMenuContext = menu;
+    
+    var btns = document.querySelectorAll('.mm-btn');
+    var selectedBtn = null;
+    
+    btns.forEach(function(b) {
+        var btnMenu = b.getAttribute('onclick').match(/mobileMenuSelect\('(\w+)'\)/);
+        if (btnMenu && btnMenu[1] === menu) {
+            selectedBtn = b;
+            b.classList.add('mm-slideup');
+        } else {
+            b.classList.add('mm-fadeout');
+        }
+    });
+    
+    // After animation, switch to sub view
+    setTimeout(function() {
+        document.getElementById('mobileMenuMain').style.display = 'none';
+        _renderMobileSubMenu(menu);
+        document.getElementById('mobileMenuSub').style.display = '';
+    }, 350);
+}
+
+function _renderMobileSubMenu(menu) {
+    var data = mobileMenuData[menu];
+    if (!data) return;
+    
+    // Title
+    document.getElementById('mmSubTitle').innerHTML = 
+        '<span class="mm-sub-title-icon">' + data.icon + '</span>' +
+        '<span class="mm-sub-title-text">' + data.label + '</span>';
+    
+    // Sub buttons
+    var html = '';
+    data.subs.forEach(function(sub) {
+        html += '<button class="mm-sub-btn mm-appear" onclick="' + sub.action + '">' + sub.label + '</button>';
+    });
+    document.getElementById('mmSubButtons').innerHTML = html;
+    
+    // Back button animation class
+    var backBtn = document.querySelector('.mm-back');
+    if (backBtn) {
+        backBtn.classList.remove('mm-appear');
+        void backBtn.offsetWidth; // force reflow
+        backBtn.classList.add('mm-appear');
+    }
+}
+
+function showMobileSubMenu(menu) {
+    var mm = document.getElementById('mobileMenu');
+    if (!mm) return;
+    mm.classList.remove('hidden');
+    mm.style.display = '';
+    
+    mobileMenuCurrentSection = menu;
+    document.getElementById('mobileMenuMain').style.display = 'none';
+    _renderMobileSubMenu(menu);
+    document.getElementById('mobileMenuSub').style.display = '';
+}
+
+function mobileMenuBack() {
+    document.getElementById('mobileMenuSub').style.display = 'none';
+    document.getElementById('mobileMenuMain').style.display = '';
+    
+    // Reset button animations
+    var btns = document.querySelectorAll('.mm-btn');
+    btns.forEach(function(b) {
+        b.classList.remove('mm-fadeout', 'mm-slideup');
+        b.style.display = '';
+    });
+    
+    mobileMenuCurrentSection = null;
+}
+
+// ============================================
+// MENU NAVIGATION (desktop + mobile aware)
 // ============================================
 
 function showSubMenu(menu) {
+    // On mobile, use the mobile menu instead
+    if (isMobile()) {
+        showMobileSubMenu(menu);
+        return;
+    }
+    
     document.getElementById('menuInquilinos').classList.remove('active');
     document.getElementById('menuProveedores').classList.remove('active');
     document.getElementById('menuAdmin').classList.remove('active');
@@ -57,6 +199,23 @@ function handleRegresa() {
     if (currentSubContext) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
+        // On mobile: show mobile submenu
+        if (isMobile()) {
+            currentSubContext = null;
+            currentSearchContext = null;
+            document.getElementById('btnRegresa').classList.add('hidden');
+            document.getElementById('btnSearch').classList.add('hidden');
+            document.getElementById('contentArea').classList.remove('fullwidth');
+            
+            if (mobileMenuCurrentSection || currentMenuContext !== 'main') {
+                showMobileSubMenu(mobileMenuCurrentSection || currentMenuContext);
+            } else {
+                showMobileMenu();
+            }
+            return;
+        }
+        
+        // Desktop: show sidebar + submenu
         if (currentMenuContext === 'inquilinos') {
             document.getElementById('inquilinosSubMenu').classList.add('active');
         } else if (currentMenuContext === 'proveedores') {
@@ -76,6 +235,9 @@ function handleRegresa() {
 }
 
 function showPageFromMenu(pageName) {
+    // Hide mobile menu
+    if (isMobile()) hideMobileMenu();
+    
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.getElementById('proveedoresSubMenu').classList.remove('active');
     document.getElementById('adminSubMenu').classList.remove('active');
@@ -274,11 +436,14 @@ function logout() {
         
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
+        // Reset mobile menu
+        hideMobileMenu();
+        mobileMenuCurrentSection = null;
+        
         currentUser = null;
         currentMenuContext = 'main';
         currentSubContext = null;
     }
 }
 
-console.log('✅ NAVIGATION.JS cargado (2026-02-13 00:30 CST)');
-console.log('   PDF Viewer → db-fetch-docs.js (blob URLs)');
+console.log('✅ NAVIGATION.JS v2 cargado (mobile menu)');
