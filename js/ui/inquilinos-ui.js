@@ -191,37 +191,31 @@ function filtrarInquilinos(query) {
 
 function _renderInquilinosMobileCards(lista, mobileDiv) {
     if (lista.length === 0) {
-        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay inquilinos</p>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay inquilinos</p>';
         return;
     }
     
-    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Inquilino</span><span>Vencimiento</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto</span><span>Renta</span></div>';
-    cardsHtml += '</div>';
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Inquilino</span><span>Vencimiento</span></div>';
+    h += '<div class="mc-header-line"><span>Contacto</span><span>Renta</span></div>';
+    h += '</div>';
     
     lista.forEach((inq, idx) => {
         const inactivo = !inq.contrato_activo;
-        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
-        const nameStyle = inactivo ? 'color:#999; font-style:italic;' : 'color:var(--text);';
         const nombre = inq.nombre.length > 35 ? inq.nombre.substring(0, 33) + '…' : inq.nombre;
         const contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0].nombre : '';
         const contacto20 = contacto.length > 20 ? contacto.substring(0, 18) + '…' : contacto;
         
-        cardsHtml += `
-        <div onclick="showInquilinoDetail(${inq.id})" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
-                <div style="font-weight:600; font-size:0.78rem; ${nameStyle} flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${formatDateVencimiento(inq.fecha_vencimiento)}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
-                <div style="font-size:0.68rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${contacto20 || '—'}</div>
-                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(inq.renta)}</span>
-            </div>
-        </div>`;
+        h += '<div onclick="showInquilinoDetail(' + inq.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title' + (inactivo ? ' mc-title-inactive' : '') + '">' + nombre + '</div>';
+        h += '<span class="mc-meta-right">' + formatDateVencimiento(inq.fecha_vencimiento) + '</span></div>';
+        h += '<div class="mc-line"><div class="mc-meta">' + (contacto20 || '—') + '</div>';
+        h += '<span class="mc-value">' + formatCurrency(inq.renta) + '</span></div>';
+        h += '</div>';
     });
     
-    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 // ============================================
@@ -231,6 +225,17 @@ function _renderInquilinosMobileCards(lista, mobileDiv) {
 function renderInquilinosRentasRecibidas() {
     const tbody = document.getElementById('inquilinosRentasRecibidasTable').querySelector('tbody');
     tbody.innerHTML = '';
+    
+    // Mobile container
+    var mobileDiv = document.getElementById('rentasRecibidasMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'rentasRecibidasMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('inquilinosRentasRecibidasTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
     
     const filterType = document.getElementById('inquilinosRentasFilter').value;
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
@@ -264,6 +269,8 @@ function renderInquilinosRentasRecibidas() {
     });
     
     rentas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    // DESKTOP
     rentas.forEach(r => {
         tbody.innerHTML += `
             <tr class="clickable" style="cursor: pointer;" onclick="showInquilinoDetail(${r.inquilinoId})">
@@ -302,6 +309,31 @@ function renderInquilinosRentasRecibidas() {
         rowAnual.style.backgroundColor = '#d4edda';
         rowAnual.innerHTML = `<td style="text-align:right;padding:1rem;font-size:1.1rem">TOTAL ${year}:</td><td class="currency" style="color:var(--success);font-size:1.2rem">${formatCurrency(totalAnual)}</td><td></td>`;
     }
+    
+    // MOBILE
+    if (rentas.length === 0) {
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay rentas</p>';
+        return;
+    }
+    
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Inquilino</span><span>Monto</span></div>';
+    h += '<div class="mc-header-line"><span></span><span>Fecha</span></div>';
+    h += '</div>';
+    
+    rentas.forEach((r, idx) => {
+        var nombre = r.empresa.length > 35 ? r.empresa.substring(0, 33) + '…' : r.empresa;
+        h += '<div onclick="showInquilinoDetail(' + r.inquilinoId + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        h += '<span class="mc-value">' + formatCurrency(r.monto) + '</span></div>';
+        h += '<div class="mc-line"><div class="mc-meta"></div>';
+        h += '<span class="mc-meta-right">' + formatDate(r.fecha) + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '<div class="mc-total"><strong>TOTAL:</strong><strong>' + formatCurrency(totalPeriodo) + '</strong></div>';
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 // ============================================
@@ -312,26 +344,46 @@ function renderInquilinosVencimientoContratos() {
     const tbody = document.getElementById('inquilinosVencimientoContratosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile container
+    var mobileDiv = document.getElementById('vencimientoMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'vencimientoMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('inquilinosVencimientoContratosTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    var items = [];
     
     inquilinos.forEach(inq => {
         const venc = new Date(inq.fecha_vencimiento + 'T00:00:00');
         const diffDays = Math.ceil((venc - today) / (1000 * 60 * 60 * 24));
         let estado = '';
         let badgeClass = '';
+        let mcBadge = '';
         
         if (diffDays < 0) {
             estado = 'Vencido';
             badgeClass = 'badge-danger';
+            mcBadge = 'mc-badge-danger';
         } else if (diffDays <= 30) {
-            estado = 'Próximo a vencer';
+            estado = 'Próximo';
             badgeClass = 'badge-warning';
+            mcBadge = 'mc-badge-warning';
         } else {
             estado = 'Vigente';
             badgeClass = 'badge-success';
+            mcBadge = 'mc-badge-success';
         }
         
+        items.push({ id: inq.id, nombre: inq.nombre, fecha_inicio: inq.fecha_inicio, fecha_vencimiento: inq.fecha_vencimiento, diffDays: diffDays, estado: estado, badgeClass: badgeClass, mcBadge: mcBadge });
+        
+        // DESKTOP row
         tbody.innerHTML += `
             <tr class="clickable" style="cursor: pointer;" onclick="showInquilinoDetail(${inq.id})">
                 <td>${inq.nombre}</td>
@@ -345,7 +397,28 @@ function renderInquilinosVencimientoContratos() {
 
     if (inquilinos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay contratos</td></tr>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay contratos</p>';
+        return;
     }
+    
+    // MOBILE
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Inquilino</span><span>Estado</span></div>';
+    h += '<div class="mc-header-line"><span>Inicio</span><span>Vencimiento</span></div>';
+    h += '</div>';
+    
+    items.forEach((it, idx) => {
+        var nombre = it.nombre.length > 30 ? it.nombre.substring(0, 28) + '…' : it.nombre;
+        h += '<div onclick="showInquilinoDetail(' + it.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        h += '<span class="mc-badge ' + it.mcBadge + '">' + it.estado + '</span></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + formatDate(it.fecha_inicio) + '</span>';
+        h += '<span class="mc-meta-right">' + formatDateVencimiento(it.fecha_vencimiento) + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 // ============================================
