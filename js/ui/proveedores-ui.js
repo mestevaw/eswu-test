@@ -180,44 +180,38 @@ function filtrarProveedores(query) {
 
 function _renderProveedoresMobileCards(lista, mobileDiv) {
     if (lista.length === 0) {
-        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay proveedores</p>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay proveedores</p>';
         return;
     }
     
-    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Servicio</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Contacto · Email</span><span>Teléfono</span></div>';
-    cardsHtml += '</div>';
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Proveedor</span><span>Servicio</span></div>';
+    h += '<div class="mc-header-line"><span>Contacto · Email</span><span>Teléfono</span></div>';
+    h += '</div>';
     
     lista.forEach((prov, idx) => {
         const c = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
-        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
         const nombre = prov.nombre.length > 35 ? prov.nombre.substring(0, 33) + '…' : prov.nombre;
         const servicio = prov.servicio ? (prov.servicio.length > 18 ? prov.servicio.substring(0, 16) + '…' : prov.servicio) : '';
         const contacto = c.nombre ? (c.nombre.length > 20 ? c.nombre.substring(0, 18) + '…' : c.nombre) : '—';
         const email = c.email ? (c.email.length > 18 ? c.email.substring(0, 16) + '…' : c.email) : '';
         const tel = c.telefono || '';
         
-        // Line 2: contacto · email (clickable) | teléfono (clickable)
         var line2Left = contacto;
         if (email && c.email) {
             line2Left += ' · <a href="mailto:' + c.email + '" onclick="event.stopPropagation();" style="color:var(--primary);text-decoration:none;">' + email + '</a>';
         }
         
-        cardsHtml += `
-        <div onclick="showProveedorDetail(${prov.id})" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
-                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                ${servicio ? '<span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:35%;">' + servicio + '</span>' : ''}
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
-                <div style="font-size:0.68rem; color:var(--text-light); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${line2Left}</div>
-                ${tel ? '<a href="tel:' + tel + '" onclick="event.stopPropagation();" style="font-size:0.68rem; color:var(--primary); text-decoration:none; flex-shrink:0; white-space:nowrap;">' + tel + '</a>' : ''}
-            </div>
-        </div>`;
+        h += '<div onclick="showProveedorDetail(' + prov.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        h += (servicio ? '<span class="mc-meta-right" style="max-width:35%;">' + servicio + '</span>' : '') + '</div>';
+        h += '<div class="mc-line"><div class="mc-meta">' + line2Left + '</div>';
+        h += (tel ? '<a href="tel:' + tel + '" onclick="event.stopPropagation();" class="mc-meta-right" style="color:var(--primary);text-decoration:none;">' + tel + '</a>' : '') + '</div>';
+        h += '</div>';
     });
     
-    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 function renderProveedoresFacturasPagadas() {
@@ -321,42 +315,31 @@ function renderProveedoresFacturasPagadas() {
         return;
     }
     
-    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Fecha Pago</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Monto</span></div>';
+    var cardsHtml = '<div class="mc-list"><div class="mc-header">';
+    cardsHtml += '<div class="mc-header-line"><span>Proveedor</span><span>Fecha Pago</span></div>';
+    cardsHtml += '<div class="mc-header-line"><span>Factura</span><span>Monto</span></div>';
     cardsHtml += '</div>';
     
     pagadas.forEach((f, idx) => {
-        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
         const nombre = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         const docIcon = f.has_documento 
             ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'documento')" style="cursor:pointer; font-size:0.75rem;">📄</span>` : '';
         const pagoIcon = f.has_pago
             ? `<span onclick="event.stopPropagation(); viewFacturaDoc(${f.facturaId}, 'pago')" style="cursor:pointer; font-size:0.75rem;">🧾</span>` : '';
         
-        cardsHtml += `
-        <div onclick="currentProveedorId=${f.proveedorId}; window.facturaActionContext='standalone-pagadas'; showProveedorDetail(${f.proveedorId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
-                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                <span style="font-size:0.68rem; color:var(--text-light); flex-shrink:0; white-space:nowrap;">${pagoIcon}${formatDate(f.fecha)}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
-                <div style="display:flex; align-items:baseline; gap:0.25rem; font-size:0.68rem; color:var(--text-light);">
-                    <span>${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
-                    ${docIcon}
-                </div>
-                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(f.monto)}</span>
-            </div>
-        </div>`;
+        cardsHtml += '<div onclick="currentProveedorId=' + f.proveedorId + '; window.facturaActionContext=\'standalone-pagadas\'; showProveedorDetail(' + f.proveedorId + ');" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        cardsHtml += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        cardsHtml += '<span class="mc-meta-right">' + pagoIcon + formatDate(f.fecha) + '</span></div>';
+        cardsHtml += '<div class="mc-line"><div class="mc-meta" style="display:flex;align-items:baseline;gap:0.25rem;">';
+        cardsHtml += '<span>' + (f.numero !== 'S/N' ? '#' + f.numero : '—') + '</span>' + docIcon + '</div>';
+        cardsHtml += '<span class="mc-value">' + formatCurrency(f.monto) + '</span></div>';
+        cardsHtml += '</div>';
     });
     
-    cardsHtml += `
-    <div style="padding:0.5rem 0.6rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:0.78rem;">TOTAL:</strong>
-        <strong style="font-size:0.78rem;">${formatCurrency(totalPagadas)}</strong>
-    </div>`;
+    cardsHtml += '<div class="mc-total"><strong>TOTAL:</strong><strong>' + formatCurrency(totalPagadas) + '</strong></div>';
+    cardsHtml += '</div>';
     
-    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+    mobileDiv.innerHTML = cardsHtml;
 }
 
 // ============================================
@@ -451,13 +434,13 @@ function renderProveedoresFacturasPorPagar() {
     
     // ── MOBILE: Card list ──
     if (porPagar.length === 0) {
-        mobileDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">No hay facturas por pagar</p>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay facturas por pagar</p>';
         return;
     }
     
-    var cardsHtml = '<div style="padding:0.4rem 0.6rem; background:var(--bg); border-bottom:2px solid var(--border); font-size:0.7rem; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:0.03em;">';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Proveedor</span><span>Monto</span></div>';
-    cardsHtml += '<div style="display:flex; justify-content:space-between;"><span>Factura</span><span>Vencimiento</span></div>';
+    var cardsHtml = '<div class="mc-list"><div class="mc-header">';
+    cardsHtml += '<div class="mc-header-line"><span>Proveedor</span><span>Monto</span></div>';
+    cardsHtml += '<div class="mc-header-line"><span>Factura</span><span>Vencimiento</span></div>';
     cardsHtml += '</div>';
     
     porPagar.forEach((f, idx) => {
@@ -466,35 +449,25 @@ function renderProveedoresFacturasPorPagar() {
         const hoy = new Date(); hoy.setHours(0,0,0,0);
         const isVencida = vencDate < hoy;
         const isProxima = !isVencida && (vencDate - hoy) < 7 * 86400000;
-        const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : 'color:var(--text-light);';
-        const bgColor = idx % 2 === 0 ? '#fff' : '#f8fafc';
+        const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : '';
         const nombre = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         
-        cardsHtml += `
-        <div onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showProveedorDetail(${f.provId});" style="padding:0.35rem 0.6rem; border-bottom:1px solid var(--border); cursor:pointer; background:${bgColor};">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:0.3rem;">
-                <div style="font-weight:600; font-size:0.78rem; color:var(--text); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${nombre}</div>
-                <span style="font-weight:600; font-size:0.78rem; color:var(--text); flex-shrink:0;">${formatCurrency(f.monto)}</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:0.02rem; gap:0.3rem;">
-                <span style="font-size:0.68rem; color:var(--text-light);">${f.numero !== 'S/N' ? '#' + f.numero : '—'}</span>
-                <div style="display:flex; align-items:baseline; gap:0.15rem; flex-shrink:0;">
-                    <span style="font-size:0.68rem; ${fechaColor} white-space:nowrap;">${formatDateVencimiento(f.vencimiento)}</span>
-                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">✏️</span>
-                    <span onclick="event.stopPropagation(); currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showPagarFacturaModal(${f.factId})" style="cursor:pointer; font-size:0.75rem;">🏦</span>
-                    <span onclick="event.stopPropagation(); window.facturaActionContext='standalone-porpagar'; deleteFacturaConConfirm(${f.factId}, '${escapedNum}')" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:0.75rem;">✕</span>
-                </div>
-            </div>
-        </div>`;
+        cardsHtml += '<div onclick="currentProveedorId=' + f.provId + '; window.facturaActionContext=\'standalone-porpagar\'; showProveedorDetail(' + f.provId + ');" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        cardsHtml += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        cardsHtml += '<span class="mc-value">' + formatCurrency(f.monto) + '</span></div>';
+        cardsHtml += '<div class="mc-line"><span class="mc-meta">' + (f.numero !== 'S/N' ? '#' + f.numero : '—') + '</span>';
+        cardsHtml += '<div class="mc-actions">';
+        cardsHtml += '<span class="mc-meta-right" style="' + fechaColor + '">' + formatDateVencimiento(f.vencimiento) + '</span>';
+        cardsHtml += '<span onclick="event.stopPropagation(); currentProveedorId=' + f.provId + '; window.facturaActionContext=\'standalone-porpagar\'; showEditFacturaModal(' + f.factId + ')">✏️</span>';
+        cardsHtml += '<span onclick="event.stopPropagation(); currentProveedorId=' + f.provId + '; window.facturaActionContext=\'standalone-porpagar\'; showPagarFacturaModal(' + f.factId + ')">🏦</span>';
+        cardsHtml += '<span onclick="event.stopPropagation(); window.facturaActionContext=\'standalone-porpagar\'; deleteFacturaConConfirm(' + f.factId + ', \'' + escapedNum + '\')" style="color:var(--danger);font-weight:700;">✕</span>';
+        cardsHtml += '</div></div></div>';
     });
     
-    cardsHtml += `
-    <div style="padding:0.5rem 0.6rem; background:#e6f2ff; display:flex; justify-content:space-between; align-items:center;">
-        <strong style="font-size:0.78rem;">TOTAL:</strong>
-        <strong style="font-size:0.78rem;">${formatCurrency(totalPorPagar)}</strong>
-    </div>`;
+    cardsHtml += '<div class="mc-total"><strong>TOTAL:</strong><strong>' + formatCurrency(totalPorPagar) + '</strong></div>';
+    cardsHtml += '</div>';
     
-    mobileDiv.innerHTML = '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">' + cardsHtml + '</div>';
+    mobileDiv.innerHTML = cardsHtml;
 }
 
 // ============================================
