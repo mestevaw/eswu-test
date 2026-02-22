@@ -12,6 +12,7 @@ var inquilinosSortColumn = null;
 var inquilinosSortOrder = 'asc';
 
 function showInquilinosView(view) {
+    if (isMobile()) hideMobileMenu();
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('inquilinosPage').classList.add('active');
