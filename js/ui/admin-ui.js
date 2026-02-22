@@ -146,8 +146,20 @@ function renderUsuariosTable() {
     const tbody = document.getElementById('usuariosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile container
+    var mobileDiv = document.getElementById('usuariosMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'usuariosMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('usuariosTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     const nivelLabels = { 1: 'Admin', 2: 'Edita', 3: 'Consulta', 4: 'Contabilidad' };
     
+    // DESKTOP
     usuarios.forEach(u => {
         const estadoBadge = u.activo 
             ? '<span class="badge badge-success">Activo</span>' 
@@ -168,7 +180,33 @@ function renderUsuariosTable() {
     
     if (usuarios.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay usuarios</td></tr>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay usuarios</p>';
+        return;
     }
+    
+    // MOBILE
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Usuario</span><span>Nivel</span></div>';
+    h += '<div class="mc-header-line"><span>Email</span><span>Estado</span></div>';
+    h += '</div>';
+    
+    usuarios.forEach((u, idx) => {
+        var nivelLabel = nivelLabels[u.nivel] || 'N' + u.nivel;
+        var mcBadge = u.activo ? 'mc-badge-success' : 'mc-badge-danger';
+        var estado = u.activo ? 'Activo' : 'Inactivo';
+        var email = u.email || '—';
+        if (email.length > 25) email = email.substring(0, 23) + '…';
+        
+        h += '<div onclick="showUsuarioDetail(' + u.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title">' + u.nombre + '</div>';
+        h += '<span class="mc-meta-right">' + nivelLabel + '</span></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + email + '</span>';
+        h += '<span class="mc-badge ' + mcBadge + '">' + estado + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 function showUsuarioDetail(id) {
@@ -459,6 +497,18 @@ function renderActivosTable() {
     const tbody = document.getElementById('activosTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile container
+    var mobileDiv = document.getElementById('activosMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'activosMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('activosTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
+    // DESKTOP
     activos.forEach(act => {
         tbody.innerHTML += `
             <tr style="cursor: pointer;" onclick="showActivoDetail(${act.id})">
@@ -472,7 +522,31 @@ function renderActivosTable() {
     
     if (activos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light)">No hay activos</td></tr>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay activos</p>';
+        return;
     }
+    
+    // MOBILE
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Activo</span><span>Próx. Mant.</span></div>';
+    h += '<div class="mc-header-line"><span>Proveedor</span><span>Último Mant.</span></div>';
+    h += '</div>';
+    
+    activos.forEach((act, idx) => {
+        var nombre = act.nombre.length > 30 ? act.nombre.substring(0, 28) + '…' : act.nombre;
+        var prov = act.proveedor || '—';
+        if (prov.length > 25) prov = prov.substring(0, 23) + '…';
+        
+        h += '<div onclick="showActivoDetail(' + act.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
+        h += '<span class="mc-meta-right">' + formatDate(act.proximo_mant) + '</span></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + prov + '</span>';
+        h += '<span class="mc-meta-right">' + formatDate(act.ultimo_mant) + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 function showActivoDetail(id) {
@@ -690,6 +764,18 @@ function renderEstacionamientoTable() {
     const tbody = document.getElementById('estacionamientoTable').querySelector('tbody');
     tbody.innerHTML = '';
     
+    // Mobile container
+    var mobileDiv = document.getElementById('estacionamientoMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'estacionamientoMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('estacionamientoTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
+    // DESKTOP
     estacionamiento.forEach(esp => {
         const espacioCell = `<span class="estacionamiento-espacio" style="background: ${esp.color_asignado}">${esp.numero_espacio}</span>`;
         const inquilinoText = esp.inquilino_nombre || '-';
@@ -703,6 +789,31 @@ function renderEstacionamientoTable() {
             </tr>
         `;
     });
+    
+    if (estacionamiento.length === 0) {
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay espacios</p>';
+        return;
+    }
+    
+    // MOBILE
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Espacio</span><span>Despacho</span></div>';
+    h += '<div class="mc-header-line"><span>Inquilino</span><span></span></div>';
+    h += '</div>';
+    
+    estacionamiento.forEach((esp, idx) => {
+        var inquilino = esp.inquilino_nombre || '—';
+        if (inquilino.length > 30) inquilino = inquilino.substring(0, 28) + '…';
+        
+        h += '<div onclick="showEditEstacionamientoModal(' + esp.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        h += '<div class="mc-line"><div class="mc-title" style="flex:none;"><span class="mc-espacio" style="background:' + esp.color_asignado + ';">' + esp.numero_espacio + '</span></div>';
+        h += '<span class="mc-meta-right">' + (esp.numero_despacho || '—') + '</span></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + inquilino + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 function showEditEstacionamientoModal(espacioId) {
@@ -729,44 +840,23 @@ function showEditEstacionamientoModal(espacioId) {
 let estacionamientoSortOrder = { espacio: 'asc', inquilino: 'asc' };
 
 function sortEstacionamiento(columna) {
-    const tbody = document.getElementById('estacionamientoTable').querySelector('tbody');
-    
-    let sortedData = [...estacionamiento];
-    
     if (columna === 'espacio') {
-        sortedData.sort((a, b) => {
+        estacionamiento.sort((a, b) => {
             const numA = parseInt(a.numero_espacio);
             const numB = parseInt(b.numero_espacio);
             return estacionamientoSortOrder.espacio === 'asc' ? numA - numB : numB - numA;
         });
         estacionamientoSortOrder.espacio = estacionamientoSortOrder.espacio === 'asc' ? 'desc' : 'asc';
     } else if (columna === 'inquilino') {
-        sortedData.sort((a, b) => {
+        estacionamiento.sort((a, b) => {
             const nameA = (a.inquilino_nombre || '').toLowerCase();
             const nameB = (b.inquilino_nombre || '').toLowerCase();
-            if (estacionamientoSortOrder.inquilino === 'asc') {
-                return nameA.localeCompare(nameB);
-            } else {
-                return nameB.localeCompare(nameA);
-            }
+            return estacionamientoSortOrder.inquilino === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
         });
         estacionamientoSortOrder.inquilino = estacionamientoSortOrder.inquilino === 'asc' ? 'desc' : 'asc';
     }
     
-    tbody.innerHTML = '';
-    sortedData.forEach(esp => {
-        const espacioCell = `<span class="estacionamiento-espacio" style="background: ${esp.color_asignado}">${esp.numero_espacio}</span>`;
-        const inquilinoText = esp.inquilino_nombre || '-';
-        const despachoText = esp.numero_despacho || '-';
-        
-        tbody.innerHTML += `
-            <tr onclick="showEditEstacionamientoModal(${esp.id})" style="cursor:pointer">
-                <td>${espacioCell}</td>
-                <td>${inquilinoText}</td>
-                <td>${despachoText}</td>
-            </tr>
-        `;
-    });
+    renderEstacionamientoTable();
 }
 
 // ============================================
@@ -781,8 +871,20 @@ function renderBitacoraTable() {
     
     tbody.innerHTML = '';
     
+    // Mobile container
+    var mobileDiv = document.getElementById('bitacoraMobileCards');
+    if (!mobileDiv) {
+        mobileDiv = document.createElement('div');
+        mobileDiv.id = 'bitacoraMobileCards';
+        mobileDiv.className = 'show-mobile-only';
+        var tableContainer = document.getElementById('bitacoraTable').parentElement;
+        tableContainer.parentElement.appendChild(mobileDiv);
+    }
+    mobileDiv.innerHTML = '';
+    
     if (!bitacoraSemanal || bitacoraSemanal.length === 0) {
         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-light);padding:2rem">No hay bitácora semanal</td></tr>';
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay bitácora semanal</p>';
         return;
     }
     
@@ -792,9 +894,19 @@ function renderBitacoraTable() {
         return bitacoraSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
     
+    _renderBitacoraRows(sorted, tbody);
+    _renderBitacoraMobile(sorted, mobileDiv);
+    
+    const th = document.querySelector('#bitacoraTable th.sortable');
+    if (th) {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        th.classList.add(bitacoraSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
+    }
+}
+
+function _renderBitacoraRows(sorted, tbody) {
     sorted.forEach((sem, index) => {
         const row = tbody.insertRow();
-        
         const esEditable = index < 2;
         
         if (esEditable) {
@@ -807,7 +919,6 @@ function renderBitacoraTable() {
         
         const notasPreview = sem.notas ? (sem.notas.length > 100 ? sem.notas.substring(0, 100) + '...' : sem.notas) : 'Sin notas';
         const notasCompletas = sem.notas || 'Sin notas';
-        
         const semanaTexto = sem.semana_texto ? sem.semana_texto.replace('Semana del', '').trim() : '';
         
         row.innerHTML = `
@@ -815,12 +926,27 @@ function renderBitacoraTable() {
             <td class="bitacora-notas-hover" data-notas="${notasCompletas.replace(/"/g, '&quot;').replace(/\n/g, '&#10;')}">${notasPreview}</td>
         `;
     });
+}
+
+function _renderBitacoraMobile(sorted, mobileDiv) {
+    var h = '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Semana</span></div>';
+    h += '</div>';
     
-    const th = document.querySelector('#bitacoraTable th.sortable');
-    if (th) {
-        th.classList.remove('sorted-asc', 'sorted-desc');
-        th.classList.add(bitacoraSortOrder === 'asc' ? 'sorted-asc' : 'sorted-desc');
-    }
+    sorted.forEach((sem, idx) => {
+        var semanaTexto = sem.semana_texto ? sem.semana_texto.replace('Semana del', '').trim() : '';
+        var notas = sem.notas || 'Sin notas';
+        var notasPreview = notas.length > 60 ? notas.substring(0, 58) + '…' : notas;
+        var esEditable = idx < 2;
+        
+        h += '<div' + (esEditable ? ' onclick="showEditBitacoraModal(' + sem.id + ')"' : '') + ' class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '"' + (!esEditable ? ' style="opacity:0.5;"' : '') + '>';
+        h += '<div class="mc-line"><div class="mc-title">' + semanaTexto + '</div></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + notasPreview + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    mobileDiv.innerHTML = h;
 }
 
 function sortBitacora() {
@@ -843,19 +969,20 @@ function filtrarBitacora(query) {
         return bitacoraSortOrder === 'asc' ? dateA - dateB : dateB - dateA;
     });
     
-    sorted.forEach(sem => {
-        const notasPreview = sem.notas ? (sem.notas.substring(0, 100) + '...') : 'Sin notas';
-        const notasCompletas = sem.notas || 'Sin notas';
-        tbody.innerHTML += `
-            <tr onclick="showEditBitacoraModal(${sem.id})" style="cursor:pointer">
-                <td><strong>${sem.semana_texto}</strong></td>
-                <td class="bitacora-notas-hover" data-notas="${notasCompletas.replace(/"/g, '&quot;')}">${notasPreview}</td>
-            </tr>
-        `;
-    });
+    _renderBitacoraRows(sorted, tbody);
     
     if (sorted.length === 0) {
         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:var(--text-light);padding:2rem">No se encontraron resultados</td></tr>';
+    }
+    
+    // Update mobile
+    var mobileDiv = document.getElementById('bitacoraMobileCards');
+    if (mobileDiv) {
+        if (sorted.length === 0) {
+            mobileDiv.innerHTML = '<p class="mc-empty">No se encontraron resultados</p>';
+        } else {
+            _renderBitacoraMobile(sorted, mobileDiv);
+        }
     }
 }
 
