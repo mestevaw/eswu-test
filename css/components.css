@@ -477,6 +477,156 @@
 }
 
 /* ============================================
+   MOBILE CARD LIST (patrón unificado)
+   Usado en: inquilinos, proveedores, facturas,
+   rentas, vencimientos, usuarios, activos,
+   estacionamiento, bitácora
+   ============================================ */
+
+.mc-list {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.mc-header {
+    padding: 0.4rem 0.6rem;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.mc-header-line {
+    display: flex;
+    justify-content: space-between;
+}
+
+.mc-row {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+}
+
+.mc-row:active {
+    background: #e8f4fd !important;
+}
+
+.mc-row-odd {
+    background: #f8fafc;
+}
+
+.mc-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.3rem;
+}
+
+.mc-line + .mc-line {
+    margin-top: 0.02rem;
+}
+
+.mc-title {
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mc-title-inactive {
+    color: #999;
+    font-style: italic;
+}
+
+.mc-value {
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--text);
+    flex-shrink: 0;
+}
+
+.mc-meta {
+    font-size: 0.68rem;
+    color: var(--text-light);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mc-meta-right {
+    font-size: 0.68rem;
+    color: var(--text-light);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.mc-actions {
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+    flex-shrink: 0;
+}
+
+.mc-actions span {
+    cursor: pointer;
+    font-size: 0.75rem;
+}
+
+.mc-total {
+    padding: 0.5rem 0.6rem;
+    background: #e6f2ff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mc-total strong {
+    font-size: 0.78rem;
+}
+
+.mc-empty {
+    text-align: center;
+    color: var(--text-light);
+    padding: 2rem;
+}
+
+/* Badge inline para mobile cards */
+.mc-badge {
+    font-size: 0.62rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 3px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.mc-badge-success { background: #d4edda; color: #155724; }
+.mc-badge-warning { background: #fff3cd; color: #856404; }
+.mc-badge-danger  { background: #f8d7da; color: #721c24; }
+
+/* Estacionamiento color badge */
+.mc-espacio {
+    display: inline-block;
+    width: 1.6rem;
+    height: 1.6rem;
+    line-height: 1.6rem;
+    text-align: center;
+    border-radius: 4px;
+    color: white;
+    font-weight: 700;
+    font-size: 0.72rem;
+}
+
+/* ============================================
    LOADING BANNER
    ============================================ */
 
