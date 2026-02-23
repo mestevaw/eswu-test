@@ -10,6 +10,7 @@ var currentMensajesTab = 'alertas';
 // ============================================
 
 function showMensajesPage() {
+    if (typeof showHeader === 'function') showHeader();
     // Cerrar submenús
     document.querySelectorAll('.submenu-container').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
