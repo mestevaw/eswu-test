@@ -106,16 +106,9 @@ function showAgregarDocumentoModal() {
     const fn = document.getElementById('nuevoDocPDFFileName');
     if (fn) fn.textContent = '';
     
-    // Mostrar/ocultar pregunta de contrato original
-    const inq = inquilinos.find(i => i.id === currentInquilinoId);
-    const pregunta = document.getElementById('nuevoDocContratoQuestion');
-    if (inq && !inq.has_contrato) {
-        pregunta.classList.remove('hidden');
-        const radios = document.querySelectorAll('input[name="esContratoNuevoDoc"]');
-        radios.forEach(r => r.checked = (r.value === 'no'));
-    } else {
-        pregunta.classList.add('hidden');
-    }
+    // Pregunta de contrato original eliminada — se usa el botón dedicado
+    var pregunta = document.getElementById('nuevoDocContratoQuestion');
+    pregunta.classList.add('hidden');
     
     document.getElementById('agregarDocumentoModal').classList.add('active');
 }
