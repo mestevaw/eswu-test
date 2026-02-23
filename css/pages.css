@@ -7,6 +7,7 @@
    ============================================ */
 
 .header.dash-hidden { display: none; }
+body.dash-no-header { padding-top: 0 !important; }
 
 .dash-grid {
     display: grid;
@@ -276,6 +277,7 @@
     .dash-admin-buttons span { min-width: 70px; font-size: 0.73rem; }
     .dash-tile-body { max-height: 180px; }
     .header.dash-hidden { display: flex; }
+    body.dash-no-header { padding-top: 70px !important; }
     .dash-search { width: 24px; }
     .dash-search:focus { width: 90px; }
 }
