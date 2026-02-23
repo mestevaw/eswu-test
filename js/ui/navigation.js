@@ -274,14 +274,17 @@ function renderDashInquilinos() {
         var lista = inquilinos.filter(function(i) { return i.contrato_activo !== false; });
         if (q) lista = lista.filter(function(i) { return i.nombre.toLowerCase().includes(q); });
         if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin resultados</div>'; return; }
+        var total = lista.length;
+        var show = lista.slice(0, 7);
         var h = '';
-        lista.forEach(function(inq) {
+        show.forEach(function(inq) {
             var nombre = inq.nombre.length > 28 ? inq.nombre.substring(0, 26) + '…' : inq.nombre;
             h += '<div class="dash-row" onclick="showInquilinoDetail(' + inq.id + ')">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
             h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
             h += '</div>';
         });
+        if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'list\')">ver todos (' + total + ')</div>';
         div.innerHTML = h;
         
     } else if (dashInqView === 'rentas') {
@@ -300,8 +303,10 @@ function renderDashInquilinos() {
         rentas.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
         if (q) rentas = rentas.filter(function(r) { return r.nombre.toLowerCase().includes(q); });
         if (rentas.length === 0) { div.innerHTML = '<div class="dash-empty">Sin rentas ' + year + '</div>'; return; }
+        var total = rentas.length;
+        var show = rentas.slice(0, 7);
         var h = '';
-        rentas.forEach(function(r) {
+        show.forEach(function(r) {
             var nombre = r.nombre.length > 22 ? r.nombre.substring(0, 20) + '…' : r.nombre;
             h += '<div class="dash-row" onclick="showInquilinoDetail(' + r.id + ')">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
@@ -309,6 +314,7 @@ function renderDashInquilinos() {
             h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + formatDate(r.fecha) + '</span>';
             h += '</div>';
         });
+        if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'rentasRecibidas\')">ver todas (' + total + ')</div>';
         div.innerHTML = h;
         
     } else if (dashInqView === 'contratos') {
@@ -317,8 +323,10 @@ function renderDashInquilinos() {
         if (q) lista = lista.filter(function(i) { return i.nombre.toLowerCase().includes(q); });
         if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin contratos</div>'; return; }
         var hoy = new Date(); hoy.setHours(0,0,0,0);
+        var total = lista.length;
+        var show = lista.slice(0, 7);
         var h = '';
-        lista.forEach(function(inq) {
+        show.forEach(function(inq) {
             var nombre = inq.nombre.length > 25 ? inq.nombre.substring(0, 23) + '…' : inq.nombre;
             var venc = new Date(inq.fecha_vencimiento + 'T00:00:00');
             var dias = Math.ceil((venc - hoy) / 86400000);
@@ -328,6 +336,7 @@ function renderDashInquilinos() {
             h += '<span class="' + metaClass + '">' + formatDate(inq.fecha_vencimiento) + '</span>';
             h += '</div>';
         });
+        if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'vencimientoContratos\')">ver todos (' + total + ')</div>';
         div.innerHTML = h;
     }
 }
@@ -342,8 +351,10 @@ function renderDashProveedores() {
         var lista = proveedores.slice();
         if (q) lista = lista.filter(function(p) { return p.nombre.toLowerCase().includes(q) || (p.servicio || '').toLowerCase().includes(q); });
         if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin resultados</div>'; return; }
+        var total = lista.length;
+        var show = lista.slice(0, 7);
         var h = '';
-        lista.forEach(function(prov) {
+        show.forEach(function(prov) {
             var nombre = prov.nombre.length > 22 ? prov.nombre.substring(0, 20) + '…' : prov.nombre;
             var servicio = (prov.servicio || '').length > 18 ? prov.servicio.substring(0, 16) + '…' : (prov.servicio || '');
             h += '<div class="dash-row" onclick="showProveedorDetail(' + prov.id + ')">';
@@ -351,10 +362,12 @@ function renderDashProveedores() {
             h += '<span class="dash-row-meta">' + servicio + '</span>';
             h += '</div>';
         });
+        if (total > 7) h += '<div class="dash-row-more" onclick="showProveedoresView(\'list\')">ver todos (' + total + ')</div>';
         div.innerHTML = h;
         
     } else if (dashProvView === 'pagadas' || dashProvView === 'porpagar') {
         var isPagadas = dashProvView === 'pagadas';
+        var viewName = isPagadas ? 'facturasPagadas' : 'facturasPorPagar';
         var facturasList = [];
         proveedores.forEach(function(prov) {
             if (prov.facturas) {
@@ -368,8 +381,10 @@ function renderDashProveedores() {
         facturasList.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
         if (q) facturasList = facturasList.filter(function(f) { return f.provNombre.toLowerCase().includes(q); });
         if (facturasList.length === 0) { div.innerHTML = '<div class="dash-empty">Sin facturas</div>'; return; }
+        var total = facturasList.length;
+        var show = facturasList.slice(0, 7);
         var h = '';
-        facturasList.forEach(function(f) {
+        show.forEach(function(f) {
             var nombre = f.provNombre.length > 20 ? f.provNombre.substring(0, 18) + '…' : f.provNombre;
             h += '<div class="dash-row" onclick="showProveedorDetail(' + f.provId + ')">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
@@ -377,6 +392,7 @@ function renderDashProveedores() {
             h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + (f.fecha ? formatDate(f.fecha) : '') + '</span>';
             h += '</div>';
         });
+        if (total > 7) h += '<div class="dash-row-more" onclick="showProveedoresView(\'' + viewName + '\')">ver todas (' + total + ')</div>';
         div.innerHTML = h;
     }
 }
