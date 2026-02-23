@@ -268,7 +268,58 @@ function bindAdjuntoListeners() {
         renderMensajeAdjuntosList();
     });
     
+    // Paste listener — captura imágenes pegadas (copy & paste en móvil y desktop)
+    var modal = document.getElementById('nuevoMensajeModal');
+    if (modal) {
+        modal.addEventListener('paste', handleMensajePaste);
+    }
+    
     _adjuntoListenersBound = true;
+}
+
+// Manejar paste de imágenes (clipboard)
+function handleMensajePaste(e) {
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    
+    var imagesPasted = false;
+    
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].kind === 'file') {
+            var file = items[i].getAsFile();
+            if (file) {
+                // Generar nombre descriptivo si es imagen genérica
+                if (file.name === 'image.png' || file.name === 'image.jpg' || !file.name) {
+                    var ext = file.type.split('/')[1] || 'png';
+                    if (ext === 'jpeg') ext = 'jpg';
+                    var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    var renamedFile = new File([file], 'imagen-' + ts + '.' + ext, { type: file.type });
+                    mensajePendingFiles.push(renamedFile);
+                } else {
+                    mensajePendingFiles.push(file);
+                }
+                imagesPasted = true;
+            }
+        }
+    }
+    
+    if (imagesPasted) {
+        e.preventDefault();
+        renderMensajeAdjuntosList();
+        
+        // Feedback visual en el drop zone
+        var zone = document.getElementById('mensajeDropZone');
+        if (zone) {
+            zone.textContent = '✅ Imagen pegada';
+            zone.style.borderColor = 'var(--success)';
+            zone.style.color = 'var(--success)';
+            setTimeout(function() {
+                zone.textContent = '📎 Toca aquí para adjuntar o pega una imagen copiada';
+                zone.style.borderColor = '';
+                zone.style.color = '';
+            }, 1500);
+        }
+    }
 }
 
 // ============================================
