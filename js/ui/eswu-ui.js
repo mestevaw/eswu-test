@@ -443,29 +443,7 @@ async function getOrCreateEswuReportesFolder() {
     return reportesFolder;
 }
 
-// Helper: find or create a subfolder inside a parent
-async function findOrCreateSubfolder(name, parentId) {
-    var safeName = name.replace(/'/g, "\\'");
-    var q;
-    if (parentId) {
-        q = "'" + parentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    } else {
-        q = "name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    }
-    
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data = await resp.json();
-    
-    if (data.files && data.files.length > 0) {
-        return data.files[0].id;
-    }
-    
-    // Create it
-    var folder = await createDriveFolder(name, parentId || 'root');
-    return folder.id;
-}
+// findOrCreateSubfolder() → definida en google-drive.js
 
 // ============================================
 // BANCOS TABLE (moved from Admin)
