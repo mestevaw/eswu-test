@@ -208,6 +208,7 @@ function showDashboard() {
     // Hide header on dashboard
     var header = document.querySelector('.header');
     if (header) header.classList.add('dash-hidden');
+    document.body.classList.add('dash-no-header');
     
     // Show dashboard
     document.getElementById('dashboardPage').classList.add('active');
@@ -223,6 +224,7 @@ function showDashboard() {
 function showHeader() {
     var header = document.querySelector('.header');
     if (header) header.classList.remove('dash-hidden');
+    document.body.classList.remove('dash-no-header');
 }
 
 function renderDashboard() {
