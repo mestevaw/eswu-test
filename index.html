@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
-    <link rel="stylesheet" href="css/pages.css?v=23">
+    <link rel="stylesheet" href="css/pages.css?v=24">
     <link rel="stylesheet" href="css/utilities.css?v=23">
     <style>
         .file-drop-zone {
@@ -166,15 +166,17 @@
                     <div class="dash-grid">
                         <!-- Inquilinos tile -->
                         <div class="dash-tile dash-inquilinos">
-                            <div class="dash-tile-header" onclick="showInquilinosView('list')">
+                            <div class="dash-tile-header">
                                 <span class="dash-tile-icon">👥</span>
                                 <span class="dash-tile-title">Inquilinos</span>
+                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()">
                             </div>
-                            <div id="dashInquilinosList" class="dash-tile-body" onclick="showInquilinosView('list')"></div>
-                            <div class="dash-tile-links">
-                                <span onclick="showInquilinosView('rentasRecibidas')">Rentas</span>
-                                <span onclick="showInquilinosView('vencimientoContratos')">Contratos</span>
+                            <div class="dash-tile-links dash-tile-links-top">
+                                <span class="active" onclick="switchDashInqView('list')">Listado</span>
+                                <span onclick="switchDashInqView('rentas')">Rentas</span>
+                                <span onclick="switchDashInqView('contratos')">Contratos</span>
                             </div>
+                            <div id="dashInquilinosList" class="dash-tile-body"></div>
                         </div>
 
                         <!-- ESWU central -->
@@ -184,19 +186,20 @@
 
                         <!-- Proveedores tile -->
                         <div class="dash-tile dash-proveedores">
-                            <div class="dash-tile-header" onclick="showProveedoresView('list')">
+                            <div class="dash-tile-header">
                                 <span class="dash-tile-icon">🔧</span>
                                 <span class="dash-tile-title">Proveedores</span>
+                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()">
                             </div>
-                            <div id="dashProveedoresList" class="dash-tile-body" onclick="showProveedoresView('list')"></div>
-                            <div class="dash-tile-links">
-                                <span onclick="showProveedoresView('facturasPagadas')">F. Pagadas</span>
-                                <span onclick="showProveedoresView('facturasPorPagar')">F. X Pagar</span>
-                                <span onclick="showProveedoresView('mantenimiento')">Mantenimiento</span>
+                            <div class="dash-tile-links dash-tile-links-top">
+                                <span class="active" onclick="switchDashProvView('list')">Listado</span>
+                                <span onclick="switchDashProvView('pagadas')">F. Pagadas</span>
+                                <span onclick="switchDashProvView('porpagar')">F. X Pagar</span>
                             </div>
+                            <div id="dashProveedoresList" class="dash-tile-body"></div>
                         </div>
 
-                        <!-- Admin tile - compacto con botones integrados -->
+                        <!-- Admin bar -->
                         <div class="dash-tile dash-admin">
                             <div class="dash-admin-bar">
                                 <span class="dash-admin-label">⚙️ Admin</span>
@@ -210,15 +213,20 @@
                             </div>
                         </div>
 
-                        <!-- Mensajes tile con alertas integradas -->
+                        <!-- Mensajes tile -->
                         <div class="dash-tile dash-mensajes">
-                            <div class="dash-tile-header" onclick="showMensajesPage()">
+                            <div class="dash-tile-header">
                                 <span class="dash-tile-icon">💬</span>
-                                <span class="dash-tile-title">Mensajes</span>
+                                <span class="dash-tile-title">Mensajes y Alertas</span>
                                 <span id="dashMensajesBadge" class="dash-badge" style="display:none;">0</span>
+                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
                             </div>
-                            <div id="dashAlertasList" class="dash-alertas-area"></div>
-                            <div id="dashMensajesList" class="dash-tile-body" onclick="showMensajesPage()"></div>
+                            <div class="dash-tile-links dash-tile-links-top">
+                                <span class="active" onclick="switchDashMsgView('alertas')">Alertas</span>
+                                <span onclick="switchDashMsgView('mensajes')">Mensajes</span>
+                                <span onclick="switchDashMsgView('avisos')">Avisos</span>
+                            </div>
+                            <div id="dashMensajesList" class="dash-tile-body dash-msg-body"></div>
                         </div>
                     </div>
                 </div>
@@ -818,10 +826,10 @@
                     </div>
                     <div id="pagoMontoGroup" class="form-group hidden"><label>Monto del Pago *</label><input type="number" id="pagoMonto" step="0.01" autocomplete="off"></div>
                     <div class="form-group">
-                        <label>Comprobante de Pago (PDF)</label>
+                        <label>Comprobante de Pago</label>
                         <div class="file-upload" onclick="document.getElementById('pagoPDF').click()">
-                            <input type="file" id="pagoPDF" accept=".pdf">
-                            <p>Click para seleccionar PDF del comprobante</p>
+                            <input type="file" id="pagoPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic">
+                            <p>Click para seleccionar documento</p>
                         </div>
                     </div>
                     <div class="modal-actions">
@@ -861,10 +869,10 @@
                         </div>
                     </div>
                     <div style="margin-bottom:0.5rem;">
-                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Documento (PDF) *</label>
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Documento *</label>
                         <div onclick="document.getElementById('nuevoDocPDF').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                            <input type="file" id="nuevoDocPDF" accept=".pdf" required style="display:none;">
-                            <span>Click para seleccionar PDF</span>
+                            <input type="file" id="nuevoDocPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" required style="display:none;">
+                            <span>Click para seleccionar documento</span>
                             <span id="nuevoDocPDFFileName" style="color:var(--success); margin-left:0.5rem;"></span>
                         </div>
                     </div>
@@ -934,10 +942,10 @@
                 <form onsubmit="saveDocumentoProveedor(event)">
                     <div class="form-group"><label>Nombre del Documento *</label><input type="text" id="provNuevoDocNombre" required autocomplete="off"></div>
                     <div class="form-group">
-                        <label>Documento (PDF) *</label>
+                        <label>Documento *</label>
                         <div class="file-upload" onclick="document.getElementById('provNuevoDocPDF').click()">
-                            <input type="file" id="provNuevoDocPDF" accept=".pdf" required onchange="document.getElementById('provNuevoDocPDFFileName').textContent=this.files[0]?this.files[0].name:''">
-                            <p>Click para seleccionar PDF</p>
+                            <input type="file" id="provNuevoDocPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" required onchange="document.getElementById('provNuevoDocPDFFileName').textContent=this.files[0]?this.files[0].name:''">
+                            <p>Click para seleccionar documento</p>
                             <p id="provNuevoDocPDFFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
                         </div>
                     </div>
@@ -1024,8 +1032,8 @@
                         <div style="display:flex; align-items:center; gap:0.5rem;">
                             <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Doc. Adicional</label>
                             <div onclick="document.getElementById('proveedorDocAdicional').click()" style="flex:1; padding:0.35rem 0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--text-light); text-align:center;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                                <input type="file" id="proveedorDocAdicional" accept=".pdf" style="display:none;" onchange="var fn=document.getElementById('provDocAdicionalFileName'); fn.textContent=this.files[0]?this.files[0].name:''; document.getElementById('nombreProvDocGroup').classList.toggle('hidden',!this.files[0]);">
-                                <span>Click para PDF</span>
+                                <input type="file" id="proveedorDocAdicional" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="var fn=document.getElementById('provDocAdicionalFileName'); fn.textContent=this.files[0]?this.files[0].name:''; document.getElementById('nombreProvDocGroup').classList.toggle('hidden',!this.files[0]);">
+                                <span>Click para seleccionar documento</span>
                                 <span id="provDocAdicionalFileName" style="color:var(--success); margin-left:0.5rem;"></span>
                             </div>
                         </div>
@@ -1093,10 +1101,10 @@
                         <input type="number" id="facturaIVA" step="0.01" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
                     </div>
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
-                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Factura (PDF)</label>
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Factura</label>
                         <div onclick="document.getElementById('facturaDocumento').click()" style="flex:1; padding:0.35rem 0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--text-light); text-align:center;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                            <input type="file" id="facturaDocumento" accept=".pdf" style="display:none;" onchange="document.getElementById('facturaDocumentoFileName').textContent=this.files[0]?this.files[0].name:''">
-                            <span>Click para PDF</span>
+                            <input type="file" id="facturaDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="document.getElementById('facturaDocumentoFileName').textContent=this.files[0]?this.files[0].name:''">
+                            <span>Click para seleccionar documento</span>
                             <span id="facturaDocumentoFileName" style="color:var(--success); margin-left:0.5rem;"></span>
                         </div>
                     </div>
@@ -1124,8 +1132,8 @@
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
                         <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Comprobante</label>
                         <div onclick="document.getElementById('pagoPDFFactura').click()" style="flex:1; padding:0.35rem 0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--text-light); text-align:center;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                            <input type="file" id="pagoPDFFactura" accept=".pdf" style="display:none;" onchange="document.getElementById('pagoPDFFacturaFileName').textContent=this.files[0]?this.files[0].name:''">
-                            <span>Click para PDF</span>
+                            <input type="file" id="pagoPDFFactura" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="document.getElementById('pagoPDFFacturaFileName').textContent=this.files[0]?this.files[0].name:''">
+                            <span>Click para seleccionar documento</span>
                             <span id="pagoPDFFacturaFileName" style="color:var(--success); margin-left:0.5rem;"></span>
                         </div>
                     </div>
@@ -1396,10 +1404,10 @@
                         </div>
                     </div>
                     <div style="margin-bottom:0.5rem;">
-                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Documento (PDF) *</label>
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Documento *</label>
                         <div class="file-upload" onclick="document.getElementById('bancoDocumento').click()">
-                            <input type="file" id="bancoDocumento" accept=".pdf" required>
-                            <p>Click para seleccionar PDF</p>
+                            <input type="file" id="bancoDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" required>
+                            <p>Click para seleccionar documento</p>
                             <p id="bancoDocumentoFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
                         </div>
                     </div>
@@ -1466,8 +1474,8 @@
             </div>
             <div style="padding: 1.25rem;">
                 <div onclick="document.getElementById('contratoUploadPDF').click()" style="padding:0.75rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-light);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                    <input type="file" id="contratoUploadPDF" accept=".pdf" style="display:none;" onchange="document.getElementById('contratoUploadFileName').textContent = this.files[0] ? this.files[0].name : ''">
-                    <span>Click para seleccionar PDF</span>
+                    <input type="file" id="contratoUploadPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="document.getElementById('contratoUploadFileName').textContent = this.files[0] ? this.files[0].name : ''">
+                    <span>Click para seleccionar documento</span>
                     <span id="contratoUploadFileName" style="color:var(--success); display:block; margin-top:0.35rem;"></span>
                 </div>
             </div>
@@ -1748,7 +1756,7 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=29"></script>
+    <script src="js/ui/navigation.js?v=30"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
