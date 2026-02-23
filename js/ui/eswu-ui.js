@@ -18,6 +18,7 @@ var ESWU_FOLDER_NAMES = {
 // ============================================
 
 function showEswuFicha() {
+    if (typeof showHeader === 'function') showHeader();
     if (isMobile()) hideMobileMenu();
     document.querySelectorAll('.submenu-container').forEach(function(s) { s.classList.remove('active'); });
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
