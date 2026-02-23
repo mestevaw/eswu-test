@@ -237,7 +237,7 @@ function renderDashboard() {
 // --- Dashboard state ---
 var dashInqView = 'list';
 var dashProvView = 'list';
-var dashMsgView = 'alertas';
+var dashMsgView = 'mensajes';
 
 function switchDashInqView(view) {
     dashInqView = view;
@@ -259,10 +259,10 @@ function switchDashProvView(view) {
 
 function switchDashMsgView(view) {
     dashMsgView = view;
-    var links = document.querySelectorAll('.dash-mensajes .dash-tile-links-top span');
-    links.forEach(function(s) { s.classList.remove('active'); });
-    var idx = view === 'alertas' ? 0 : view === 'mensajes' ? 1 : 2;
-    if (links[idx]) links[idx].classList.add('active');
+    var tabs = document.querySelectorAll('.dash-msg-tab');
+    tabs.forEach(function(s) { s.classList.remove('active'); });
+    var idx = view === 'mensajes' ? 0 : view === 'alertas' ? 1 : 2;
+    if (tabs[idx]) tabs[idx].classList.add('active');
     renderDashMensajes();
 }
 
@@ -281,9 +281,24 @@ function renderDashInquilinos() {
         var h = '';
         show.forEach(function(inq) {
             var nombre = inq.nombre.length > 28 ? inq.nombre.substring(0, 26) + '…' : inq.nombre;
-            h += '<div class="dash-row" onclick="showInquilinoDetail(' + inq.id + ')">';
+            var contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0] : null;
+            h += '<div class="dash-row dash-row-2line" onclick="showInquilinoDetail(' + inq.id + ')">';
+            h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
             h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
+            h += '</div>';
+            if (contacto) {
+                h += '<div class="dash-row-bottom">';
+                var cNombre = contacto.nombre || '';
+                h += '<span class="dash-row-contact">' + cNombre + '</span>';
+                if (contacto.telefono) {
+                    h += '<a href="tel:' + contacto.telefono + '" class="dash-row-link" onclick="event.stopPropagation();">📞 ' + contacto.telefono + '</a>';
+                }
+                if (contacto.email) {
+                    h += '<a href="mailto:' + contacto.email + '" class="dash-row-link" onclick="event.stopPropagation();">✉️</a>';
+                }
+                h += '</div>';
+            }
             h += '</div>';
         });
         if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'list\')">ver todos (' + total + ')</div>';
