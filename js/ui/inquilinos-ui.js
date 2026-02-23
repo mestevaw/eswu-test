@@ -24,6 +24,7 @@ function sortRentasRecibidas(column) {
 }
 
 function showInquilinosView(view) {
+    if (typeof showHeader === 'function') showHeader();
     if (isMobile()) hideMobileMenu();
     document.getElementById('inquilinosSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
