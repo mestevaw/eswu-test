@@ -70,6 +70,54 @@ async function loadBitacoraSemanal() {
     }
 }
 
+async function agregarSemanaBitacora() {
+    showLoading();
+    try {
+        const { data: lastWeek, error: fetchError } = await supabaseClient
+            .from('bitacora_semanal')
+            .select('semana_inicio, semana_fin')
+            .order('semana_inicio', { ascending: false })
+            .limit(1)
+            .single();
+        
+        if (fetchError) throw fetchError;
+        
+        if (lastWeek) {
+            const lastEnd = lastWeek.semana_fin || lastWeek.semana_inicio;
+            const nextInicio = new Date(lastEnd + 'T12:00:00');
+            nextInicio.setDate(nextInicio.getDate() + 1);
+            
+            const nextFin = new Date(nextInicio);
+            nextFin.setDate(nextFin.getDate() + 6);
+            
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                          'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const textoSemana = nextInicio.getDate() + ' al ' + nextFin.getDate() + ' ' + meses[nextFin.getMonth()] + ' ' + nextFin.getFullYear();
+            
+            const { error } = await supabaseClient
+                .from('bitacora_semanal')
+                .insert([{
+                    semana_inicio: nextInicio.toISOString().split('T')[0],
+                    semana_fin: nextFin.toISOString().split('T')[0],
+                    semana_texto: textoSemana,
+                    notas: ''
+                }]);
+            
+            if (error) throw error;
+            
+            await loadBitacoraSemanal();
+            renderBitacoraTable();
+        } else {
+            alert('No hay semanas previas. Agrega la primera manualmente en Supabase.');
+        }
+    } catch (error) {
+        console.error('Error creando nueva semana:', error);
+        alert('Error al agregar semana: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
 async function loadUsuarios() {
     try {
         const { data, error } = await supabaseClient
