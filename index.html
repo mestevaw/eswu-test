@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
-    <link rel="stylesheet" href="css/pages.css?v=24">
+    <link rel="stylesheet" href="css/pages.css?v=25">
     <link rel="stylesheet" href="css/utilities.css?v=23">
     <style>
         .file-drop-zone {
@@ -168,7 +168,7 @@
                         <div class="dash-tile dash-inquilinos">
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">👥</span>
-                                <span class="dash-tile-title">Inquilinos</span>
+                                <span class="dash-tile-title" onclick="showInquilinosView('list')" style="cursor:pointer;">Inquilinos</span>
                                 <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top">
@@ -188,7 +188,7 @@
                         <div class="dash-tile dash-proveedores">
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">🔧</span>
-                                <span class="dash-tile-title">Proveedores</span>
+                                <span class="dash-tile-title" onclick="showProveedoresView('list')" style="cursor:pointer;">Proveedores</span>
                                 <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top">
@@ -217,7 +217,7 @@
                         <div class="dash-tile dash-mensajes">
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">💬</span>
-                                <span class="dash-tile-title">Mensajes y Alertas</span>
+                                <span class="dash-tile-title" onclick="showMensajesPage()" style="cursor:pointer;">Mensajes y Alertas</span>
                                 <span id="dashMensajesBadge" class="dash-badge" style="display:none;">0</span>
                                 <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
                             </div>
@@ -1756,7 +1756,7 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=30"></script>
+    <script src="js/ui/navigation.js?v=31"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
