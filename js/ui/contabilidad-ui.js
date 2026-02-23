@@ -18,6 +18,7 @@
 // ============================================
 
 function showContabilidadPage() {
+    if (typeof showHeader === 'function') showHeader();
     if (isMobile()) hideMobileMenu();
     document.getElementById('adminSubMenu').classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
