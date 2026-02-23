@@ -110,7 +110,9 @@ body.dash-no-header { padding-top: 0 !important; }
     display: flex;
     align-items: center;
     justify-content: center;
+    align-self: center;
     transition: transform 0.15s;
+    padding: 1.2rem 1rem;
 }
 .dash-eswu:hover { transform: scale(1.03); }
 .dash-eswu-text {
@@ -162,7 +164,31 @@ body.dash-no-header { padding-top: 0 !important; }
 }
 .dash-admin-buttons span:hover { background: rgba(255,255,255,0.3); }
 
-/* Mensajes tile */
+/* Mensajes tile - tabs in header */
+.dash-msg-header {
+    gap: 0;
+    padding: 0;
+}
+.dash-msg-tab {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+    opacity: 0.7;
+}
+.dash-msg-tab.active {
+    opacity: 1;
+    background: rgba(255,255,255,0.15);
+    font-weight: 600;
+}
+.dash-msg-tab:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+.dash-msg-header .dash-search {
+    margin-left: auto;
+    margin-right: 0.4rem;
+}
+
 .dash-msg-body {
     min-height: 100px;
     max-height: 300px;
@@ -193,6 +219,37 @@ body.dash-no-header { padding-top: 0 !important; }
     transition: background 0.1s;
     border-radius: 3px;
 }
+.dash-row-2line {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.3rem 0.35rem;
+}
+.dash-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.dash-row-bottom {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.1rem;
+    font-size: 0.7rem;
+    color: var(--text-light);
+}
+.dash-row-contact {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dash-row-link {
+    color: var(--primary);
+    text-decoration: none;
+    white-space: nowrap;
+    font-size: 0.68rem;
+}
+.dash-row-link:hover { text-decoration: underline; }
 .dash-row:last-child { border-bottom: none; }
 .dash-row:hover { background: #f0f7ff; }
 .dash-row-name {
