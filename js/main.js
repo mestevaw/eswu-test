@@ -57,6 +57,15 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         // Aplicar restricciones de nivel
         applyUserLevel();
         
+        // Mostrar dashboard en desktop (level 4 ya fue redirigido por applyUserLevel)
+        if (!isMobile() && (!currentUser || currentUser.nivel !== 4)) {
+            showDashboard();
+            // Cargar mensajes y actualizar dashboard
+            if (typeof initMensajes === 'function') {
+                initMensajes().then(function() { renderDashboard(); });
+            }
+        }
+        
     } catch (error) {
         alert(error.message);
     } finally {
