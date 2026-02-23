@@ -226,106 +226,233 @@ function showHeader() {
 }
 
 function renderDashboard() {
-    // --- Inquilinos ---
-    var inqDiv = document.getElementById('dashInquilinosList');
-    if (inqDiv) {
-        var activos = inquilinos.filter(function(i) { return i.contrato_activo !== false; });
-        if (activos.length === 0) {
-            inqDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">Sin inquilinos</div>';
-        } else {
-            var h = '';
-            activos.slice(0, 10).forEach(function(inq) {
-                var nombre = inq.nombre.length > 30 ? inq.nombre.substring(0, 28) + '…' : inq.nombre;
-                h += '<div class="dash-row">';
-                h += '<span class="dash-row-name">' + nombre + '</span>';
-                h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
-                h += '</div>';
-            });
-            if (activos.length > 10) {
-                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--text-light);">+ ' + (activos.length - 10) + ' más</div>';
-            }
-            inqDiv.innerHTML = h;
-        }
-    }
+    renderDashInquilinos();
+    renderDashProveedores();
+    renderDashMensajes();
+    updateDashBadge();
+}
+
+// --- Dashboard state ---
+var dashInqView = 'list';
+var dashProvView = 'list';
+var dashMsgView = 'alertas';
+
+function switchDashInqView(view) {
+    dashInqView = view;
+    var links = document.querySelectorAll('.dash-inquilinos .dash-tile-links-top span');
+    links.forEach(function(s) { s.classList.remove('active'); });
+    var idx = view === 'list' ? 0 : view === 'rentas' ? 1 : 2;
+    if (links[idx]) links[idx].classList.add('active');
+    renderDashInquilinos();
+}
+
+function switchDashProvView(view) {
+    dashProvView = view;
+    var links = document.querySelectorAll('.dash-proveedores .dash-tile-links-top span');
+    links.forEach(function(s) { s.classList.remove('active'); });
+    var idx = view === 'list' ? 0 : view === 'pagadas' ? 1 : 2;
+    if (links[idx]) links[idx].classList.add('active');
+    renderDashProveedores();
+}
+
+function switchDashMsgView(view) {
+    dashMsgView = view;
+    var links = document.querySelectorAll('.dash-mensajes .dash-tile-links-top span');
+    links.forEach(function(s) { s.classList.remove('active'); });
+    var idx = view === 'alertas' ? 0 : view === 'mensajes' ? 1 : 2;
+    if (links[idx]) links[idx].classList.add('active');
+    renderDashMensajes();
+}
+
+function renderDashInquilinos() {
+    var div = document.getElementById('dashInquilinosList');
+    if (!div) return;
+    var q = (document.getElementById('dashInqSearch') || {}).value || '';
+    q = q.toLowerCase().trim();
     
-    // --- Proveedores ---
-    var provDiv = document.getElementById('dashProveedoresList');
-    if (provDiv) {
-        if (proveedores.length === 0) {
-            provDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">Sin proveedores</div>';
-        } else {
-            var h = '';
-            proveedores.slice(0, 10).forEach(function(prov) {
-                var nombre = prov.nombre.length > 25 ? prov.nombre.substring(0, 23) + '…' : prov.nombre;
-                var servicio = (prov.servicio || '').length > 20 ? prov.servicio.substring(0, 18) + '…' : (prov.servicio || '');
-                h += '<div class="dash-row">';
-                h += '<span class="dash-row-name">' + nombre + '</span>';
-                h += '<span class="dash-row-meta">' + servicio + '</span>';
-                h += '</div>';
-            });
-            if (proveedores.length > 10) {
-                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--text-light);">+ ' + (proveedores.length - 10) + ' más</div>';
+    if (dashInqView === 'list') {
+        var lista = inquilinos.filter(function(i) { return i.contrato_activo !== false; });
+        if (q) lista = lista.filter(function(i) { return i.nombre.toLowerCase().includes(q); });
+        if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin resultados</div>'; return; }
+        var h = '';
+        lista.forEach(function(inq) {
+            var nombre = inq.nombre.length > 28 ? inq.nombre.substring(0, 26) + '…' : inq.nombre;
+            h += '<div class="dash-row" onclick="showInquilinoDetail(' + inq.id + ')">';
+            h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
+        
+    } else if (dashInqView === 'rentas') {
+        var year = new Date().getFullYear();
+        var rentas = [];
+        inquilinos.forEach(function(inq) {
+            if (inq.pagos) {
+                inq.pagos.forEach(function(p) {
+                    var pd = new Date(p.fecha + 'T00:00:00');
+                    if (pd.getFullYear() === year) {
+                        rentas.push({ nombre: inq.nombre, monto: p.monto, fecha: p.fecha, id: inq.id });
+                    }
+                });
             }
-            provDiv.innerHTML = h;
-        }
+        });
+        rentas.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
+        if (q) rentas = rentas.filter(function(r) { return r.nombre.toLowerCase().includes(q); });
+        if (rentas.length === 0) { div.innerHTML = '<div class="dash-empty">Sin rentas ' + year + '</div>'; return; }
+        var h = '';
+        rentas.forEach(function(r) {
+            var nombre = r.nombre.length > 22 ? r.nombre.substring(0, 20) + '…' : r.nombre;
+            h += '<div class="dash-row" onclick="showInquilinoDetail(' + r.id + ')">';
+            h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="dash-row-meta">' + formatCurrency(r.monto) + '</span>';
+            h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + formatDate(r.fecha) + '</span>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
+        
+    } else if (dashInqView === 'contratos') {
+        var lista = inquilinos.filter(function(i) { return i.contrato_activo !== false && i.fecha_vencimiento; });
+        lista.sort(function(a, b) { return new Date(a.fecha_vencimiento) - new Date(b.fecha_vencimiento); });
+        if (q) lista = lista.filter(function(i) { return i.nombre.toLowerCase().includes(q); });
+        if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin contratos</div>'; return; }
+        var hoy = new Date(); hoy.setHours(0,0,0,0);
+        var h = '';
+        lista.forEach(function(inq) {
+            var nombre = inq.nombre.length > 25 ? inq.nombre.substring(0, 23) + '…' : inq.nombre;
+            var venc = new Date(inq.fecha_vencimiento + 'T00:00:00');
+            var dias = Math.ceil((venc - hoy) / 86400000);
+            var metaClass = dias <= 30 ? 'dash-row-meta dash-row-meta-warn' : 'dash-row-meta';
+            h += '<div class="dash-row" onclick="showInquilinoDetail(' + inq.id + ')">';
+            h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="' + metaClass + '">' + formatDate(inq.fecha_vencimiento) + '</span>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
     }
+}
+
+function renderDashProveedores() {
+    var div = document.getElementById('dashProveedoresList');
+    if (!div) return;
+    var q = (document.getElementById('dashProvSearch') || {}).value || '';
+    q = q.toLowerCase().trim();
     
-    // --- Alertas del sistema (inside mensajes tile) ---
-    var alertDiv = document.getElementById('dashAlertasList');
-    if (alertDiv) {
+    if (dashProvView === 'list') {
+        var lista = proveedores.slice();
+        if (q) lista = lista.filter(function(p) { return p.nombre.toLowerCase().includes(q) || (p.servicio || '').toLowerCase().includes(q); });
+        if (lista.length === 0) { div.innerHTML = '<div class="dash-empty">Sin resultados</div>'; return; }
+        var h = '';
+        lista.forEach(function(prov) {
+            var nombre = prov.nombre.length > 22 ? prov.nombre.substring(0, 20) + '…' : prov.nombre;
+            var servicio = (prov.servicio || '').length > 18 ? prov.servicio.substring(0, 16) + '…' : (prov.servicio || '');
+            h += '<div class="dash-row" onclick="showProveedorDetail(' + prov.id + ')">';
+            h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="dash-row-meta">' + servicio + '</span>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
+        
+    } else if (dashProvView === 'pagadas' || dashProvView === 'porpagar') {
+        var isPagadas = dashProvView === 'pagadas';
+        var facturasList = [];
+        proveedores.forEach(function(prov) {
+            if (prov.facturas) {
+                prov.facturas.forEach(function(f) {
+                    if (isPagadas ? f.pagada : !f.pagada) {
+                        facturasList.push({ provNombre: prov.nombre, provId: prov.id, monto: f.monto, fecha: f.fecha_factura || f.fecha_pago || '' });
+                    }
+                });
+            }
+        });
+        facturasList.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+        if (q) facturasList = facturasList.filter(function(f) { return f.provNombre.toLowerCase().includes(q); });
+        if (facturasList.length === 0) { div.innerHTML = '<div class="dash-empty">Sin facturas</div>'; return; }
+        var h = '';
+        facturasList.forEach(function(f) {
+            var nombre = f.provNombre.length > 20 ? f.provNombre.substring(0, 18) + '…' : f.provNombre;
+            h += '<div class="dash-row" onclick="showProveedorDetail(' + f.provId + ')">';
+            h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="dash-row-meta">' + formatCurrency(f.monto) + '</span>';
+            h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + (f.fecha ? formatDate(f.fecha) : '') + '</span>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
+    }
+}
+
+function renderDashMensajes() {
+    var div = document.getElementById('dashMensajesList');
+    if (!div) return;
+    var q = (document.getElementById('dashMsgSearch') || {}).value || '';
+    q = q.toLowerCase().trim();
+    
+    if (dashMsgView === 'alertas') {
         var alertas = (typeof alertasSistema !== 'undefined') ? alertasSistema : [];
-        if (alertas.length === 0) {
-            alertDiv.innerHTML = '';
-        } else {
-            var colorMap = { danger: '#fee2e2', warning: '#fef3c7', info: '#dbeafe' };
-            var borderMap = { danger: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
-            var h = '';
-            alertas.forEach(function(a, idx) {
-                h += '<div class="dash-alerta-item" onclick="alertasSistema[' + idx + '].accion()" style="background:' + colorMap[a.tipo] + ';border-left-color:' + borderMap[a.tipo] + ';">';
-                h += '<span style="margin-right:0.3rem;">' + a.icono + '</span>' + a.texto;
-                h += '</div>';
-            });
-            alertDiv.innerHTML = h;
-        }
+        if (alertas.length === 0) { div.innerHTML = '<div class="dash-empty">✅ Sin alertas pendientes</div>'; return; }
+        var colorMap = { danger: '#fee2e2', warning: '#fef3c7', info: '#dbeafe' };
+        var borderMap = { danger: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+        var h = '';
+        alertas.forEach(function(a, idx) {
+            if (q && !a.texto.toLowerCase().includes(q)) return;
+            h += '<div class="dash-alerta-item" onclick="alertasSistema[' + idx + '].accion()" style="background:' + colorMap[a.tipo] + ';border-left-color:' + borderMap[a.tipo] + ';">';
+            h += '<span style="margin-right:0.3rem;">' + a.icono + '</span>' + a.texto;
+            h += '</div>';
+        });
+        div.innerHTML = h || '<div class="dash-empty">Sin resultados</div>';
+        
+    } else if (dashMsgView === 'mensajes') {
+        var msgs = (typeof mensajes !== 'undefined') ? mensajes : [];
+        if (q) msgs = msgs.filter(function(m) { return (m.asunto || '').toLowerCase().includes(q) || (m.de_usuario && m.de_usuario.nombre.toLowerCase().includes(q)); });
+        if (msgs.length === 0) { div.innerHTML = '<div class="dash-empty">📭 Sin mensajes</div>'; return; }
+        var h = '';
+        msgs.forEach(function(m) {
+            var de = m.de_usuario ? m.de_usuario.nombre : 'Sistema';
+            var fecha = new Date(m.fecha_envio);
+            var fechaStr = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short' });
+            var unreadClass = m.leido ? '' : ' dash-msg-unread';
+            h += '<div class="dash-msg-row" onclick="abrirMensaje(' + m.id + ')">';
+            h += '<div class="dash-msg-subject' + unreadClass + '">' + (m.asunto || 'Sin asunto') + '</div>';
+            h += '<div class="dash-msg-meta"><span>' + de + '</span><span>' + fechaStr + '</span></div>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
+        
+    } else if (dashMsgView === 'avisos') {
+        var avisosArr = (typeof avisos !== 'undefined') ? avisos : [];
+        var hoy = new Date();
+        var vigentes = avisosArr.filter(function(a) {
+            if (a.fecha_expiracion && new Date(a.fecha_expiracion) < hoy) return false;
+            return true;
+        });
+        if (q) vigentes = vigentes.filter(function(a) { return (a.titulo || '').toLowerCase().includes(q) || (a.contenido || '').toLowerCase().includes(q); });
+        if (vigentes.length === 0) { div.innerHTML = '<div class="dash-empty">📋 Sin avisos activos</div>'; return; }
+        var h = '';
+        vigentes.forEach(function(a) {
+            var yaLeido = currentUser && (a.avisos_leidos || []).some(function(l) { return l.usuario_id === currentUser.id; });
+            var bg = yaLeido ? 'white' : '#fffbeb';
+            var fecha = new Date(a.fecha_publicacion);
+            var fechaStr = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short' });
+            h += '<div class="dash-msg-row" style="background:' + bg + ';" onclick="showMensajesPage(); setTimeout(function(){ switchMensajesTab(\'avisos\'); }, 100);">';
+            h += '<div class="dash-msg-subject' + (yaLeido ? '' : ' dash-msg-unread') + '">📢 ' + (a.titulo || 'Sin título') + '</div>';
+            h += '<div class="dash-msg-meta"><span>' + (a.usuario ? a.usuario.nombre : '') + '</span><span>' + fechaStr + '</span></div>';
+            h += '</div>';
+        });
+        div.innerHTML = h;
     }
-    
-    // --- Mensajes ---
-    var msgDiv = document.getElementById('dashMensajesList');
+}
+
+function updateDashBadge() {
     var msgBadge = document.getElementById('dashMensajesBadge');
-    if (msgDiv) {
-        var misMensajes = (typeof mensajes !== 'undefined') ? mensajes : [];
-        var noLeidos = misMensajes.filter(function(m) { return !m.leido; }).length;
-        var alertasCount = (typeof alertasSistema !== 'undefined') ? alertasSistema.length : 0;
-        var totalBadge = noLeidos + alertasCount;
-        
-        if (msgBadge) {
-            if (totalBadge > 0) {
-                msgBadge.textContent = totalBadge;
-                msgBadge.style.display = 'inline-flex';
-            } else {
-                msgBadge.style.display = 'none';
-            }
-        }
-        
-        if (misMensajes.length === 0) {
-            msgDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">📭 No hay mensajes</div>';
-        } else {
-            var h = '';
-            misMensajes.slice(0, 6).forEach(function(m) {
-                var de = m.de_usuario ? m.de_usuario.nombre : 'Sistema';
-                var fecha = new Date(m.fecha_envio);
-                var fechaStr = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short' });
-                var unreadClass = m.leido ? '' : ' dash-msg-unread';
-                h += '<div class="dash-msg-row">';
-                h += '<div class="dash-msg-subject' + unreadClass + '">' + (m.asunto || 'Sin asunto') + '</div>';
-                h += '<div class="dash-msg-meta"><span>' + de + '</span><span>' + fechaStr + '</span></div>';
-                h += '</div>';
-            });
-            if (misMensajes.length > 6) {
-                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--primary);cursor:pointer;" onclick="showMensajesPage()">Ver todos (' + misMensajes.length + ')</div>';
-            }
-            msgDiv.innerHTML = h;
-        }
+    if (!msgBadge) return;
+    var noLeidos = (typeof mensajes !== 'undefined') ? mensajes.filter(function(m) { return !m.leido; }).length : 0;
+    var alertasCount = (typeof alertasSistema !== 'undefined') ? alertasSistema.length : 0;
+    var total = noLeidos + alertasCount;
+    if (total > 0) {
+        msgBadge.textContent = total;
+        msgBadge.style.display = 'inline-flex';
+    } else {
+        msgBadge.style.display = 'none';
     }
 }
 
