@@ -205,6 +205,10 @@ function showDashboard() {
     document.getElementById('btnRegresa').classList.add('hidden');
     document.getElementById('btnSearch').classList.add('hidden');
     
+    // Hide header on dashboard
+    var header = document.querySelector('.header');
+    if (header) header.classList.add('dash-hidden');
+    
     // Show dashboard
     document.getElementById('dashboardPage').classList.add('active');
     
@@ -213,6 +217,12 @@ function showDashboard() {
     currentSearchContext = null;
     
     renderDashboard();
+}
+
+// Restore header when leaving dashboard
+function showHeader() {
+    var header = document.querySelector('.header');
+    if (header) header.classList.remove('dash-hidden');
 }
 
 function renderDashboard() {
@@ -260,16 +270,37 @@ function renderDashboard() {
         }
     }
     
+    // --- Alertas del sistema (inside mensajes tile) ---
+    var alertDiv = document.getElementById('dashAlertasList');
+    if (alertDiv) {
+        var alertas = (typeof alertasSistema !== 'undefined') ? alertasSistema : [];
+        if (alertas.length === 0) {
+            alertDiv.innerHTML = '';
+        } else {
+            var colorMap = { danger: '#fee2e2', warning: '#fef3c7', info: '#dbeafe' };
+            var borderMap = { danger: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+            var h = '';
+            alertas.forEach(function(a, idx) {
+                h += '<div class="dash-alerta-item" onclick="alertasSistema[' + idx + '].accion()" style="background:' + colorMap[a.tipo] + ';border-left-color:' + borderMap[a.tipo] + ';">';
+                h += '<span style="margin-right:0.3rem;">' + a.icono + '</span>' + a.texto;
+                h += '</div>';
+            });
+            alertDiv.innerHTML = h;
+        }
+    }
+    
     // --- Mensajes ---
     var msgDiv = document.getElementById('dashMensajesList');
     var msgBadge = document.getElementById('dashMensajesBadge');
     if (msgDiv) {
         var misMensajes = (typeof mensajes !== 'undefined') ? mensajes : [];
         var noLeidos = misMensajes.filter(function(m) { return !m.leido; }).length;
+        var alertasCount = (typeof alertasSistema !== 'undefined') ? alertasSistema.length : 0;
+        var totalBadge = noLeidos + alertasCount;
         
         if (msgBadge) {
-            if (noLeidos > 0) {
-                msgBadge.textContent = noLeidos;
+            if (totalBadge > 0) {
+                msgBadge.textContent = totalBadge;
                 msgBadge.style.display = 'inline-flex';
             } else {
                 msgBadge.style.display = 'none';
@@ -308,6 +339,8 @@ function showSubMenu(menu) {
         showMobileSubMenu(menu);
         return;
     }
+    
+    showHeader();
     
     // Hide dashboard and any active pages
     document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
@@ -377,6 +410,7 @@ function handleRegresa() {
 }
 
 function showPageFromMenu(pageName) {
+    showHeader();
     // Hide mobile menu
     if (isMobile()) hideMobileMenu();
     
