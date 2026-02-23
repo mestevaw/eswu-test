@@ -598,7 +598,7 @@ async function findOrCreateSubfolder(folderName, parentId) {
     }
     
     // Create it
-    var result = await createDriveFolder(folderName, parentId);
+    var result = await createDriveFolder(folderName, parentId || 'root');
     return result.id;
 }
 
