@@ -277,6 +277,50 @@ function bindAdjuntoListeners() {
     _adjuntoListenersBound = true;
 }
 
+// Pegar imagen desde portapapeles (Clipboard API — funciona en móvil y desktop)
+async function pegarImagenClipboard() {
+    try {
+        // Verificar soporte
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            alert('Tu navegador no soporta pegar imágenes. Intenta con "Adjuntar archivo".');
+            return;
+        }
+        
+        var items = await navigator.clipboard.read();
+        var found = false;
+        
+        for (var i = 0; i < items.length; i++) {
+            var types = items[i].types;
+            for (var t = 0; t < types.length; t++) {
+                if (types[t].startsWith('image/')) {
+                    var blob = await items[i].getType(types[t]);
+                    var ext = types[t].split('/')[1] || 'png';
+                    if (ext === 'jpeg') ext = 'jpg';
+                    var ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                    var file = new File([blob], 'imagen-' + ts + '.' + ext, { type: types[t] });
+                    mensajePendingFiles.push(file);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+        
+        if (found) {
+            renderMensajeAdjuntosList();
+        } else {
+            alert('No hay imagen en el portapapeles. Copia una imagen primero.');
+        }
+        
+    } catch (e) {
+        if (e.name === 'NotAllowedError') {
+            alert('Permite el acceso al portapapeles cuando el navegador lo solicite.');
+        } else {
+            alert('No se pudo leer el portapapeles: ' + e.message);
+        }
+    }
+}
+
 // Manejar paste de imágenes (clipboard)
 function handleMensajePaste(e) {
     var items = e.clipboardData && e.clipboardData.items;
