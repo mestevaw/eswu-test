@@ -10,6 +10,18 @@
 // Estado de ordenamiento
 var inquilinosSortColumn = null;
 var inquilinosSortOrder = 'asc';
+var rentasSortColumn = 'fecha';
+var rentasSortOrder = 'desc';
+
+function sortRentasRecibidas(column) {
+    if (rentasSortColumn === column) {
+        rentasSortOrder = rentasSortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+        rentasSortColumn = column;
+        rentasSortOrder = column === 'fecha' ? 'desc' : 'asc';
+    }
+    renderInquilinosRentasRecibidas();
+}
 
 function showInquilinosView(view) {
     if (isMobile()) hideMobileMenu();
@@ -269,7 +281,15 @@ function renderInquilinosRentasRecibidas() {
         }
     });
     
-    rentas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    rentas.sort((a, b) => {
+        let cmp = 0;
+        if (rentasSortColumn === 'inquilino') {
+            cmp = a.empresa.localeCompare(b.empresa);
+        } else {
+            cmp = new Date(a.fecha) - new Date(b.fecha);
+        }
+        return rentasSortOrder === 'asc' ? cmp : -cmp;
+    });
     
     // DESKTOP
     rentas.forEach(r => {
