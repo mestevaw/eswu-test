@@ -266,13 +266,7 @@ async function saveUsuario(event) {
 // ============================================
 // BANCOS
 // ============================================
-
-function renderBancosTable() {
-    // Bancos moved to ESWU ficha - redirect
-    if (typeof renderEswuBancosTable === 'function') {
-        renderEswuBancosTable();
-    }
-}
+// renderBancosTable() → definida en eswu-ui.js (redirige a renderEswuBancosTable)
 
 // ============================================
 // BANCOS - VINCULAR DESDE DRIVE (herramienta temporal)
