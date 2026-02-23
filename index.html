@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
-    <link rel="stylesheet" href="css/pages.css?v=26">
+    <link rel="stylesheet" href="css/pages.css?v=27">
     <link rel="stylesheet" href="css/utilities.css?v=23">
     <style>
         .file-drop-zone {
@@ -215,16 +215,11 @@
 
                         <!-- Mensajes tile -->
                         <div class="dash-tile dash-mensajes">
-                            <div class="dash-tile-header">
-                                <span class="dash-tile-icon">💬</span>
-                                <span class="dash-tile-title" onclick="showMensajesPage()" style="cursor:pointer;">Mensajes y Alertas</span>
-                                <span id="dashMensajesBadge" class="dash-badge" style="display:none;">0</span>
+                            <div class="dash-tile-header dash-msg-header">
+                                <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes <span id="dashMensajesBadge" class="dash-badge" style="display:none;">0</span></span>
+                                <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas</span>
+                                <span onclick="switchDashMsgView('avisos')" class="dash-msg-tab">📢 Avisos</span>
                                 <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
-                            </div>
-                            <div class="dash-tile-links dash-tile-links-top">
-                                <span class="active" onclick="switchDashMsgView('alertas')">Alertas</span>
-                                <span onclick="switchDashMsgView('mensajes')">Mensajes</span>
-                                <span onclick="switchDashMsgView('avisos')">Avisos</span>
                             </div>
                             <div id="dashMensajesList" class="dash-tile-body dash-msg-body"></div>
                         </div>
@@ -1756,7 +1751,7 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=32"></script>
+    <script src="js/ui/navigation.js?v=33"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
@@ -1767,7 +1762,7 @@
     <script src="js/ui/numeros-ui.js?v=24"></script>
     <script src="js/ui/mensajes-ui.js?v=30"></script>
     <script src="js/modals/modals.js?v=23"></script>
-    <script src="js/modals/inquilino-modals.js?v=22"></script>
+    <script src="js/modals/inquilino-modals.js?v=23"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
     <script src="js/main.js?v=25"></script>
     <script>
