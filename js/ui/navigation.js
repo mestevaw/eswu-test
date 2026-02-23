@@ -188,6 +188,117 @@ function mobileMenuBack() {
 }
 
 // ============================================
+// DASHBOARD
+// ============================================
+
+function showDashboard() {
+    // Hide all pages, submenus, sidebar
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('inquilinosSubMenu').classList.remove('active');
+    document.getElementById('proveedoresSubMenu').classList.remove('active');
+    document.getElementById('adminSubMenu').classList.remove('active');
+    
+    document.getElementById('menuSidebar').classList.add('hidden');
+    document.getElementById('contentArea').classList.remove('with-submenu');
+    document.getElementById('contentArea').classList.add('fullwidth');
+    
+    document.getElementById('btnRegresa').classList.add('hidden');
+    document.getElementById('btnSearch').classList.add('hidden');
+    
+    // Show dashboard
+    document.getElementById('dashboardPage').classList.add('active');
+    
+    currentMenuContext = 'main';
+    currentSubContext = null;
+    currentSearchContext = null;
+    
+    renderDashboard();
+}
+
+function renderDashboard() {
+    // --- Inquilinos ---
+    var inqDiv = document.getElementById('dashInquilinosList');
+    if (inqDiv) {
+        var activos = inquilinos.filter(function(i) { return i.contrato_activo !== false; });
+        if (activos.length === 0) {
+            inqDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">Sin inquilinos</div>';
+        } else {
+            var h = '';
+            activos.slice(0, 10).forEach(function(inq) {
+                var nombre = inq.nombre.length > 30 ? inq.nombre.substring(0, 28) + '…' : inq.nombre;
+                h += '<div class="dash-row">';
+                h += '<span class="dash-row-name">' + nombre + '</span>';
+                h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
+                h += '</div>';
+            });
+            if (activos.length > 10) {
+                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--text-light);">+ ' + (activos.length - 10) + ' más</div>';
+            }
+            inqDiv.innerHTML = h;
+        }
+    }
+    
+    // --- Proveedores ---
+    var provDiv = document.getElementById('dashProveedoresList');
+    if (provDiv) {
+        if (proveedores.length === 0) {
+            provDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">Sin proveedores</div>';
+        } else {
+            var h = '';
+            proveedores.slice(0, 10).forEach(function(prov) {
+                var nombre = prov.nombre.length > 25 ? prov.nombre.substring(0, 23) + '…' : prov.nombre;
+                var servicio = (prov.servicio || '').length > 20 ? prov.servicio.substring(0, 18) + '…' : (prov.servicio || '');
+                h += '<div class="dash-row">';
+                h += '<span class="dash-row-name">' + nombre + '</span>';
+                h += '<span class="dash-row-meta">' + servicio + '</span>';
+                h += '</div>';
+            });
+            if (proveedores.length > 10) {
+                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--text-light);">+ ' + (proveedores.length - 10) + ' más</div>';
+            }
+            provDiv.innerHTML = h;
+        }
+    }
+    
+    // --- Mensajes ---
+    var msgDiv = document.getElementById('dashMensajesList');
+    var msgBadge = document.getElementById('dashMensajesBadge');
+    if (msgDiv) {
+        var misMensajes = (typeof mensajes !== 'undefined') ? mensajes : [];
+        var noLeidos = misMensajes.filter(function(m) { return !m.leido; }).length;
+        
+        if (msgBadge) {
+            if (noLeidos > 0) {
+                msgBadge.textContent = noLeidos;
+                msgBadge.style.display = 'inline-flex';
+            } else {
+                msgBadge.style.display = 'none';
+            }
+        }
+        
+        if (misMensajes.length === 0) {
+            msgDiv.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--text-light)">📭 No hay mensajes</div>';
+        } else {
+            var h = '';
+            misMensajes.slice(0, 6).forEach(function(m) {
+                var de = m.de_usuario ? m.de_usuario.nombre : 'Sistema';
+                var fecha = new Date(m.fecha_envio);
+                var fechaStr = fecha.toLocaleDateString('es-MX', { day:'numeric', month:'short' });
+                var unreadClass = m.leido ? '' : ' dash-msg-unread';
+                h += '<div class="dash-msg-row">';
+                h += '<div class="dash-msg-subject' + unreadClass + '">' + (m.asunto || 'Sin asunto') + '</div>';
+                h += '<div class="dash-msg-meta"><span>' + de + '</span><span>' + fechaStr + '</span></div>';
+                h += '</div>';
+            });
+            if (misMensajes.length > 6) {
+                h += '<div style="text-align:center;padding:0.3rem;font-size:0.75rem;color:var(--primary);cursor:pointer;" onclick="showMensajesPage()">Ver todos (' + misMensajes.length + ')</div>';
+            }
+            msgDiv.innerHTML = h;
+        }
+    }
+}
+
+// ============================================
 // MENU NAVIGATION (desktop + mobile aware)
 // ============================================
 
@@ -197,6 +308,13 @@ function showSubMenu(menu) {
         showMobileSubMenu(menu);
         return;
     }
+    
+    // Hide dashboard and any active pages
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    
+    // Show sidebar
+    document.getElementById('menuSidebar').classList.remove('hidden');
+    document.getElementById('contentArea').classList.remove('fullwidth');
     
     document.getElementById('menuInquilinos').classList.remove('active');
     document.getElementById('menuProveedores').classList.remove('active');
@@ -220,7 +338,7 @@ function showSubMenu(menu) {
         currentMenuContext = 'admin';
     }
     
-    document.getElementById('btnRegresa').classList.add('hidden');
+    document.getElementById('btnRegresa').classList.remove('hidden');
     document.getElementById('btnSearch').classList.add('hidden');
     document.getElementById('contentArea').classList.add('with-submenu');
 }
@@ -244,7 +362,6 @@ function handleRegresa() {
             document.getElementById('contentArea').classList.remove('fullwidth');
             
             if (currentMenuContext === 'eswu') {
-                // ESWU no tiene submenú, regresar al menú principal
                 showMobileMenu();
             } else if (mobileMenuCurrentSection || currentMenuContext !== 'main') {
                 showMobileSubMenu(mobileMenuCurrentSection || currentMenuContext);
@@ -254,22 +371,8 @@ function handleRegresa() {
             return;
         }
         
-        // Desktop: show sidebar + submenu
-        if (currentMenuContext === 'inquilinos') {
-            document.getElementById('inquilinosSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'proveedores') {
-            document.getElementById('proveedoresSubMenu').classList.add('active');
-        } else if (currentMenuContext === 'admin') {
-            document.getElementById('adminSubMenu').classList.add('active');
-        }
-        
-        currentSubContext = null;
-        currentSearchContext = null;
-        document.getElementById('btnRegresa').classList.add('hidden');
-        document.getElementById('btnSearch').classList.add('hidden');
-        document.getElementById('menuSidebar').classList.remove('hidden');
-        document.getElementById('contentArea').classList.remove('fullwidth');
-        document.getElementById('contentArea').classList.add('with-submenu');
+        // Desktop: volver al dashboard
+        showDashboard();
     }
 }
 
