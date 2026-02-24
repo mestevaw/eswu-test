@@ -93,6 +93,7 @@ body.dash-no-header { padding-top: 0 !important; }
     font-size: 0.8rem;
     color: var(--text);
     overflow-y: auto;
+    max-height: 280px;
 }
 
 /* Tile positions */
