@@ -105,7 +105,7 @@ body.dash-no-header { padding-top: 0 !important; }
 
 /* ESWU center tile */
 .dash-eswu {
-    background: linear-gradient(135deg, #1a365d, #2d5a8e);
+    background: #1a365d;
     cursor: pointer;
     border: none;
     display: flex;
