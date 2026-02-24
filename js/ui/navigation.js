@@ -405,21 +405,51 @@ function renderDashProveedores() {
                 prov.facturas.forEach(function(f) {
                     var estaPagada = !!f.fecha_pago;
                     if (isPagadas ? estaPagada : !estaPagada) {
-                        facturasList.push({ provNombre: prov.nombre, provId: prov.id, monto: f.monto, fecha: isPagadas ? (f.fecha_pago || f.fecha) : (f.vencimiento || f.fecha), fechaFactura: f.fecha });
+                        facturasList.push({
+                            provNombre: prov.nombre,
+                            provId: prov.id,
+                            monto: f.monto,
+                            numero: f.numero || '',
+                            fechaFactura: f.fecha || '',
+                            fechaPago: f.fecha_pago || '',
+                            docFileId: f.documento_drive_file_id || ''
+                        });
                     }
                 });
             }
         });
-        facturasList.sort(function(a, b) { return (b.fecha || '').localeCompare(a.fecha || ''); });
+        facturasList.sort(function(a, b) {
+            var da = isPagadas ? (a.fechaPago || a.fechaFactura) : a.fechaFactura;
+            var db = isPagadas ? (b.fechaPago || b.fechaFactura) : b.fechaFactura;
+            return (db || '').localeCompare(da || '');
+        });
         if (q) facturasList = facturasList.filter(function(f) { return f.provNombre.toLowerCase().includes(q); });
         if (facturasList.length === 0) { div.innerHTML = '<div class="dash-empty">Sin facturas</div>'; return; }
         var h = '';
         facturasList.forEach(function(f) {
-            var nombre = f.provNombre.length > 20 ? f.provNombre.substring(0, 18) + '…' : f.provNombre;
-            h += '<div class="dash-row" onclick="showProveedorDetail(' + f.provId + ')">';
+            var nombre = f.provNombre.length > 22 ? f.provNombre.substring(0, 20) + '…' : f.provNombre;
+            var clickAction = f.docFileId
+                ? 'viewDriveFileInline(\'' + f.docFileId + '\', \'Factura ' + (f.numero || '') + '\')'
+                : 'showProveedorDetail(' + f.provId + ')';
+            h += '<div class="dash-row dash-row-2line" onclick="' + clickAction + '">';
+            h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
             h += '<span class="dash-row-meta">' + formatCurrency(f.monto) + '</span>';
-            h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + (f.fecha ? formatDate(f.fecha) : '') + '</span>';
+            h += '</div>';
+            h += '<div class="dash-row-bottom">';
+            if (isPagadas) {
+                h += '<span class="dash-row-contact">';
+                if (f.numero) h += 'Factura No. ' + f.numero;
+                if (f.fechaFactura) h += ' del ' + formatDate(f.fechaFactura);
+                if (f.fechaPago) h += ', pagada el ' + formatDate(f.fechaPago);
+                h += '</span>';
+            } else {
+                h += '<span class="dash-row-contact">';
+                if (f.numero) h += 'Fact. No. ' + f.numero;
+                if (f.fechaFactura) h += ' del ' + formatDate(f.fechaFactura);
+                h += '</span>';
+            }
+            h += '</div>';
             h += '</div>';
         });
         div.innerHTML = h;
