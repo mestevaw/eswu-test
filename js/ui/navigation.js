@@ -280,22 +280,21 @@ function renderDashInquilinos() {
         var show = lista.slice(0, 7);
         var h = '';
         show.forEach(function(inq) {
-            var nombre = inq.nombre.length > 28 ? inq.nombre.substring(0, 26) + '…' : inq.nombre;
+            var nombre = inq.nombre.length > 25 ? inq.nombre.substring(0, 23) + '…' : inq.nombre;
             var contacto = (inq.contactos && inq.contactos.length > 0) ? inq.contactos[0] : null;
+            var tel = contacto ? (contacto.telefono || '') : '';
             h += '<div class="dash-row dash-row-2line" onclick="showInquilinoDetail(' + inq.id + ')">';
             h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
-            h += '<span class="dash-row-meta">' + formatCurrency(inq.renta) + '</span>';
+            if (tel) {
+                h += '<a href="tel:' + tel + '" class="dash-row-link" onclick="event.stopPropagation();">📞 ' + tel + '</a>';
+            }
             h += '</div>';
             if (contacto) {
                 h += '<div class="dash-row-bottom">';
-                var cNombre = contacto.nombre || '';
-                h += '<span class="dash-row-contact">' + cNombre + '</span>';
-                if (contacto.telefono) {
-                    h += '<a href="tel:' + contacto.telefono + '" class="dash-row-link" onclick="event.stopPropagation();">📞 ' + contacto.telefono + '</a>';
-                }
+                h += '<span class="dash-row-contact">' + (contacto.nombre || '') + '</span>';
                 if (contacto.email) {
-                    h += '<a href="mailto:' + contacto.email + '" class="dash-row-link" onclick="event.stopPropagation();">✉️</a>';
+                    h += '<a href="mailto:' + contacto.email + '" class="dash-row-link" onclick="event.stopPropagation();">✉️ ' + contacto.email + '</a>';
                 }
                 h += '</div>';
             }
@@ -324,11 +323,15 @@ function renderDashInquilinos() {
         var show = rentas.slice(0, 7);
         var h = '';
         show.forEach(function(r) {
-            var nombre = r.nombre.length > 22 ? r.nombre.substring(0, 20) + '…' : r.nombre;
-            h += '<div class="dash-row" onclick="showInquilinoDetail(' + r.id + ')">';
+            var nombre = r.nombre.length > 30 ? r.nombre.substring(0, 28) + '…' : r.nombre;
+            h += '<div class="dash-row dash-row-2line" onclick="showInquilinoDetail(' + r.id + ')">';
+            h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
-            h += '<span class="dash-row-meta">' + formatCurrency(r.monto) + '</span>';
-            h += '<span class="dash-row-meta" style="min-width:65px;text-align:right;">' + formatDate(r.fecha) + '</span>';
+            h += '</div>';
+            h += '<div class="dash-row-bottom">';
+            h += '<span class="dash-row-contact">Fecha de Pago: ' + formatDate(r.fecha) + '</span>';
+            h += '<span class="dash-row-meta" style="margin-left:auto;">' + formatCurrency(r.monto) + '</span>';
+            h += '</div>';
             h += '</div>';
         });
         if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'rentasRecibidas\')">ver todas (' + total + ')</div>';
@@ -374,9 +377,23 @@ function renderDashProveedores() {
         show.forEach(function(prov) {
             var nombre = prov.nombre.length > 22 ? prov.nombre.substring(0, 20) + '…' : prov.nombre;
             var servicio = (prov.servicio || '').length > 18 ? prov.servicio.substring(0, 16) + '…' : (prov.servicio || '');
-            h += '<div class="dash-row" onclick="showProveedorDetail(' + prov.id + ')">';
+            var contacto = (prov.contactos && prov.contactos.length > 0) ? prov.contactos[0] : null;
+            h += '<div class="dash-row dash-row-2line" onclick="showProveedorDetail(' + prov.id + ')">';
+            h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
             h += '<span class="dash-row-meta">' + servicio + '</span>';
+            h += '</div>';
+            if (contacto) {
+                h += '<div class="dash-row-bottom">';
+                h += '<span class="dash-row-contact">' + (contacto.nombre || '') + '</span>';
+                if (contacto.telefono) {
+                    h += '<a href="tel:' + contacto.telefono + '" class="dash-row-link" onclick="event.stopPropagation();">📞 ' + contacto.telefono + '</a>';
+                }
+                if (contacto.email) {
+                    h += '<a href="mailto:' + contacto.email + '" class="dash-row-link" onclick="event.stopPropagation();">✉️ ' + contacto.email + '</a>';
+                }
+                h += '</div>';
+            }
             h += '</div>';
         });
         if (total > 7) h += '<div class="dash-row-more" onclick="showProveedoresView(\'list\')">ver todos (' + total + ')</div>';
@@ -389,8 +406,9 @@ function renderDashProveedores() {
         proveedores.forEach(function(prov) {
             if (prov.facturas) {
                 prov.facturas.forEach(function(f) {
-                    if (isPagadas ? f.pagada : !f.pagada) {
-                        facturasList.push({ provNombre: prov.nombre, provId: prov.id, monto: f.monto, fecha: f.fecha_factura || f.fecha_pago || '' });
+                    var estaPagada = !!f.fecha_pago;
+                    if (isPagadas ? estaPagada : !estaPagada) {
+                        facturasList.push({ provNombre: prov.nombre, provId: prov.id, monto: f.monto, fecha: isPagadas ? (f.fecha_pago || f.fecha) : (f.vencimiento || f.fecha), fechaFactura: f.fecha });
                     }
                 });
             }
