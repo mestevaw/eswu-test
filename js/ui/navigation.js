@@ -1117,11 +1117,30 @@ function togglePasswordVisibility(inputId, toggleEl) {
 // ============================================
 
 var _headerLiveSearchFn = null;
+var _headerExcelFn = null;
+var _headerAddFn = null;
 var _headerFilterYearCb = null;
 var _headerFilterMonthCb = null;
 
+function _hideAllCtx() {
+    ['headerCtxSearchBtn','headerInlineSearch','headerFilterYear','headerFilterMonth','headerCtxExcel','headerCtxAdd'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.classList.remove('visible','open');
+    });
+    var navMenu = document.getElementById('headerNavMenu');
+    if (navMenu) navMenu.style.display = 'none';
+    var sub = document.getElementById('headerSubtitle');
+    if (sub) sub.textContent = '';
+    _headerLiveSearchFn = null;
+    _headerExcelFn = null;
+    _headerAddFn = null;
+    _headerFilterYearCb = null;
+    _headerFilterMonthCb = null;
+}
+
 function setHeaderContext(config) {
-    if (isMobile()) return; // Desktop only
+    if (isMobile()) return;
+    _hideAllCtx();
     
     // Subtitle
     var sub = document.getElementById('headerSubtitle');
@@ -1131,7 +1150,7 @@ function setHeaderContext(config) {
     var navMenu = document.getElementById('headerNavMenu');
     var navDropdown = document.getElementById('headerNavDropdown');
     if (config.navItems && config.navItems.length > 0) {
-        navMenu.style.display = '';
+        navMenu.style.display = 'inline-block';
         var html = '';
         config.navItems.forEach(function(item) {
             var cls = 'nav-dropdown-item';
@@ -1144,45 +1163,23 @@ function setHeaderContext(config) {
             }
         });
         navDropdown.innerHTML = html;
-    } else {
-        navMenu.style.display = 'none';
     }
     
-    // Inline search
-    var searchBtn = document.getElementById('headerCtxSearchBtn');
-    var searchInput = document.getElementById('headerInlineSearch');
+    // Search
     if (config.liveSearch) {
-        searchBtn.style.display = '';
         _headerLiveSearchFn = config.liveSearch;
-        // Reset search state
-        searchInput.classList.remove('open');
-        searchInput.value = '';
-    } else {
-        searchBtn.style.display = 'none';
-        searchInput.style.display = 'none';
-        searchInput.classList.remove('open');
-        _headerLiveSearchFn = null;
+        document.getElementById('headerCtxSearchBtn').classList.add('visible');
+        var si = document.getElementById('headerInlineSearch');
+        si.value = '';
+        si.classList.remove('open');
     }
     
-    // Filter selects
-    var yearSel = document.getElementById('headerFilterYear');
-    var monthSel = document.getElementById('headerFilterMonth');
-    _headerFilterYearCb = null;
-    _headerFilterMonthCb = null;
-    
+    // Filters
     if (config.filters) {
         config.filters.forEach(function(f) {
             if (f.type === 'year') {
-                yearSel.style.display = '';
-                yearSel.innerHTML = '';
-                // Populate with years from current-2 to current+1
-                var cy = new Date().getFullYear();
-                for (var y = cy + 1; y >= cy - 3; y--) {
-                    var opt = document.createElement('option');
-                    opt.value = y; opt.textContent = y;
-                    if (y === cy) opt.selected = true;
-                    yearSel.appendChild(opt);
-                }
+                var yearSel = document.getElementById('headerFilterYear');
+                yearSel.classList.add('visible');
                 if (f.syncFrom) {
                     var src = document.getElementById(f.syncFrom);
                     if (src) { yearSel.innerHTML = src.innerHTML; yearSel.value = src.value; }
@@ -1194,7 +1191,8 @@ function setHeaderContext(config) {
                 };
             }
             if (f.type === 'month') {
-                monthSel.style.display = '';
+                var monthSel = document.getElementById('headerFilterMonth');
+                monthSel.classList.add('visible');
                 monthSel.innerHTML = '<option value="">Todos</option>' +
                     '<option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>' +
                     '<option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>' +
@@ -1211,86 +1209,54 @@ function setHeaderContext(config) {
                 };
             }
         });
-    } else {
-        yearSel.style.display = 'none';
-        monthSel.style.display = 'none';
     }
     
-    // Context action buttons
-    var ctxExcel = document.getElementById('headerCtxExcel');
-    var ctxAdd = document.getElementById('headerCtxAdd');
-    ctxExcel.style.display = 'none';
-    ctxAdd.style.display = 'none';
-    
+    // Actions
     if (config.actions) {
         config.actions.forEach(function(a) {
             if (a.icon === '📊') {
-                ctxExcel.style.display = '';
-                ctxExcel.onclick = function() { eval(a.onclick); };
+                document.getElementById('headerCtxExcel').classList.add('visible');
+                _headerExcelFn = a.onclick;
             } else if (a.icon === '+') {
-                ctxAdd.style.display = '';
-                ctxAdd.onclick = function() { eval(a.onclick); };
+                document.getElementById('headerCtxAdd').classList.add('visible');
+                _headerAddFn = a.onclick;
             }
         });
     }
     
-    // Hide the old btnSearch since we use headerCtxSearchBtn
+    // Wire up click handlers
+    document.getElementById('headerCtxExcel').onclick = function() {
+        if (_headerExcelFn) { var fn = new Function(_headerExcelFn); fn(); }
+    };
+    document.getElementById('headerCtxAdd').onclick = function() {
+        if (_headerAddFn) { var fn = new Function(_headerAddFn); fn(); }
+    };
+    
     document.getElementById('btnSearch').classList.add('hidden');
 }
 
 function clearHeaderContext() {
-    var sub = document.getElementById('headerSubtitle');
-    if (sub) sub.textContent = '';
-    
-    var navMenu = document.getElementById('headerNavMenu');
-    if (navMenu) navMenu.style.display = 'none';
-    
-    var searchBtn = document.getElementById('headerCtxSearchBtn');
-    var searchInput = document.getElementById('headerInlineSearch');
-    if (searchBtn) searchBtn.style.display = 'none';
-    if (searchInput) { searchInput.classList.remove('open'); searchInput.style.display = 'none'; searchInput.value = ''; }
-    
-    var yearSel = document.getElementById('headerFilterYear');
-    var monthSel = document.getElementById('headerFilterMonth');
-    if (yearSel) yearSel.style.display = 'none';
-    if (monthSel) monthSel.style.display = 'none';
-    _headerFilterYearCb = null;
-    _headerFilterMonthCb = null;
-    
-    var ctxExcel = document.getElementById('headerCtxExcel');
-    var ctxAdd = document.getElementById('headerCtxAdd');
-    if (ctxExcel) { ctxExcel.style.display = 'none'; ctxExcel.onclick = null; }
-    if (ctxAdd) { ctxAdd.style.display = 'none'; ctxAdd.onclick = null; }
-    
-    _headerLiveSearchFn = null;
+    _hideAllCtx();
+    var searchBar = document.getElementById('headerSearchBar');
+    if (searchBar) searchBar.classList.remove('active');
 }
 
 function toggleHeaderInlineSearch() {
     var input = document.getElementById('headerInlineSearch');
     if (!input) return;
     if (input.classList.contains('open')) {
-        input.classList.remove('open');
+        input.classList.remove('open', 'visible');
         input.value = '';
-        // Trigger refresh
         if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
             window[_headerLiveSearchFn]();
         }
     } else {
-        input.classList.add('open');
-        input.focus();
+        input.classList.add('open', 'visible');
+        setTimeout(function() { input.focus(); }, 50);
     }
 }
 
 function headerSearchLive() {
-    // Check inline search first (desktop)
-    var inlineInput = document.getElementById('headerInlineSearch');
-    if (inlineInput && inlineInput.classList.contains('open') && _headerLiveSearchFn) {
-        if (typeof window[_headerLiveSearchFn] === 'function') {
-            window[_headerLiveSearchFn]();
-        }
-        return;
-    }
-    // Fallback: old header search bar
     if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
         window[_headerLiveSearchFn]();
     }
