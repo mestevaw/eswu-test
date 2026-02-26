@@ -1,8 +1,7 @@
 /* ========================================
-   ESWU-UI.JS v6
+   ESWU-UI.JS v5
    Ficha ESWU - Select dropdown contacts, subfolder nav
    ======================================== */
-
 
 var eswuFolderIds = { legales: null, generales: null };
 var eswuFolderContents = { legales: [], generales: [] };
@@ -813,6 +812,12 @@ function renderBalanceTab() {
     }
     
     var mh = '';
+    // Header
+    mh += '<div style="display:flex;padding:0.25rem 0.6rem;border-bottom:2px solid var(--border);font-size:0.62rem;font-weight:600;color:var(--text-light);text-transform:uppercase;">';
+    mh += '<div style="flex:1;">Concepto</div>';
+    mh += '<div style="width:80px;text-align:right;">Ingreso</div>';
+    mh += '<div style="width:80px;text-align:right;">Egreso</div>';
+    mh += '</div>';
     
     rows.forEach(function(r, idx) {
         var concepto = r.concepto.length > 25 ? r.concepto.substring(0, 23) + '…' : r.concepto;
