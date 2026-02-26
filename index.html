@@ -1214,12 +1214,27 @@
                         <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">IVA</label>
                         <input type="number" id="facturaIVA" step="0.01" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
                     </div>
-                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem;">
-                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Factura</label>
-                        <div onclick="document.getElementById('facturaDocumento').click()" style="flex:1; padding:0.35rem 0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--text-light); text-align:center;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
-                            <input type="file" id="facturaDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="document.getElementById('facturaDocumentoFileName').textContent=this.files[0]?this.files[0].name:''">
-                            <span>Click para seleccionar documento</span>
-                            <span id="facturaDocumentoFileName" style="color:var(--success); margin-left:0.5rem;"></span>
+                    <div style="margin-top:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Factura</label>
+                        <!-- Option 1: Click to select -->
+                        <div id="facturaClickZone" onclick="document.getElementById('facturaDocumento').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <input type="file" id="facturaDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleFacturaFileSelect(this)">
+                            📎 Click para seleccionar documento
+                            <div id="facturaDocumentoFileName" style="color:var(--success); margin-top:0.25rem; font-weight:500;"></div>
+                        </div>
+                        <!-- Separator -->
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.4rem 0;">— o —</div>
+                        <!-- Options 2 & 3 side by side -->
+                        <div style="display:flex; gap:0.5rem;">
+                            <div id="facturaPasteZone" tabindex="0" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
+                            <div id="facturaDragZone" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleFacturaDrop(event);">
+                                📁 Arrastra aquí
+                            </div>
+                        </div>
+                        <!-- Feedback: file accepted -->
+                        <div id="facturaFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534; display:none;">
                         </div>
                     </div>
                 </form>
@@ -1872,7 +1887,7 @@
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=23"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
-    <script src="js/database/db-facturas.js?v=22"></script>
+    <script src="js/database/db-facturas.js?v=23"></script>
     <script src="js/database/db-fetch-docs.js?v=24"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
@@ -1888,7 +1903,7 @@
     <script src="js/ui/mensajes-ui.js?v=30"></script>
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=24"></script>
-    <script src="js/modals/proveedor-modals.js?v=22"></script>
+    <script src="js/modals/proveedor-modals.js?v=23"></script>
     <script src="js/main.js?v=28"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
