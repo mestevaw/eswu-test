@@ -142,7 +142,27 @@ function fetchAndViewPagoInquilino(pagoId) {
 // ============================================
 
 function fetchAndViewDocProveedor(docId) {
-    fetchAndViewDoc('proveedores_documentos', 'archivo_pdf', docId);
+    // Check if doc has a Google Drive file ID in local data
+    var driveFileId = null;
+    if (typeof proveedores !== 'undefined') {
+        proveedores.some(function(p) {
+            return (p.documentos || []).some(function(d) {
+                if (d.id === docId && d.google_drive_file_id) {
+                    driveFileId = d.google_drive_file_id;
+                    return true;
+                }
+                return false;
+            });
+        });
+    }
+    
+    if (driveFileId) {
+        // Open from Google Drive
+        window.open('https://drive.google.com/file/d/' + driveFileId + '/view', '_blank');
+    } else {
+        // Fallback to base64 from Supabase
+        fetchAndViewDoc('proveedores_documentos', 'archivo_pdf', docId);
+    }
 }
 
 // ============================================
