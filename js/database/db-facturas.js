@@ -70,7 +70,12 @@ function navigateAfterFacturaAction(defaultTab) {
     const ctx = window.facturaActionContext;
     window.facturaActionContext = null; // Limpiar
     
-    if (ctx === 'standalone-porpagar') {
+    if (ctx === 'dashboard-porpagar') {
+        // Came from dashboard — stay on dashboard, refresh porpagar view
+        if (typeof switchDashProvView === 'function') {
+            switchDashProvView('porpagar');
+        }
+    } else if (ctx === 'standalone-porpagar') {
         renderProveedoresFacturasPorPagar();
     } else if (ctx === 'standalone-pagadas') {
         renderProveedoresFacturasPagadas();
@@ -88,13 +93,18 @@ function navigateAfterFacturaAction(defaultTab) {
     if (typeof renderProveedoresTable === 'function' && currentSubContext === 'proveedores-list') {
         renderProveedoresTable();
     }
+    
+    // Refresh dashboard tiles if on dashboard
+    if (typeof renderDashProveedores === 'function') {
+        renderDashProveedores();
+    }
 }
 
 async function saveFactura(event) {
     event.preventDefault();
     
-    // If standalone mode, pick up proveedor from search
-    if (window.facturaActionContext === 'standalone-porpagar') {
+    // If standalone/dashboard mode, pick up proveedor from search
+    if (window.facturaActionContext === 'standalone-porpagar' || window.facturaActionContext === 'dashboard-porpagar') {
         var selId = document.getElementById('facturaProveedorId');
         if (selId && selId.value) {
             currentProveedorId = parseInt(selId.value);
@@ -266,8 +276,8 @@ function showRegistrarFacturaFromDash() {
         return a.nombre.localeCompare(b.nombre);
     });
     
-    // Mark as standalone context
-    window.facturaActionContext = 'standalone-porpagar';
+    // Mark as dashboard context
+    window.facturaActionContext = 'dashboard-porpagar';
     currentProveedorId = null;
     
     // Open the regular factura modal (which will show the proveedor row)
