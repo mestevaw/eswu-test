@@ -62,29 +62,51 @@ function showProveedoresView(view) {
     
     document.getElementById('btnRegresa').classList.remove('hidden');
     
+    // Build nav items with active marker
+    var navLabels = [
+        { key: 'list', label: 'Proveedores', action: "showProveedoresView('list')" },
+        { key: 'facturasPagadas', label: 'Facturas Pagadas', action: "showProveedoresView('facturasPagadas')" },
+        { key: 'facturasPorPagar', label: 'Facturas x Pagar', action: "showProveedoresView('facturasPorPagar')" },
+        { key: 'mantenimiento', label: 'Mantenimiento', action: "showProveedoresView('mantenimiento')" }
+    ];
+    var navItems = [{ label: '🏠 Home', action: 'showDashboard()', isHome: true }];
+    var subtitle = '';
+    navLabels.forEach(function(n) {
+        var item = { label: n.label, action: n.action };
+        if (n.key === view) { item.active = true; subtitle = ' — ' + n.label; }
+        navItems.push(item);
+    });
+    
+    var headerCfg = { subtitle: subtitle, navItems: navItems };
+    
     if (view === 'list') {
-        document.getElementById('btnSearch').classList.remove('hidden');
         currentSearchContext = 'proveedores';
-        setHeaderContext({
-            subtitle: ' — Listado',
-            navItems: [
-                { label: '🏠 Home', action: 'showDashboard()', isHome: true },
-                { label: 'Listado', active: true },
-                { label: 'Facturas Pagadas', action: "showProveedoresView('facturasPagadas')" },
-                { label: 'Facturas x Pagar', action: "showProveedoresView('facturasPorPagar')" },
-                { label: 'Mantenimiento', action: "showProveedoresView('mantenimiento')" }
-            ],
-            actions: [
-                { icon: '📊', onclick: 'exportProveedoresToExcel()', title: 'Exportar' },
-                { icon: '+', onclick: 'showAddProveedorModal()', title: 'Agregar' }
-            ],
-            liveSearch: 'renderProveedoresTable'
-        });
-    } else {
-        document.getElementById('btnSearch').classList.add('hidden');
+        headerCfg.liveSearch = 'renderProveedoresTable';
+        headerCfg.actions = [
+            { icon: '📊', onclick: 'exportProveedoresToExcel()' },
+            { icon: '+', onclick: 'showAddProveedorModal()' }
+        ];
+    } else if (view === 'facturasPagadas') {
         currentSearchContext = null;
-        clearHeaderContext();
+        headerCfg.liveSearch = 'renderProveedoresFacturasPagadas';
+        headerCfg.filters = [
+            { type: 'year', syncFrom: 'provFactPagYear', onChange: function(){ renderProveedoresFacturasPagadas(); } },
+            { type: 'month', syncFrom: 'provFactPagMonth', onChange: function(){ renderProveedoresFacturasPagadas(); } }
+        ];
+        headerCfg.actions = [{ icon: '📊', onclick: 'exportFacturasPagadasToExcel()' }];
+    } else if (view === 'facturasPorPagar') {
+        currentSearchContext = null;
+        headerCfg.liveSearch = 'renderProveedoresFacturasPorPagar';
+        headerCfg.filters = [
+            { type: 'year', syncFrom: 'provFactPorPagYear', onChange: function(){ renderProveedoresFacturasPorPagar(); } },
+            { type: 'month', syncFrom: 'provFactPorPagMonth', onChange: function(){ renderProveedoresFacturasPorPagar(); } }
+        ];
+        headerCfg.actions = [{ icon: '📊', onclick: 'exportFacturasPorPagarToExcel()' }];
+    } else if (view === 'mantenimiento') {
+        currentSearchContext = null;
     }
+    
+    setHeaderContext(headerCfg);
     
     document.getElementById('contentArea').classList.remove('with-submenu');
     document.getElementById('menuSidebar').classList.add('hidden');
@@ -124,9 +146,15 @@ function renderProveedoresTable() {
     }
     mobileDiv.innerHTML = '';
     
-    // Search filter — use header search when on proveedores list context
-    var searchEl = document.getElementById('provListSearch') || document.getElementById('searchInput');
-    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    // Search filter — check header inline search (desktop), fallback to toolbar search (mobile)
+    var searchQuery = '';
+    var hdrSearch = document.getElementById('headerInlineSearch');
+    if (hdrSearch && hdrSearch.classList.contains('open')) {
+        searchQuery = hdrSearch.value.toLowerCase().trim();
+    } else {
+        var searchEl = document.getElementById('provListSearch') || document.getElementById('searchInput');
+        searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    }
     var filtered = proveedores;
     if (searchQuery) {
         filtered = proveedores.filter(function(p) {
@@ -259,8 +287,15 @@ function renderProveedoresFacturasPagadas() {
     
     const year = parseInt(document.getElementById('provFactPagYear').value);
     const monthSelect = document.getElementById('provFactPagMonth');
-    const searchInput = document.getElementById('provFactPagSearch');
-    const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    // Search: check header inline (desktop) first, then toolbar (mobile)
+    var searchQuery = '';
+    var hdrSearch = document.getElementById('headerInlineSearch');
+    if (hdrSearch && hdrSearch.classList.contains('open')) {
+        searchQuery = hdrSearch.value.toLowerCase().trim();
+    } else {
+        var searchInput = document.getElementById('provFactPagSearch');
+        searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    }
     const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     const pagadas = [];
     let totalPagadas = 0;
@@ -384,8 +419,14 @@ function renderProveedoresFacturasPorPagar() {
     const year = parseInt(document.getElementById('provFactPorPagYear').value);
     const monthSelect = document.getElementById('provFactPorPagMonth');
     const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
-    var searchEl = document.getElementById('provFactPorPagSearch');
-    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    var searchQuery = '';
+    var hdrSearch = document.getElementById('headerInlineSearch');
+    if (hdrSearch && hdrSearch.classList.contains('open')) {
+        searchQuery = hdrSearch.value.toLowerCase().trim();
+    } else {
+        var searchEl = document.getElementById('provFactPorPagSearch');
+        searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    }
     const porPagar = [];
     let totalPorPagar = 0;
     
