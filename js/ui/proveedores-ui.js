@@ -442,6 +442,7 @@ function renderProveedoresFacturasPorPagar() {
                             factId: f.id,
                             proveedor: prov.nombre,
                             numero: f.numero || 'S/N',
+                            clabe: prov.clabe || '',
                             monto: f.monto,
                             vencimiento: f.vencimiento,
                             has_documento: f.has_documento
@@ -459,9 +460,11 @@ function renderProveedoresFacturasPorPagar() {
     porPagar.forEach(f => {
         const row = tbody.insertRow();
         const escapedNum = (f.numero).replace(/'/g, "\\'");
+        var displayNum = f.numero.length > 12 ? f.numero.substring(0, 12) + '…' : f.numero;
         row.innerHTML = `
             <td>${f.proveedor}</td>
-            <td>${f.numero}</td>
+            <td title="${f.numero}">${displayNum}</td>
+            <td style="font-size:0.78rem;letter-spacing:0.02em;color:var(--text-light);">${f.clabe}</td>
             <td class="currency">${formatCurrency(f.monto)}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
             <td style="white-space:nowrap;" onclick="event.stopPropagation()">
@@ -481,11 +484,11 @@ function renderProveedoresFacturasPorPagar() {
     });
     
     if (porPagar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td colspan="2" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
     }
     
     // ── MOBILE: Card list ──
