@@ -242,4 +242,48 @@ async function deleteFactura(facturaId) {
     }
 }
 
+// ============================================
+// REGISTRAR FACTURA DESDE DASHBOARD
+// ============================================
+
+function showRegistrarFacturaFromDash() {
+    // Populate proveedor select
+    var sel = document.getElementById('selectProveedorForFactura');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Elige proveedor —</option>';
+    
+    var sorted = (typeof proveedores !== 'undefined' ? proveedores : []).slice().sort(function(a, b) {
+        return a.nombre.localeCompare(b.nombre);
+    });
+    sorted.forEach(function(p) {
+        var opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.nombre;
+        sel.appendChild(opt);
+    });
+    
+    document.getElementById('selectProveedorModal').classList.add('active');
+}
+
+function continueRegistrarFacturaFromDash() {
+    var sel = document.getElementById('selectProveedorForFactura');
+    var provId = sel ? parseInt(sel.value) : 0;
+    if (!provId) {
+        alert('Selecciona un proveedor');
+        return;
+    }
+    
+    // Set current proveedor and open registrar factura modal
+    currentProveedorId = provId;
+    window.facturaActionContext = 'standalone-porpagar';
+    
+    // Close selector modal
+    document.getElementById('selectProveedorModal').classList.remove('active');
+    
+    // Open registrar factura
+    if (typeof showRegistrarFacturaModal === 'function') {
+        showRegistrarFacturaModal();
+    }
+}
+
 console.log('✅ DB-FACTURAS.JS v5 cargado');
