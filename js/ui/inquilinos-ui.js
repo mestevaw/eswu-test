@@ -251,17 +251,9 @@ function renderInquilinosRentasRecibidas() {
     }
     mobileDiv.innerHTML = '';
     
-    const filterType = document.getElementById('inquilinosRentasFilter').value;
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
     const monthSelect = document.getElementById('inquilinosRentasMonth');
-    
-    if (filterType === 'mensual') {
-        monthSelect.classList.remove('hidden');
-    } else {
-        monthSelect.classList.add('hidden');
-    }
-    
-    const month = filterType === 'mensual' ? parseInt(monthSelect.value) : null;
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     const rentas = [];
     let totalPeriodo = 0;
 
@@ -307,7 +299,7 @@ function renderInquilinosRentasRecibidas() {
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-light)">No hay rentas</td></tr>';
     } else {
         const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        if (filterType === 'mensual') {
+        if (month !== null) {
             const row = tbody.insertRow();
             row.style.fontWeight = 'bold';
             row.style.backgroundColor = '#e6f2ff';
