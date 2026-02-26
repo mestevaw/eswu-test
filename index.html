@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/base.css?v=22">
     <link rel="stylesheet" href="css/layout.css?v=22">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=25">
+    <link rel="stylesheet" href="css/modals.css?v=26">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -481,12 +481,12 @@
                             </div>
                             <!-- Pestañas -->
                             <div class="tabs-container">
-                                <div class="tabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                                    <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
-                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                                    <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'balance')">Balance</button>
                                 </div>
                                 <div id="eswuLegalesTab" class="tab-content active">
                                     <div style="margin-bottom:0.5rem;">
@@ -692,10 +692,10 @@
                 </div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                        <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'pagos')">Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                        <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'pagos')">Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="inquilinoPagosTab" class="tab-content active">
                         <div id="historialPagos"></div>
@@ -901,12 +901,12 @@
                 <div id="provDetailAdditionalContacts"></div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs" id="proveedorTabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
-                        <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
-                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    <div class="tabs" id="proveedorTabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                        <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="proveedorPagadasTab" class="tab-content active">
                         <div id="facturasPagadas"></div>
@@ -1769,7 +1769,7 @@
     <script src="js/ui/admin-ui.js?v=34"></script>
     <script src="js/ui/numeros-ui.js?v=24"></script>
     <script src="js/ui/mensajes-ui.js?v=30"></script>
-    <script src="js/modals/modals.js?v=23"></script>
+    <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=24"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
     <script src="js/main.js?v=26"></script>
