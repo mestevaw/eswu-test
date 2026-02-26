@@ -62,8 +62,9 @@ function showRegistrarFacturaModal() {
     
     // Show/hide proveedor row based on context
     var provRow = document.getElementById('facturaProveedorRow');
+    var needsProvSearch = (window.facturaActionContext === 'standalone-porpagar' || window.facturaActionContext === 'dashboard-porpagar');
     if (provRow) {
-        if (window.facturaActionContext === 'standalone-porpagar') {
+        if (needsProvSearch) {
             provRow.style.display = '';
             // Reset proveedor search
             document.getElementById('facturaProveedorSearch').value = '';
@@ -82,8 +83,8 @@ function showRegistrarFacturaModal() {
     // Init paste listener (needs element to be visible)
     setTimeout(function() {
         if (typeof _initFacturaPaste === 'function') _initFacturaPaste();
-        // Focus proveedor search if standalone
-        if (window.facturaActionContext === 'standalone-porpagar') {
+        // Focus proveedor search if needed
+        if (needsProvSearch) {
             var searchInput = document.getElementById('facturaProveedorSearch');
             if (searchInput) searchInput.focus();
         }
