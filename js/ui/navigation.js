@@ -731,7 +731,21 @@ function formatDateVencimiento(dateString) {
 // ============================================
 
 function switchTab(type, tabName) {
-    if (type === 'inquilino') {
+    if (type === 'eswu') {
+        document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
+        
+        var tabMap = { legales: 1, generales: 2, mensajes: 3, bancos: 4 };
+        var tabIndex = tabMap[tabName] || 1;
+        var tabBtn = document.querySelector('#eswuDocsPage .tab:nth-child(' + tabIndex + ')');
+        if (tabBtn) tabBtn.classList.add('active');
+        
+        var tabContentId = 'eswu' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Tab';
+        var tabContent = document.getElementById(tabContentId);
+        if (tabContent) tabContent.classList.add('active');
+        
+        window.eswuActiveTab = tabName;
+    } else if (type === 'inquilino') {
         document.querySelectorAll('#inquilinoDetailModal .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#inquilinoDetailModal .tab-content').forEach(tc => tc.classList.remove('active'));
         
