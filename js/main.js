@@ -176,15 +176,18 @@ function waitForGoogleAndConnect(attempt) {
 function showGdriveConnectBanner() {
     if (document.getElementById('gdriveConnectBanner')) return;
     
-    var banner = document.createElement('div');
-    banner.id = 'gdriveConnectBanner';
-    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:linear-gradient(135deg,#1a365d,#2d4a7c);color:white;padding:0.6rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:0.85rem;';
-    banner.innerHTML = '<span>📁 Conecta Google Drive para ver documentos y bancos</span>' +
-        '<button onclick="connectGdriveFromBanner()" style="background:white;color:#1a365d;border:none;border-radius:4px;padding:0.3rem 0.9rem;font-weight:600;font-size:0.82rem;cursor:pointer;">Conectar</button>' +
-        '<button onclick="dismissGdriveBanner()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.1rem;cursor:pointer;padding:0 0.3rem;" title="Cerrar">✕</button>';
+    var overlay = document.createElement('div');
+    overlay.id = 'gdriveConnectBanner';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = '<div style="background:white;border-radius:12px;padding:2rem 1.5rem;max-width:360px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">' +
+        '<div style="font-size:2.5rem;margin-bottom:0.8rem;">📁</div>' +
+        '<h3 style="margin:0 0 0.5rem;font-size:1.1rem;color:#1a365d;">Conectar Google Drive</h3>' +
+        '<p style="margin:0 0 1.2rem;font-size:0.85rem;color:#64748b;line-height:1.4;">Conecta tu cuenta de Google para ver documentos y estados de cuenta bancarios.</p>' +
+        '<button onclick="connectGdriveFromBanner()" style="background:linear-gradient(135deg,#1a365d,#2d4a7c);color:white;border:none;border-radius:8px;padding:0.7rem 2rem;font-weight:600;font-size:0.95rem;cursor:pointer;width:100%;margin-bottom:0.6rem;">Conectar</button>' +
+        '<button onclick="dismissGdriveBanner()" style="background:none;border:none;color:#94a3b8;font-size:0.82rem;cursor:pointer;padding:0.3rem;">Ahora no</button>' +
+        '</div>';
     
-    document.body.appendChild(banner);
-    document.body.style.marginTop = '44px';
+    document.body.appendChild(overlay);
 }
 
 function connectGdriveFromBanner() {
@@ -195,7 +198,6 @@ function connectGdriveFromBanner() {
 function dismissGdriveBanner() {
     var banner = document.getElementById('gdriveConnectBanner');
     if (banner) banner.remove();
-    document.body.style.marginTop = '';
 }
 
 // ============================================
