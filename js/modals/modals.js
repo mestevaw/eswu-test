@@ -119,7 +119,10 @@
 
 .tabs {
     display: flex;
-    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     border-bottom: 2px solid var(--border);
     margin-bottom: 1.5rem;
     position: sticky;
@@ -128,17 +131,20 @@
     z-index: 50;
     padding-top: 0.5rem;
 }
+.tabs::-webkit-scrollbar { display: none; }
 
 .tab {
     background: none;
     border: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.88rem;
     font-weight: 500;
     color: var(--text-light);
     cursor: pointer;
     border-bottom: 3px solid transparent;
     transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .tab:hover {
@@ -492,19 +498,11 @@
     }
     
     .tabs {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
         gap: 0;
-        scrollbar-width: none;
     }
-    .tabs::-webkit-scrollbar { display: none; }
-    
     .tab {
         padding: 0.5rem 0.7rem;
         font-size: 0.78rem;
-        white-space: nowrap;
-        flex-shrink: 0;
     }
     
     .info-grid {
