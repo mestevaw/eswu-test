@@ -126,6 +126,9 @@ function handleGoogleAuthResponse(response) {
             loadEswuDocsTab('legales');
             loadEswuDocsTab('generales');
         }
+        if (typeof renderEswuBancosTable === 'function') {
+            renderEswuBancosTable();
+        }
     }
     
     // Execute pending callbacks
