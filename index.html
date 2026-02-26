@@ -545,17 +545,16 @@
                                     <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
                                         <select id="balanceYearSelect" onchange="renderBalanceTab()" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;"></select>
                                         <select id="balanceMonthSelect" onchange="renderBalanceTab()" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
-                                            <option value="0">Todo el año</option>
+                                            <option value="0">Todos</option>
                                             <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
                                             <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
                                             <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
                                             <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
                                         </select>
-                                        <span id="balanceSummary" style="font-size:0.82rem;color:var(--text-light);margin-left:auto;"></span>
                                     </div>
                                     <div class="table-container">
                                         <table id="eswuBalanceTable" class="sticky-header-table">
-                                            <thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right;">Monto</th><th style="text-align:right;">Acumulado</th></tr></thead>
+                                            <thead><tr><th>Fecha</th><th>Concepto</th><th style="text-align:right;">Ingresos</th><th style="text-align:right;">Egresos</th></tr></thead>
                                             <tbody></tbody>
                                         </table>
                                     </div>
