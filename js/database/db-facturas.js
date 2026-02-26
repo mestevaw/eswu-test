@@ -246,41 +246,86 @@ async function deleteFactura(facturaId) {
 // REGISTRAR FACTURA DESDE DASHBOARD
 // ============================================
 
+var _proveedorListSorted = [];
+
 function showRegistrarFacturaFromDash() {
-    // Populate proveedor select
-    var sel = document.getElementById('selectProveedorForFactura');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— Elige proveedor —</option>';
-    
-    var sorted = (typeof proveedores !== 'undefined' ? proveedores : []).slice().sort(function(a, b) {
+    // Prepare sorted list
+    _proveedorListSorted = (typeof proveedores !== 'undefined' ? proveedores : []).slice().sort(function(a, b) {
         return a.nombre.localeCompare(b.nombre);
     });
-    sorted.forEach(function(p) {
-        var opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.nombre;
-        sel.appendChild(opt);
-    });
+    
+    // Reset
+    document.getElementById('proveedorSearchInput').value = '';
+    document.getElementById('selectedProveedorId').value = '';
+    document.getElementById('proveedorSearchResults').style.display = 'none';
+    document.getElementById('proveedorSearchResults').innerHTML = '';
+    document.getElementById('proveedorSelectedBadge').style.display = 'none';
     
     document.getElementById('selectProveedorModal').classList.add('active');
+    setTimeout(function() {
+        document.getElementById('proveedorSearchInput').focus();
+    }, 100);
 }
 
-function continueRegistrarFacturaFromDash() {
-    var sel = document.getElementById('selectProveedorForFactura');
-    var provId = sel ? parseInt(sel.value) : 0;
-    if (!provId) {
-        alert('Selecciona un proveedor');
+function filterProveedorList() {
+    var input = document.getElementById('proveedorSearchInput');
+    var query = input.value.toLowerCase().trim();
+    var results = document.getElementById('proveedorSearchResults');
+    
+    // Clear selection when typing
+    document.getElementById('selectedProveedorId').value = '';
+    document.getElementById('proveedorSelectedBadge').style.display = 'none';
+    
+    if (query.length === 0) {
+        results.style.display = 'none';
+        results.innerHTML = '';
         return;
     }
     
-    // Set current proveedor and open registrar factura modal
+    var matches = _proveedorListSorted.filter(function(p) {
+        return p.nombre.toLowerCase().includes(query);
+    });
+    
+    if (matches.length === 0) {
+        results.style.display = 'block';
+        results.innerHTML = '<div style="padding:0.5rem 0.7rem;color:var(--text-light);font-size:0.85rem;">No se encontraron proveedores</div>';
+        return;
+    }
+    
+    var html = '';
+    matches.forEach(function(p) {
+        html += '<div onclick="selectProveedorForFactura(' + p.id + ',\'' + p.nombre.replace(/'/g, "\\'") + '\')" style="padding:0.45rem 0.7rem;cursor:pointer;font-size:0.88rem;border-bottom:1px solid #f1f5f9;transition:background 0.1s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'">' +
+            '<strong>' + p.nombre + '</strong>' +
+            (p.servicio ? '<span style="color:var(--text-light);font-size:0.78rem;margin-left:0.5rem;">' + p.servicio + '</span>' : '') +
+            '</div>';
+    });
+    
+    results.innerHTML = html;
+    results.style.display = 'block';
+}
+
+function selectProveedorForFactura(id, nombre) {
+    document.getElementById('selectedProveedorId').value = id;
+    document.getElementById('proveedorSearchInput').value = nombre;
+    document.getElementById('proveedorSearchResults').style.display = 'none';
+    
+    var badge = document.getElementById('proveedorSelectedBadge');
+    badge.innerHTML = '✅ <strong>' + nombre + '</strong>';
+    badge.style.display = 'block';
+}
+
+function continueRegistrarFacturaFromDash() {
+    var provId = parseInt(document.getElementById('selectedProveedorId').value);
+    if (!provId) {
+        alert('Escribe y selecciona un proveedor');
+        return;
+    }
+    
     currentProveedorId = provId;
     window.facturaActionContext = 'standalone-porpagar';
     
-    // Close selector modal
-    document.getElementById('selectProveedorModal').classList.remove('active');
+    closeModal('selectProveedorModal');
     
-    // Open registrar factura
     if (typeof showRegistrarFacturaModal === 'function') {
         showRegistrarFacturaModal();
     }
