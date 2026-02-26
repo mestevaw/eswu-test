@@ -150,7 +150,8 @@ async function saveFactura(event) {
         }
         
         await loadProveedores();
-        closeModal('registrarFacturaModal');
+        var modal = document.getElementById('registrarFacturaModal');
+        if (modal) modal.classList.remove('active');
         if (typeof _resetFacturaFile === 'function') _resetFacturaFile();
         navigateAfterFacturaAction('porpagar');
         
@@ -207,7 +208,8 @@ async function savePagoFactura(event) {
         if (error) throw error;
         
         await loadProveedores();
-        closeModal('pagarFacturaModal');
+        var pModal = document.getElementById('pagarFacturaModal');
+        if (pModal) pModal.classList.remove('active');
         navigateAfterFacturaAction('pagadas');
         
     } catch (error) {
