@@ -706,6 +706,23 @@ function initBalanceTab() {
     renderBalanceTab();
 }
 
+// Balance sort state
+var balanceSortBy = 'fecha'; // 'fecha' or 'concepto'
+var balanceSortAsc = true;
+
+function toggleBalanceSort(field) {
+    if (balanceSortBy === field) {
+        balanceSortAsc = !balanceSortAsc;
+    } else {
+        balanceSortBy = field;
+        balanceSortAsc = true;
+    }
+    // Update header indicators
+    document.getElementById('balSortFecha').textContent = balanceSortBy === 'fecha' ? (balanceSortAsc ? '▲' : '▼') : '';
+    document.getElementById('balSortConcepto').textContent = balanceSortBy === 'concepto' ? (balanceSortAsc ? '▲' : '▼') : '';
+    renderBalanceTab();
+}
+
 function renderBalanceTab() {
     var tbody = document.querySelector('#eswuBalanceTable tbody');
     if (!tbody) return;
@@ -764,7 +781,19 @@ function renderBalanceTab() {
         });
     });
     
-    rows.sort(function(a, b) { return new Date(a.fecha) - new Date(b.fecha); });
+    // Sort
+    if (balanceSortBy === 'fecha') {
+        rows.sort(function(a, b) {
+            var diff = new Date(a.fecha) - new Date(b.fecha);
+            return balanceSortAsc ? diff : -diff;
+        });
+    } else {
+        rows.sort(function(a, b) {
+            var diff = a.concepto.localeCompare(b.concepto);
+            if (diff === 0) diff = new Date(a.fecha) - new Date(b.fecha);
+            return balanceSortAsc ? diff : -diff;
+        });
+    }
     
     // === DESKTOP TABLE ===
     tbody.innerHTML = '';
@@ -774,9 +803,45 @@ function renderBalanceTab() {
     if (rows.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:1.5rem;">No hay movimientos en este periodo</td></tr>';
     } else {
+        // Group for subtotals
+        var currentGroup = null;
+        var groupIngresos = 0;
+        var groupEgresos = 0;
+        
+        function getGroupKey(row) {
+            if (balanceSortBy === 'fecha') {
+                return fmtFechaCorta(row.fecha);
+            } else {
+                // Group by base concept name (without invoice #)
+                return row.concepto.split(' #')[0];
+            }
+        }
+        
+        function flushGroup() {
+            if (currentGroup === null) return;
+            if (groupIngresos || groupEgresos) {
+                var trSub = document.createElement('tr');
+                trSub.style.cssText = 'background:#f0f4f8;font-weight:600;font-size:0.82em;';
+                trSub.innerHTML = '<td></td><td style="color:var(--text-light);">Subtotal ' + currentGroup + '</td>' +
+                    '<td style="text-align:right;color:var(--success);">' + (groupIngresos ? fmtMonto(groupIngresos) : '') + '</td>' +
+                    '<td style="text-align:right;color:var(--danger);">' + (groupEgresos ? fmtMonto(groupEgresos) : '') + '</td>';
+                tbody.appendChild(trSub);
+            }
+        }
+        
         rows.forEach(function(r) {
+            var groupKey = getGroupKey(r);
+            if (groupKey !== currentGroup) {
+                flushGroup();
+                currentGroup = groupKey;
+                groupIngresos = 0;
+                groupEgresos = 0;
+            }
+            
             totalIngresos += r.ingreso;
             totalEgresos += r.egreso;
+            groupIngresos += r.ingreso;
+            groupEgresos += r.egreso;
             
             var tr = document.createElement('tr');
             tr.innerHTML = '<td style="white-space:nowrap;">' + fmtFechaCorta(r.fecha) + '</td>' +
@@ -785,6 +850,8 @@ function renderBalanceTab() {
                 '<td style="text-align:right;color:var(--danger);">' + (r.egreso ? fmtMonto(r.egreso) : '') + '</td>';
             tbody.appendChild(tr);
         });
+        // Final group subtotal
+        flushGroup();
         
         var balance = totalIngresos - totalEgresos;
         var balColor = balance >= 0 ? 'var(--success)' : 'var(--danger)';
@@ -812,8 +879,14 @@ function renderBalanceTab() {
     }
     
     var mh = '';
-    // Scrollable container with sticky header and footer
-    mh += '<div style="max-height:65vh;overflow-y:auto;border:1px solid var(--border);border-radius:6px;position:relative;">';
+    // Sort toggle for mobile
+    mh += '<div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">';
+    mh += '<button onclick="toggleBalanceSort(\'fecha\')" style="flex:1;padding:0.35rem;border:1px solid var(--border);border-radius:4px;background:' + (balanceSortBy === 'fecha' ? 'var(--primary);color:white;' : '#f1f5f9;color:var(--text);') + 'font-size:0.72rem;font-weight:600;cursor:pointer;">Fecha ' + (balanceSortBy === 'fecha' ? (balanceSortAsc ? '▲' : '▼') : '') + '</button>';
+    mh += '<button onclick="toggleBalanceSort(\'concepto\')" style="flex:1;padding:0.35rem;border:1px solid var(--border);border-radius:4px;background:' + (balanceSortBy === 'concepto' ? 'var(--primary);color:white;' : '#f1f5f9;color:var(--text);') + 'font-size:0.72rem;font-weight:600;cursor:pointer;">Concepto ' + (balanceSortBy === 'concepto' ? (balanceSortAsc ? '▲' : '▼') : '') + '</button>';
+    mh += '</div>';
+    
+    // Scrollable container
+    mh += '<div style="max-height:60vh;overflow-y:auto;border:1px solid var(--border);border-radius:6px;position:relative;">';
     // Sticky Header
     mh += '<div style="position:sticky;top:0;z-index:10;background:white;display:flex;padding:0.25rem 0.6rem;border-bottom:2px solid var(--border);font-size:0.62rem;font-weight:600;color:var(--text-light);text-transform:uppercase;">';
     mh += '<div style="flex:1;">Concepto</div>';
@@ -821,15 +894,43 @@ function renderBalanceTab() {
     mh += '<div style="width:80px;text-align:right;">Egreso</div>';
     mh += '</div>';
     
+    var mobileGroup = null;
+    var mGroupIng = 0;
+    var mGroupEgr = 0;
+    
+    function mobileGroupKey(r) {
+        if (balanceSortBy === 'fecha') return fmtFechaCorta(r.fecha);
+        return r.concepto.split(' #')[0];
+    }
+    
+    function mobileFlushGroup() {
+        if (mobileGroup === null) return '';
+        if (!mGroupIng && !mGroupEgr) return '';
+        var s = '<div style="display:flex;padding:0.25rem 0.6rem;background:#f0f4f8;font-size:0.68rem;font-weight:600;color:var(--text-light);border-bottom:1px solid var(--border);">';
+        s += '<div style="flex:1;">Sub. ' + (mobileGroup.length > 18 ? mobileGroup.substring(0,16) + '…' : mobileGroup) + '</div>';
+        s += '<div style="width:80px;text-align:right;color:var(--success);">' + (mGroupIng ? fmtMonto(mGroupIng) : '') + '</div>';
+        s += '<div style="width:80px;text-align:right;color:var(--danger);">' + (mGroupEgr ? fmtMonto(mGroupEgr) : '') + '</div>';
+        s += '</div>';
+        return s;
+    }
+    
     rows.forEach(function(r, idx) {
+        var gk = mobileGroupKey(r);
+        if (gk !== mobileGroup) {
+            mh += mobileFlushGroup();
+            mobileGroup = gk;
+            mGroupIng = 0;
+            mGroupEgr = 0;
+        }
+        mGroupIng += r.ingreso;
+        mGroupEgr += r.egreso;
+        
         var concepto = r.concepto.length > 25 ? r.concepto.substring(0, 23) + '…' : r.concepto;
         var ingresoStr = r.ingreso ? fmtMonto(r.ingreso) : '';
         var egresoStr = r.egreso ? fmtMonto(r.egreso) : '';
         
         mh += '<div class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '" style="cursor:default;padding:0.3rem 0.6rem;">';
-        // Line 1: full concept name
         mh += '<div class="mc-title" style="font-size:0.75rem;">' + concepto + '</div>';
-        // Line 2: date | ingreso | egreso
         mh += '<div style="display:flex;align-items:baseline;gap:0.3rem;">';
         mh += '<div class="mc-meta" style="font-size:0.62rem;flex-shrink:0;">' + fmtFechaCorta(r.fecha) + '</div>';
         mh += '<div style="flex:1;"></div>';
@@ -838,19 +939,20 @@ function renderBalanceTab() {
         mh += '</div>';
         mh += '</div>';
     });
+    // Final mobile group subtotal
+    mh += mobileFlushGroup();
     
-    // Sticky Totals
+    // Sticky Totals — each on its own line
     var balance = totalIngresos - totalEgresos;
     var balColor = balance >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
     mh += '<div style="position:sticky;bottom:0;z-index:10;">';
-    mh += '<div style="display:flex;padding:0.4rem 0.6rem;border-top:2px solid var(--primary);font-weight:700;font-size:0.75rem;background:#e6f2ff;">';
-    mh += '<div style="flex:1;">Totales</div>';
-    mh += '<div style="width:80px;text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</div>';
-    mh += '<div style="width:80px;text-align:right;color:var(--danger);">' + fmtMonto(totalEgresos) + '</div>';
+    mh += '<div style="padding:0.4rem 0.6rem;border-top:2px solid var(--primary);font-weight:700;font-size:0.75rem;background:#e6f2ff;">';
+    mh += '<div style="display:flex;margin-bottom:0.15rem;"><div style="flex:1;">Total Ingresos</div><div style="text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</div></div>';
+    mh += '<div style="display:flex;"><div style="flex:1;">Total Egresos</div><div style="text-align:right;color:var(--danger);">' + fmtMonto(totalEgresos) + '</div></div>';
     mh += '</div>';
-    mh += '<div style="display:flex;padding:0.4rem 0.6rem;font-weight:700;font-size:0.75rem;background:#f0f4f8;">';
+    mh += '<div style="display:flex;padding:0.4rem 0.6rem;font-weight:700;font-size:0.8rem;background:#f0f4f8;">';
     mh += '<div style="flex:1;">Balance</div>';
-    mh += '<div style="width:160px;text-align:right;' + balColor + '">' + fmtMonto(balance) + '</div>';
+    mh += '<div style="text-align:right;' + balColor + '">' + fmtMonto(balance) + '</div>';
     mh += '</div>';
     mh += '</div>'; // close sticky totals
     mh += '</div>'; // close scrollable container
