@@ -710,6 +710,19 @@ function renderBalanceTab() {
     var tbody = document.querySelector('#eswuBalanceTable tbody');
     if (!tbody) return;
     
+    // Get or create mobile div
+    var mobileDiv = document.getElementById('balanceMobileCards');
+    if (!mobileDiv) {
+        var tableContainer = document.getElementById('eswuBalanceTable').closest('.table-container');
+        if (tableContainer) {
+            mobileDiv = document.createElement('div');
+            mobileDiv.id = 'balanceMobileCards';
+            mobileDiv.className = 'show-mobile-only';
+            tableContainer.parentElement.appendChild(mobileDiv);
+        }
+    }
+    if (mobileDiv) mobileDiv.innerHTML = '';
+    
     var yearSel = document.getElementById('balanceYearSelect');
     var monthSel = document.getElementById('balanceMonthSelect');
     var filterYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
@@ -753,6 +766,7 @@ function renderBalanceTab() {
     
     rows.sort(function(a, b) { return new Date(a.fecha) - new Date(b.fecha); });
     
+    // === DESKTOP TABLE ===
     tbody.innerHTML = '';
     var totalIngresos = 0;
     var totalEgresos = 0;
@@ -772,7 +786,6 @@ function renderBalanceTab() {
             tbody.appendChild(tr);
         });
         
-        // Fila de totales
         var balance = totalIngresos - totalEgresos;
         var balColor = balance >= 0 ? 'var(--success)' : 'var(--danger)';
         
@@ -789,6 +802,37 @@ function renderBalanceTab() {
             '<td colspan="2" style="text-align:right;color:' + balColor + ';font-size:1em;">' + fmtMonto(balance) + '</td>';
         tbody.appendChild(trBalance);
     }
+    
+    // === MOBILE CARDS ===
+    if (!mobileDiv) return;
+    
+    if (rows.length === 0) {
+        mobileDiv.innerHTML = '<p class="mc-empty">No hay movimientos en este periodo</p>';
+        return;
+    }
+    
+    var mh = '';
+    rows.forEach(function(r, idx) {
+        var isIngreso = r.ingreso > 0;
+        var montoStr = isIngreso ? fmtMonto(r.ingreso) : fmtMonto(r.egreso);
+        var montoColor = isIngreso ? 'color:var(--success);' : 'color:var(--danger);';
+        var label = isIngreso ? 'Ingreso' : 'Egreso';
+        
+        mh += '<div class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '" style="cursor:default;">';
+        mh += '<div class="mc-line"><div class="mc-title">' + r.concepto + '</div></div>';
+        mh += '<div class="mc-line"><div class="mc-meta">' + fmtFechaCorta(r.fecha) + ' · ' + label + '</div>';
+        mh += '<span class="mc-value" style="' + montoColor + '">' + montoStr + '</span></div>';
+        mh += '</div>';
+    });
+    
+    // Totals
+    var balance = totalIngresos - totalEgresos;
+    var balColor = balance >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
+    mh += '<div class="mc-total"><strong>Ingresos</strong><strong style="color:var(--success);">' + fmtMonto(totalIngresos) + '</strong></div>';
+    mh += '<div class="mc-total" style="background:#fee2e2;"><strong>Egresos</strong><strong style="color:var(--danger);">' + fmtMonto(totalEgresos) + '</strong></div>';
+    mh += '<div class="mc-total" style="background:#f0f4f8;"><strong>Balance</strong><strong style="' + balColor + '">' + fmtMonto(balance) + '</strong></div>';
+    
+    mobileDiv.innerHTML = mh;
 }
 
 // Formato fecha: "25 feb 26"
