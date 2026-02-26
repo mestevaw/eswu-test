@@ -42,9 +42,9 @@ function exportInquilinosToExcel() {
 }
 
 function exportRentasRecibidasToExcel() {
-    const filterType = document.getElementById('inquilinosRentasFilter').value;
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
-    const month = filterType === 'mensual' ? parseInt(document.getElementById('inquilinosRentasMonth').value) : null;
+    const monthSelect = document.getElementById('inquilinosRentasMonth');
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     
     const data = [['Empresa', 'Monto', 'Fecha']];
     const rentas = [];
@@ -64,7 +64,7 @@ function exportRentasRecibidasToExcel() {
     rentas.forEach(r => data.push([r.empresa, r.monto, r.fecha]));
     
     const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-    const filename = filterType === 'mensual' 
+    const filename = month !== null
         ? `Rentas_${monthNames[month]}_${year}.xlsx`
         : `Rentas_${year}.xlsx`;
     
