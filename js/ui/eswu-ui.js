@@ -790,7 +790,7 @@ function renderBalanceTab() {
             var d = new Date(f.fecha_pago);
             if (d.getFullYear() !== filterYear) return;
             if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
-            var montoTotal = (parseFloat(f.monto) || 0) + (parseFloat(f.iva) || 0);
+            var montoTotal = parseFloat(f.monto) || 0;
             rows.push({
                 fecha: f.fecha_pago,
                 concepto: prov.nombre + (f.numero ? ' #' + f.numero : ''),
