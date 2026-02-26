@@ -108,8 +108,18 @@ function renderProveedoresTable() {
     }
     mobileDiv.innerHTML = '';
     
+    // Search filter
+    var searchEl = document.getElementById('provListSearch');
+    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    var filtered = proveedores;
+    if (searchQuery) {
+        filtered = proveedores.filter(function(p) {
+            return p.nombre.toLowerCase().includes(searchQuery) || (p.servicio || '').toLowerCase().includes(searchQuery);
+        });
+    }
+    
     // Desktop table
-    proveedores.forEach(prov => {
+    filtered.forEach(prov => {
         const primerContacto = prov.contactos && prov.contactos.length > 0 ? prov.contactos[0] : {};
         const row = tbody.insertRow();
         
@@ -131,12 +141,12 @@ function renderProveedoresTable() {
         row.onclick = () => showProveedorDetail(prov.id);
     });
     
-    if (proveedores.length === 0) {
+    if (filtered.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-light)">No hay proveedores</td></tr>';
     }
     
     // Mobile cards
-    _renderProveedoresMobileCards(proveedores, mobileDiv);
+    _renderProveedoresMobileCards(filtered, mobileDiv);
 }
 
 function filtrarProveedores(query) {
@@ -358,10 +368,13 @@ function renderProveedoresFacturasPorPagar() {
     const year = parseInt(document.getElementById('provFactPorPagYear').value);
     const monthSelect = document.getElementById('provFactPorPagMonth');
     const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
+    var searchEl = document.getElementById('provFactPorPagSearch');
+    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
     const porPagar = [];
     let totalPorPagar = 0;
     
     proveedores.forEach(prov => {
+        if (searchQuery && !prov.nombre.toLowerCase().includes(searchQuery)) return;
         if (prov.facturas) {
             prov.facturas.forEach(f => {
                 if (!f.fecha_pago) {
