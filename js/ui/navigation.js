@@ -924,8 +924,16 @@ function switchTab(type, tabName) {
         var sel = document.querySelector('#eswuDocsPage .tabs-mobile-select');
         if (sel) sel.value = tabName;
         
+        // Show/hide balance inline filters
+        var isBalance = (tabName === 'balance');
+        var desktopFilters = document.getElementById('balanceInlineFilters');
+        if (desktopFilters) desktopFilters.style.display = isBalance ? 'inline-block' : 'none';
+        document.querySelectorAll('.balance-inline-filter').forEach(function(el) {
+            el.style.display = isBalance ? 'inline-block' : 'none';
+        });
+        
         // Initialize data-dependent tabs when first shown
-        if (tabName === 'balance' && typeof initBalanceTab === 'function') {
+        if (isBalance && typeof initBalanceTab === 'function') {
             initBalanceTab();
         }
         if (tabName === 'bancos' && typeof renderEswuBancosTable === 'function') {
