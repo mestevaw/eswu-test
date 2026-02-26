@@ -71,10 +71,12 @@ function navigateAfterFacturaAction(defaultTab) {
     window.facturaActionContext = null; // Limpiar
     
     if (ctx === 'dashboard-porpagar') {
-        // Came from dashboard — stay on dashboard, refresh porpagar view
-        if (typeof switchDashProvView === 'function') {
-            switchDashProvView('porpagar');
+        // Came from dashboard — just refresh the dashboard proveedores tile
+        // Don't navigate anywhere, the modal is already closed
+        if (typeof renderDashProveedores === 'function') {
+            renderDashProveedores();
         }
+        return; // Done — stay on dashboard
     } else if (ctx === 'standalone-porpagar') {
         renderProveedoresFacturasPorPagar();
     } else if (ctx === 'standalone-pagadas') {
