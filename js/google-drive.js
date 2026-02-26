@@ -592,6 +592,7 @@ async function getOrCreateInquilinoFolder(inquilinoNombre) {
 // ============================================
 
 async function getOrCreateProveedorFolder(proveedorNombre) {
+    // LEGACY — kept as fallback, but main flow uses getFacturasProveedoresFolderId
     var q = "name = 'Proveedores' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
     var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
@@ -617,6 +618,51 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
     
     var newFolder = await createDriveFolder(proveedorNombre, proveedoresParentId);
     return newFolder.id;
+}
+
+// ============================================
+// FACTURAS PROVEEDORES FOLDER (correct structure)
+// Inmobilaris ESWU / [year] / [MM. MES] / Facturas proveedores /
+// ============================================
+
+var _MESES_DRIVE = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+async function getFacturasProveedoresFolderId(fechaStr) {
+    // fechaStr = "2026-02-15" format
+    var parts = fechaStr.split('-');
+    var year = parts[0];                          // "2026"
+    var monthIdx = parseInt(parts[1]) - 1;        // 0-based
+    var monthNum = String(parseInt(parts[1])).padStart(2, '0'); // "02"
+    var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];  // "02. FEBRERO"
+    
+    // 1) Find root "Inmobilaris ESWU"
+    var rootId = await findOrCreateSubfolder('Inmobilaris ESWU', null);
+    
+    // 2) Year folder
+    var yearId = await findOrCreateSubfolder(year, rootId);
+    
+    // 3) Month folder
+    var monthId = await findOrCreateSubfolder(monthName, yearId);
+    
+    // 4) "Facturas proveedores" folder
+    var facturasId = await findOrCreateSubfolder('Facturas proveedores', monthId);
+    
+    return facturasId;
+}
+
+async function getPagosProveedoresFolderId(fechaStr) {
+    var parts = fechaStr.split('-');
+    var year = parts[0];
+    var monthIdx = parseInt(parts[1]) - 1;
+    var monthNum = String(parseInt(parts[1])).padStart(2, '0');
+    var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];
+    
+    var rootId = await findOrCreateSubfolder('Inmobilaris ESWU', null);
+    var yearId = await findOrCreateSubfolder(year, rootId);
+    var monthId = await findOrCreateSubfolder(monthName, yearId);
+    var pagosId = await findOrCreateSubfolder('Pagos proveedores', monthId);
+    
+    return pagosId;
 }
 
 // ============================================
