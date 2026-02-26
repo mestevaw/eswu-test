@@ -38,6 +38,7 @@ function initGoogleDrive() {
         });
         gdriveInitialized = true;
         console.log('✅ Google Drive API inicializada');
+        if (typeof updateGdriveStatus === 'function') updateGdriveStatus();
         
         // Auto-reconnect silently if previously connected but token expired
         if (!gdriveAccessToken && !gdriveAutoConnectAttempted && localStorage.getItem('gdrive_was_connected') === 'true') {
@@ -109,6 +110,7 @@ function handleGoogleAuthResponse(response) {
     
     // Dismiss connect banner if showing
     if (typeof dismissGdriveBanner === 'function') dismissGdriveBanner();
+    if (typeof updateGdriveStatus === 'function') updateGdriveStatus();
     
     // Save login_hint (skips account picker next time)
     fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
