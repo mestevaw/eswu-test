@@ -641,13 +641,13 @@ async function findEswuRootWithYears() {
         return _eswuRootId;
     }
     
-    // Search for ALL folders named "Inmobilaris ESWU" — include parents field
-    var q = "name = 'Inmobilaris ESWU' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    // Search for ALL folders named "Inmobilaris ESWU" or "Inmobiliaris ESWU"
+    var q = "mimeType = 'application/vnd.google-apps.folder' and trashed = false and (name = 'Inmobilaris ESWU' or name = 'Inmobiliaris ESWU')";
     var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name,parents)', {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
     });
     var data = await resp.json();
-    console.log('📁 Found "Inmobilaris ESWU" folders:', JSON.stringify(data.files));
+    console.log('📁 All ESWU folders found:', JSON.stringify(data.files));
     
     if (!data.files || data.files.length === 0) {
         throw new Error('No se encontró la carpeta "Inmobilaris ESWU" en Google Drive');
@@ -660,46 +660,56 @@ async function findEswuRootWithYears() {
         return _eswuRootId;
     }
     
-    // Multiple found — the INNER one is the correct one.
-    // The inner one has a parent that is also named "Inmobilaris ESWU"
+    // Multiple found — we want the INNER one.
+    // The INNER folder is a CHILD of the OUTER folder.
+    // So: find the folder whose parent is ALSO in our list.
     var folderIds = data.files.map(function(f) { return f.id; });
     
     for (var i = 0; i < data.files.length; i++) {
         var folder = data.files[i];
         var parentIds = folder.parents || [];
-        // Check if any parent is also an "Inmobilaris ESWU" folder
         for (var j = 0; j < parentIds.length; j++) {
             if (folderIds.indexOf(parentIds[j]) !== -1) {
-                // This folder's parent is also named "Inmobilaris ESWU" — this is the inner/correct one
+                // This folder's parent is ALSO named "Inmobilaris ESWU" — this is the INNER one
                 _eswuRootId = folder.id;
-                console.log('📁 Found INNER ESWU folder (parent is also ESWU):', _eswuRootId);
+                console.log('📁 ✅ Found INNER ESWU folder:', _eswuRootId, '(parent', parentIds[j], 'is also ESWU)');
                 return _eswuRootId;
             }
         }
     }
     
-    // Fallback: check which one has year subfolders
+    // Fallback: find the one with THE MOST year subfolders (the real one has 2018-2026)
+    console.log('📁 Parent check did not work, checking children count...');
+    var bestId = null;
+    var bestYearCount = 0;
+    
     for (var i = 0; i < data.files.length; i++) {
         var candidateId = data.files[i].id;
         var yearQ = "'" + candidateId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-        var yearResp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(yearQ) + '&fields=files(id,name)&pageSize=20', {
+        var yearResp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(yearQ) + '&fields=files(id,name)&pageSize=30', {
             headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
         });
         var yearData = await yearResp.json();
-        console.log('📁 Children of', candidateId, ':', JSON.stringify((yearData.files || []).map(function(f){return f.name;})));
+        var yearCount = 0;
         if (yearData.files) {
-            var hasYear = yearData.files.some(function(f) { return /^\d{4}$/.test(f.name); });
-            if (hasYear) {
-                _eswuRootId = candidateId;
-                console.log('📁 Found ESWU root with year folders:', _eswuRootId);
-                return _eswuRootId;
-            }
+            yearCount = yearData.files.filter(function(f) { return /^\d{4}$/.test(f.name); }).length;
         }
+        console.log('📁 Folder', candidateId, 'has', yearCount, 'year subfolders');
+        if (yearCount > bestYearCount) {
+            bestYearCount = yearCount;
+            bestId = candidateId;
+        }
+    }
+    
+    if (bestId) {
+        _eswuRootId = bestId;
+        console.log('📁 ✅ Using folder with most years (' + bestYearCount + '):', _eswuRootId);
+        return _eswuRootId;
     }
     
     // Last fallback
     _eswuRootId = data.files[data.files.length - 1].id;
-    console.log('📁 Fallback ESWU root:', _eswuRootId);
+    console.log('📁 ⚠️ Last fallback ESWU root:', _eswuRootId);
     return _eswuRootId;
 }
 
