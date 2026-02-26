@@ -46,17 +46,9 @@ function toggleHomeTable(tableName) {
 }
 
 function updateHomeView() {
-    const filterType = document.getElementById('homeFilter').value;
     const year = parseInt(document.getElementById('homeYear').value);
     const monthSelect = document.getElementById('homeMonth');
-    
-    if (filterType === 'mensual') {
-        monthSelect.classList.remove('hidden');
-    } else {
-        monthSelect.classList.add('hidden');
-    }
-    
-    const month = filterType === 'mensual' ? parseInt(monthSelect.value) : null;
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     let totalIngresos = 0;
     let totalGastos = 0;
     
@@ -96,9 +88,9 @@ function updateHomeView() {
 }
 
 function renderHomeIngresos() {
-    const filterType = document.getElementById('homeFilter').value;
     const year = parseInt(document.getElementById('homeYear').value);
-    const month = filterType === 'mensual' ? parseInt(document.getElementById('homeMonth').value) : null;
+    const monthSelect = document.getElementById('homeMonth');
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     
     const tbody = document.getElementById('homeIngresosTable').querySelector('tbody');
     tbody.innerHTML = '';
@@ -139,9 +131,9 @@ function renderHomeIngresos() {
 }
 
 function renderHomePagos() {
-    const filterType = document.getElementById('homeFilter').value;
     const year = parseInt(document.getElementById('homeYear').value);
-    const month = filterType === 'mensual' ? parseInt(document.getElementById('homeMonth').value) : null;
+    const monthSelect = document.getElementById('homeMonth');
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     
     const tbody = document.getElementById('homePagosTable').querySelector('tbody');
     tbody.innerHTML = '';
