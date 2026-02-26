@@ -920,6 +920,10 @@ function switchTab(type, tabName) {
         
         window.eswuActiveTab = tabName;
         
+        // Sync mobile dropdown
+        var sel = document.querySelector('#eswuDocsPage .tabs-mobile-select');
+        if (sel) sel.value = tabName;
+        
         // Initialize data-dependent tabs when first shown
         if (tabName === 'balance' && typeof initBalanceTab === 'function') {
             initBalanceTab();
@@ -941,12 +945,12 @@ function switchTab(type, tabName) {
             document.querySelector('#inquilinoDetailModal .tab:nth-child(3)').classList.add('active');
             document.getElementById('inquilinoNotasTab').classList.add('active');
         }
+        // Sync mobile dropdown
+        var sel = document.querySelector('#inquilinoDetailModal .tabs-mobile-select');
+        if (sel) sel.value = tabName;
     } else if (type === 'proveedor') {
         document.querySelectorAll('#proveedorDetailModal .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#proveedorDetailModal .tab-content').forEach(tc => tc.classList.remove('active'));
-        
-        // Los + verdes ya están en el HTML con clase btn-add-inline
-        // El CSS se encarga de mostrarlos solo en la pestaña activa
         
         if (tabName === 'pagadas') {
             document.querySelector('#proveedorDetailModal .tab:nth-child(1)').classList.add('active');
@@ -965,6 +969,9 @@ function switchTab(type, tabName) {
             document.querySelector('#proveedorDetailModal .tab:nth-child(5)').classList.add('active');
             document.getElementById('proveedorNotasTab').classList.add('active');
         }
+        // Sync mobile dropdown
+        var sel = document.querySelector('#proveedorDetailModal .tabs-mobile-select');
+        if (sel) sel.value = tabName;
     }
 }
 
