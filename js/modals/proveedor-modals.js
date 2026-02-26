@@ -60,12 +60,33 @@ function showRegistrarFacturaModal() {
     document.getElementById('facturaDocumentoFileName').textContent = '';
     if (typeof _resetFacturaFile === 'function') _resetFacturaFile();
     
+    // Show/hide proveedor row based on context
+    var provRow = document.getElementById('facturaProveedorRow');
+    if (provRow) {
+        if (window.facturaActionContext === 'standalone-porpagar') {
+            provRow.style.display = '';
+            // Reset proveedor search
+            document.getElementById('facturaProveedorSearch').value = '';
+            document.getElementById('facturaProveedorId').value = '';
+            document.getElementById('facturaProveedorResults').style.display = 'none';
+            document.getElementById('facturaProveedorSearch').style.borderColor = 'var(--border)';
+            document.getElementById('facturaProveedorSearch').style.background = '';
+        } else {
+            provRow.style.display = 'none';
+        }
+    }
+    
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
     document.getElementById('registrarFacturaModal').classList.add('active');
     
     // Init paste listener (needs element to be visible)
     setTimeout(function() {
         if (typeof _initFacturaPaste === 'function') _initFacturaPaste();
+        // Focus proveedor search if standalone
+        if (window.facturaActionContext === 'standalone-porpagar') {
+            var searchInput = document.getElementById('facturaProveedorSearch');
+            if (searchInput) searchInput.focus();
+        }
     }, 100);
 }
 
