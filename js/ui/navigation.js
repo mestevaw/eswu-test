@@ -426,7 +426,9 @@ function renderDashProveedores() {
         if (q) facturasList = facturasList.filter(function(f) { return f.provNombre.toLowerCase().includes(q); });
         if (facturasList.length === 0) { div.innerHTML = '<div class="dash-empty">Sin facturas</div>'; return; }
         var h = '';
+        var totalMonto = 0;
         facturasList.forEach(function(f) {
+            totalMonto += f.monto;
             var nombre = f.provNombre.length > 22 ? f.provNombre.substring(0, 20) + '…' : f.provNombre;
             var clickAction = f.docFileId
                 ? 'viewDriveFileInline(\'' + f.docFileId + '\', \'Factura ' + (f.numero || '') + '\')'
@@ -452,6 +454,13 @@ function renderDashProveedores() {
             h += '</div>';
             h += '</div>';
         });
+        // Sticky total for porPagar
+        if (!isPagadas && totalMonto > 0) {
+            h += '<div style="position:sticky;bottom:0;background:#e6f2ff;border-top:2px solid var(--primary);padding:0.4rem 0.6rem;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:0.8rem;">';
+            h += '<span>Total por pagar</span>';
+            h += '<span style="color:var(--danger);">' + formatCurrency(totalMonto) + '</span>';
+            h += '</div>';
+        }
         div.innerHTML = h;
     }
 }
