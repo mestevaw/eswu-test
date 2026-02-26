@@ -71,6 +71,8 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         }
         
     } catch (error) {
+        // Restaurar visibilidad del login en caso de error
+        document.getElementById('loginContainer').style.opacity = '1';
         alert(error.message);
     } finally {
         hideLoading();
@@ -82,21 +84,20 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 // ============================================
 
 window.addEventListener('DOMContentLoaded', function() {
+    // Limpiar estado visual antes de cualquier cosa
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    
     const rememberedUser = localStorage.getItem('eswu_remembered_user');
     const rememberedPass = localStorage.getItem('eswu_remembered_pass');
     
     if (rememberedUser && rememberedPass) {
+        // Mostrar loading inmediatamente para evitar parpadeo
+        document.getElementById('loginContainer').style.opacity = '0';
         document.getElementById('username').value = rememberedUser;
         document.getElementById('password').value = rememberedPass;
         document.getElementById('loginForm').dispatchEvent(new Event('submit'));
     }
-    
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-    
-    setTimeout(() => {
-        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-    }, 1000);
 });
 
 // ============================================
@@ -132,28 +133,8 @@ async function initializeApp() {
         
         console.log('✅ App inicializada correctamente');
         
-        // Initialize Google Drive (non-blocking, auto-reconnects if previously connected)
-        try {
-            if (typeof initGoogleDrive === 'function') {
-                initGoogleDrive();
-            }
-            // Prompt user to connect Google Drive if not already connected
-            if (typeof isGoogleConnected === 'function' && !isGoogleConnected()) {
-                // Small delay to let auto-reconnect finish first
-                setTimeout(async function() {
-                    if (!isGoogleConnected()) {
-                        // Try silent auto-connect one more time
-                        var ok = await ensureGdriveToken();
-                        if (!ok) {
-                            // Not connected - prompt user
-                            googleSignIn();
-                        }
-                    }
-                }, 2000);
-            }
-        } catch (e) {
-            console.log('Google Drive init diferido');
-        }
+        // Initialize Google Drive — wait for GSI library (loaded async defer)
+        waitForGoogleAndConnect();
         
         // Pre-load contabilidad carpetas (needed for bancos upload to Drive)
         try {
@@ -169,6 +150,44 @@ async function initializeApp() {
         alert('Error cargando datos: ' + error.message);
     } finally {
         hideLoadingBanner();
+    }
+}
+
+// ============================================
+// WAIT FOR GOOGLE GSI LIBRARY & CONNECT
+// ============================================
+
+function waitForGoogleAndConnect(attempt) {
+    attempt = attempt || 0;
+    
+    // google.accounts comes from the async-loaded GSI script
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        try {
+            if (typeof initGoogleDrive === 'function') {
+                initGoogleDrive();
+            }
+        } catch (e) {
+            console.warn('Error init Google Drive:', e);
+        }
+        
+        // Give auto-reconnect 3 seconds, then prompt if still not connected
+        setTimeout(async function() {
+            if (typeof isGoogleConnected === 'function' && !isGoogleConnected()) {
+                var ok = await ensureGdriveToken();
+                if (!ok) {
+                    // Not connected — prompt user interactively
+                    googleSignIn();
+                }
+            }
+        }, 3000);
+        return;
+    }
+    
+    // GSI not loaded yet — retry up to 15 seconds
+    if (attempt < 30) {
+        setTimeout(function() { waitForGoogleAndConnect(attempt + 1); }, 500);
+    } else {
+        console.warn('Google GSI library no cargó después de 15 segundos');
     }
 }
 
