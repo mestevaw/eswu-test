@@ -444,6 +444,7 @@ function renderProveedoresFacturasPorPagar() {
                             numero: f.numero || 'S/N',
                             clabe: prov.clabe || '',
                             monto: f.monto,
+                            iva: f.iva || 0,
                             vencimiento: f.vencimiento,
                             has_documento: f.has_documento
                         });
@@ -461,11 +462,13 @@ function renderProveedoresFacturasPorPagar() {
         const row = tbody.insertRow();
         const escapedNum = (f.numero).replace(/'/g, "\\'");
         var displayNum = f.numero.length > 12 ? f.numero.substring(0, 12) + '…' : f.numero;
+        var displayName = f.proveedor.length > 21 ? f.proveedor.substring(0, 21) + '…' : f.proveedor;
         row.innerHTML = `
-            <td>${f.proveedor}</td>
+            <td title="${f.proveedor}">${displayName}</td>
             <td title="${f.numero}">${displayNum}</td>
             <td style="font-size:0.78rem;letter-spacing:0.02em;color:var(--text-light);">${f.clabe}</td>
-            <td class="currency">${formatCurrency(f.monto)}</td>
+            <td class="currency"><strong>${formatCurrency(f.monto)}</strong></td>
+            <td class="currency" style="font-size:0.82rem;color:var(--text-light);">${f.iva ? formatCurrency(f.iva) : ''}</td>
             <td>${formatDateVencimiento(f.vencimiento)}</td>
             <td style="white-space:nowrap;" onclick="event.stopPropagation()">
                 <span onclick="currentProveedorId=${f.provId}; window.facturaActionContext='standalone-porpagar'; showEditFacturaModal(${f.factId})" title="Modificar factura" style="cursor:pointer; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
@@ -484,11 +487,11 @@ function renderProveedoresFacturasPorPagar() {
     });
     
     if (porPagar.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-light)">No hay facturas por pagar</td></tr>';
     } else {
         const row = tbody.insertRow();
         row.className = 'total-row';
-        row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="2"></td>`;
+        row.innerHTML = `<td colspan="3" style="text-align:right;padding:1rem"><strong>TOTAL:</strong></td><td class="currency"><strong>${formatCurrency(totalPorPagar)}</strong></td><td colspan="3"></td>`;
     }
     
     // ── MOBILE: Card list ──
