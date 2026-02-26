@@ -140,7 +140,13 @@ function showPagarFacturaModal(facturaId) {
     document.getElementById('fechaPagoFactura').value = new Date().toISOString().split('T')[0];
     document.getElementById('pagoPDFFactura').value = '';
     document.getElementById('pagoPDFFacturaFileName').textContent = '';
+    if (typeof _resetPagoFile === 'function') _resetPagoFile();
     document.getElementById('pagarFacturaModal').classList.add('active');
+    
+    // Init paste listener
+    setTimeout(function() {
+        if (typeof _initPagoPaste === 'function') _initPagoPaste();
+    }, 100);
 }
 
 console.log('✅ PROVEEDOR-MODALS.JS cargado (2026-02-12 18:00 CST)');
