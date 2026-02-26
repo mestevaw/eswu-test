@@ -217,8 +217,8 @@
                         <!-- Mensajes tile -->
                         <div class="dash-tile dash-mensajes">
                             <div class="dash-tile-header dash-msg-header">
-                                <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes <span id="dashMensajesBadge" class="dash-badge" style="display:none;">0</span></span>
-                                <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas</span>
+                                <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes</span>
+                                <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas <span id="dashAlertasBadge" class="dash-badge" style="display:none;">0</span></span>
                                 <span onclick="switchDashMsgView('avisos')" class="dash-msg-tab">📢 Avisos</span>
                                 <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
                             </div>
@@ -356,7 +356,18 @@
                 <div id="proveedoresListView" class="hidden">
                     <div class="card">
                        <div class="card-header">
-    <h2 class="card-title">Listado de Proveedores</h2>
+    <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div class="prov-nav-menu" style="position:relative;display:inline-block;">
+            <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
+            <div class="prov-nav-dropdown" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:100;min-width:170px;margin-top:4px;">
+                <div style="padding:0.5rem 0.8rem;font-weight:700;cursor:pointer;border-radius:6px 6px 0 0;background:var(--primary);color:white;">Listado</div>
+                <div onclick="showProveedoresView('facturasPagadas')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas Pagadas</div>
+                <div onclick="showProveedoresView('facturasPorPagar')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas x Pagar</div>
+                <div onclick="showProveedoresView('mantenimiento')" style="padding:0.5rem 0.8rem;cursor:pointer;border-radius:0 0 6px 6px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Mantenimiento</div>
+            </div>
+        </div>
+        <h2 class="card-title">Listado de Proveedores</h2>
+    </div>
     <div style="display:flex; align-items:center; gap:0.5rem;">
         <span onclick="exportProveedoresToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
         <span class="btn-add-inline" onclick="showAddProveedorModal()" title="Agregar proveedor" style="font-size:1.5rem; cursor:pointer;">+</span>
@@ -375,7 +386,18 @@
                 <div id="proveedoresFacturasPagadasView" class="hidden">
                     <div class="card">
                         <div class="card-header">
-                            <h2 class="card-title">Facturas Pagadas</h2>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div class="prov-nav-menu" style="position:relative;display:inline-block;">
+                                    <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
+                                    <div class="prov-nav-dropdown" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:100;min-width:170px;margin-top:4px;">
+                                        <div onclick="showProveedoresView('list')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Listado</div>
+                                        <div style="padding:0.5rem 0.8rem;font-weight:700;cursor:pointer;background:var(--primary);color:white;">Facturas Pagadas</div>
+                                        <div onclick="showProveedoresView('facturasPorPagar')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas x Pagar</div>
+                                        <div onclick="showProveedoresView('mantenimiento')" style="padding:0.5rem 0.8rem;cursor:pointer;border-radius:0 0 6px 6px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <h2 class="card-title">Facturas Pagadas</h2>
+                            </div>
                             <span onclick="exportFacturasPagadasToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
                         </div>
                         <div style="padding: 1.5rem;">
@@ -406,7 +428,18 @@
                 <div id="proveedoresFacturasPorPagarView" class="hidden">
                     <div class="card">
                         <div class="card-header">
-                            <h2 class="card-title">Facturas Por Pagar</h2>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div class="prov-nav-menu" style="position:relative;display:inline-block;">
+                                    <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
+                                    <div class="prov-nav-dropdown" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:100;min-width:170px;margin-top:4px;">
+                                        <div onclick="showProveedoresView('list')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Listado</div>
+                                        <div onclick="showProveedoresView('facturasPagadas')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas Pagadas</div>
+                                        <div style="padding:0.5rem 0.8rem;font-weight:700;cursor:pointer;background:var(--primary);color:white;border-bottom:1px solid rgba(255,255,255,0.3);">Facturas x Pagar</div>
+                                        <div onclick="showProveedoresView('mantenimiento')" style="padding:0.5rem 0.8rem;cursor:pointer;border-radius:0 0 6px 6px;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <h2 class="card-title">Facturas Por Pagar</h2>
+                            </div>
                             <span onclick="exportFacturasPorPagarToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
                         </div>
                         <div style="padding: 1.5rem;">
@@ -436,7 +469,18 @@
                 <div id="proveedoresMantenimientoView" class="hidden">
                     <div class="card">
                         <div class="card-header">
-                            <h2 class="card-title">Mantenimiento — Trabajos Pendientes</h2>
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div class="prov-nav-menu" style="position:relative;display:inline-block;">
+                                    <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
+                                    <div class="prov-nav-dropdown" style="display:none;position:absolute;top:100%;left:0;background:white;border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:100;min-width:170px;margin-top:4px;">
+                                        <div onclick="showProveedoresView('list')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Listado</div>
+                                        <div onclick="showProveedoresView('facturasPagadas')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas Pagadas</div>
+                                        <div onclick="showProveedoresView('facturasPorPagar')" style="padding:0.5rem 0.8rem;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background=''">Facturas x Pagar</div>
+                                        <div style="padding:0.5rem 0.8rem;font-weight:700;cursor:pointer;border-radius:0 0 6px 6px;background:var(--primary);color:white;">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <h2 class="card-title">Mantenimiento — Trabajos Pendientes</h2>
+                            </div>
                         </div>
                         <div style="padding:1rem;">
                             <div id="mantenimientoGlobalContent">
@@ -654,6 +698,12 @@
 
             </div> <!-- Cierre de contentArea -->
         </div> <!-- Cierre de main-content -->
+
+        <!-- Google Drive status indicator -->
+        <div id="gdriveStatusIndicator" style="position:fixed;bottom:12px;left:12px;z-index:900;display:none;background:white;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--text-light);box-shadow:0 1px 4px rgba(0,0,0,0.1);cursor:default;">
+            <span id="gdriveStatusDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:0.3rem;vertical-align:middle;"></span>
+            <span id="gdriveStatusText" style="vertical-align:middle;">Google Drive</span>
+        </div>
 
     </div> <!-- Cierre de appContainer -->
 
@@ -1791,7 +1841,7 @@
     </div>
 
     <script src="js/config.js?v=23"></script>
-    <script src="js/google-drive.js?v=33"></script>
+    <script src="js/google-drive.js?v=34"></script>
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=23"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
@@ -1799,7 +1849,7 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=39"></script>
+    <script src="js/ui/navigation.js?v=41"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
@@ -1812,7 +1862,7 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=24"></script>
     <script src="js/modals/proveedor-modals.js?v=22"></script>
-    <script src="js/main.js?v=27"></script>
+    <script src="js/main.js?v=28"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
         document.addEventListener('dragover', function(e) { e.preventDefault(); });
