@@ -281,8 +281,8 @@ async function iniciarVinculacionBancos() {
     if (!gdriveInitialized) initGoogleDrive();
     
     if (!isGoogleConnected()) {
-        // Trigger sign-in, user will need to click 🔗 again after connecting
-        googleSignIn();
+        // Trigger auto-reconnect, user will need to click 🔗 again after connecting
+        if (typeof requireGdrive === 'function') requireGdrive();
         return;
     }
     
