@@ -255,9 +255,12 @@ function switchDashProvView(view) {
     links.forEach(function(s) { s.classList.remove('active'); });
     var idx = view === 'list' ? 0 : view === 'pagadas' ? 1 : 2;
     if (links[idx]) links[idx].classList.add('active');
-    // Show green + only on porpagar
+    // Show green + only on porpagar AND nivel 1
     var addBtn = document.getElementById('dashProvAddFactura');
-    if (addBtn) addBtn.style.display = (view === 'porpagar') ? '' : 'none';
+    if (addBtn) {
+        var nivel = (typeof currentUser !== 'undefined' && currentUser && currentUser.nivel) || 1;
+        addBtn.style.display = (view === 'porpagar' && nivel === 1) ? '' : 'none';
+    }
     renderDashProveedores();
 }
 
