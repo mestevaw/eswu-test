@@ -65,9 +65,25 @@ function showProveedoresView(view) {
     if (view === 'list') {
         document.getElementById('btnSearch').classList.remove('hidden');
         currentSearchContext = 'proveedores';
+        setHeaderContext({
+            subtitle: ' — Listado',
+            navItems: [
+                { label: '🏠 Home', action: 'showDashboard()', isHome: true },
+                { label: 'Listado', active: true },
+                { label: 'Facturas Pagadas', action: "showProveedoresView('facturasPagadas')" },
+                { label: 'Facturas x Pagar', action: "showProveedoresView('facturasPorPagar')" },
+                { label: 'Mantenimiento', action: "showProveedoresView('mantenimiento')" }
+            ],
+            actions: [
+                { icon: '📊', onclick: 'exportProveedoresToExcel()', title: 'Exportar' },
+                { icon: '+', onclick: 'showAddProveedorModal()', title: 'Agregar' }
+            ],
+            liveSearch: 'renderProveedoresTable'
+        });
     } else {
         document.getElementById('btnSearch').classList.add('hidden');
         currentSearchContext = null;
+        clearHeaderContext();
     }
     
     document.getElementById('contentArea').classList.remove('with-submenu');
@@ -108,8 +124,8 @@ function renderProveedoresTable() {
     }
     mobileDiv.innerHTML = '';
     
-    // Search filter
-    var searchEl = document.getElementById('provListSearch');
+    // Search filter — use header search when on proveedores list context
+    var searchEl = document.getElementById('provListSearch') || document.getElementById('searchInput');
     var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
     var filtered = proveedores;
     if (searchQuery) {
