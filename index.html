@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/base.css?v=22">
     <link rel="stylesheet" href="css/layout.css?v=22">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=26">
+    <link rel="stylesheet" href="css/modals.css?v=27">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -481,7 +481,7 @@
                             </div>
                             <!-- Pestañas -->
                             <div class="tabs-container">
-                                <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                                <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;">
                                     <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
@@ -692,7 +692,7 @@
                 </div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                    <div class="tabs" style="display:block;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;">
                         <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'pagos')">Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
@@ -901,7 +901,7 @@
                 <div id="provDetailAdditionalContacts"></div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs" id="proveedorTabs" style="display:block;white-space:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                    <div class="tabs" id="proveedorTabs" style="display:block;white-space:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;">
                         <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
