@@ -141,7 +141,7 @@ function fetchAndViewPagoInquilino(pagoId) {
 // PROVEEDORES - Documentos bajo demanda
 // ============================================
 
-function fetchAndViewDocProveedor(docId) {
+async function fetchAndViewDocProveedor(docId) {
     // Check if doc has a Google Drive file ID in local data
     var driveFileId = null;
     if (typeof proveedores !== 'undefined') {
@@ -156,9 +156,51 @@ function fetchAndViewDocProveedor(docId) {
         });
     }
     
-    if (driveFileId) {
-        // Open from Google Drive
-        window.open('https://drive.google.com/file/d/' + driveFileId + '/view', '_blank');
+    if (driveFileId && typeof gdriveAccessToken !== 'undefined' && gdriveAccessToken) {
+        // Download from Google Drive and show in internal viewer
+        showLoading();
+        try {
+            // Get file metadata to know mime type
+            var metaResp = await fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?fields=mimeType', {
+                headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+            });
+            if (!metaResp.ok) throw new Error('Error obteniendo metadata');
+            var meta = await metaResp.json();
+            var mimeType = meta.mimeType || 'application/pdf';
+            var isGoogleDoc = mimeType.includes('google-apps');
+            
+            // Google native docs → export as PDF
+            var downloadUrl;
+            if (isGoogleDoc) {
+                downloadUrl = 'https://www.googleapis.com/drive/v3/files/' + driveFileId + '/export?mimeType=application/pdf';
+                mimeType = 'application/pdf';
+            } else {
+                downloadUrl = 'https://www.googleapis.com/drive/v3/files/' + driveFileId + '?alt=media';
+            }
+            
+            var resp = await fetch(downloadUrl, {
+                headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+            });
+            if (!resp.ok) throw new Error('Error descargando archivo');
+            var blob = await resp.blob();
+            
+            // Convert blob to data URI for openPDFViewer
+            var reader = new FileReader();
+            reader.onload = function() {
+                hideLoading();
+                openPDFViewer(reader.result); // data:mime;base64,...
+            };
+            reader.onerror = function() {
+                hideLoading();
+                alert('Error al leer el archivo de Drive');
+            };
+            reader.readAsDataURL(new Blob([blob], { type: mimeType }));
+            
+        } catch (e) {
+            hideLoading();
+            console.error('Error viewing Drive doc:', e);
+            alert('Error al cargar documento de Drive: ' + e.message);
+        }
     } else {
         // Fallback to base64 from Supabase
         fetchAndViewDoc('proveedores_documentos', 'archivo_pdf', docId);
