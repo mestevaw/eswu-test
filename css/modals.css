@@ -120,7 +120,8 @@
 /* Mobile dropdown - hidden on desktop */
 .tabs-mobile-select {
     display: none;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     padding: 0.6rem 0.8rem;
     font-size: 0.9rem;
     font-weight: 600;
@@ -137,9 +138,25 @@
     background-position: right 0.8rem center;
 }
 
+.tabs-mobile-row {
+    display: none;
+    margin-bottom: 1rem;
+}
+
+.tabs-mobile-row .tabs-mobile-select {
+    margin-bottom: 0;
+}
+
+.balance-inline-filter {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .tabs-mobile-select {
         display: block;
+    }
+    .tabs-mobile-row {
+        display: flex;
     }
     .tabs-desktop-only {
         display: none !important;
