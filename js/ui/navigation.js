@@ -304,37 +304,62 @@ function renderDashInquilinos() {
         div.innerHTML = h;
         
     } else if (dashInqView === 'rentas') {
-        var year = new Date().getFullYear();
         var rentas = [];
         inquilinos.forEach(function(inq) {
             if (inq.pagos) {
                 inq.pagos.forEach(function(p) {
-                    var pd = new Date(p.fecha + 'T00:00:00');
-                    if (pd.getFullYear() === year) {
-                        rentas.push({ nombre: inq.nombre, monto: p.monto, fecha: p.fecha, id: inq.id });
-                    }
+                    rentas.push({ nombre: inq.nombre, monto: p.monto, fecha: p.fecha, id: inq.id });
                 });
             }
         });
         rentas.sort(function(a, b) { return new Date(b.fecha) - new Date(a.fecha); });
         if (q) rentas = rentas.filter(function(r) { return r.nombre.toLowerCase().includes(q); });
-        if (rentas.length === 0) { div.innerHTML = '<div class="dash-empty">Sin rentas ' + year + '</div>'; return; }
-        var total = rentas.length;
-        var show = rentas.slice(0, 7);
-        var h = '';
-        show.forEach(function(r) {
+        
+        // Date range filter
+        if (dashRentasDateFrom || dashRentasDateTo) {
+            rentas = rentas.filter(function(r) {
+                if (!r.fecha) return false;
+                if (dashRentasDateFrom && r.fecha < dashRentasDateFrom) return false;
+                if (dashRentasDateTo && r.fecha > dashRentasDateTo) return false;
+                return true;
+            });
+        }
+        
+        // Calendar header
+        var headerHtml = '<div style="display:flex;align-items:center;justify-content:flex-end;padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">';
+        if (dashRentasDateFrom || dashRentasDateTo) {
+            var fl = dashRentasDateFrom ? fmtFechaDash(dashRentasDateFrom) : '…';
+            var tl = dashRentasDateTo ? fmtFechaDash(dashRentasDateTo) : '…';
+            headerHtml += '<span style="font-size:0.68rem;color:var(--text-light);margin-right:auto;">' + fl + ' – ' + tl + '</span>';
+        } else {
+            headerHtml += '<span style="font-size:0.68rem;color:var(--text-light);margin-right:auto;">Todas las fechas</span>';
+        }
+        headerHtml += '<span onclick="toggleDashRentasDatePicker()" style="cursor:pointer;font-size:0.9rem;padding:0.1rem 0.3rem;border-radius:4px;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'" title="Filtrar por fecha">📅</span>';
+        headerHtml += '</div>';
+        
+        if (rentas.length === 0) { div.innerHTML = headerHtml + '<div class="dash-empty">Sin rentas</div>'; return; }
+        var h = headerHtml;
+        var totalMonto = 0;
+        rentas.forEach(function(r) {
+            totalMonto += r.monto;
             var nombre = r.nombre.length > 30 ? r.nombre.substring(0, 28) + '…' : r.nombre;
             h += '<div class="dash-row dash-row-2line" onclick="showInquilinoDetail(' + r.id + ')">';
             h += '<div class="dash-row-top">';
             h += '<span class="dash-row-name">' + nombre + '</span>';
+            h += '<span class="dash-row-meta">' + formatCurrency(r.monto) + '</span>';
             h += '</div>';
             h += '<div class="dash-row-bottom">';
-            h += '<span class="dash-row-contact">Fecha de Pago: ' + formatDate(r.fecha) + '</span>';
-            h += '<span class="dash-row-meta" style="margin-left:auto;">' + formatCurrency(r.monto) + '</span>';
+            h += '<span class="dash-row-contact">' + formatDate(r.fecha) + '</span>';
             h += '</div>';
             h += '</div>';
         });
-        if (total > 7) h += '<div class="dash-row-more" onclick="showInquilinosView(\'rentasRecibidas\')">ver todas (' + total + ')</div>';
+        // Sticky total
+        if (totalMonto > 0) {
+            h += '<div style="position:sticky;bottom:0;background:#d4edda;border-top:2px solid var(--success);padding:0.4rem 0.6rem;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:0.8rem;">';
+            h += '<span>Total rentas</span>';
+            h += '<span style="color:var(--success);">' + formatCurrency(totalMonto) + '</span>';
+            h += '</div>';
+        }
         div.innerHTML = h;
         
     } else if (dashInqView === 'contratos') {
@@ -365,13 +390,21 @@ function renderDashInquilinos() {
 var dashPagadasDateFrom = null;
 var dashPagadasDateTo = null;
 
+// --- Dashboard Rentas date range ---
+var dashRentasDateFrom = null;
+var dashRentasDateTo = null;
+
 (function() {
-    // Default: current month
+    // Default: current month for both
     var now = new Date();
     var y = now.getFullYear();
     var m = now.getMonth();
-    dashPagadasDateFrom = new Date(y, m, 1).toISOString().slice(0, 10);
-    dashPagadasDateTo = new Date(y, m + 1, 0).toISOString().slice(0, 10);
+    var firstDay = new Date(y, m, 1).toISOString().slice(0, 10);
+    var lastDay = new Date(y, m + 1, 0).toISOString().slice(0, 10);
+    dashPagadasDateFrom = firstDay;
+    dashPagadasDateTo = lastDay;
+    dashRentasDateFrom = firstDay;
+    dashRentasDateTo = lastDay;
 })();
 
 function toggleDashPagadasDatePicker() {
@@ -410,6 +443,46 @@ function clearDashPagadasFilter() {
     var picker = document.getElementById('dashPagadasDatePicker');
     if (picker) picker.remove();
     renderDashProveedores();
+}
+
+// --- Rentas date picker ---
+
+function toggleDashRentasDatePicker() {
+    var existing = document.getElementById('dashRentasDatePicker');
+    if (existing) { existing.remove(); return; }
+    
+    var container = document.getElementById('dashInquilinosList');
+    if (!container) return;
+    
+    var picker = document.createElement('div');
+    picker.id = 'dashRentasDatePicker';
+    picker.style.cssText = 'padding:0.5rem 0.6rem;background:#f8fafc;border-bottom:1px solid var(--border);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;font-size:0.75rem;';
+    picker.innerHTML = '<label style="font-weight:500;">De:</label>' +
+        '<input type="date" id="dashRentasFrom" value="' + (dashRentasDateFrom || '') + '" style="padding:0.2rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.75rem;">' +
+        '<label style="font-weight:500;">A:</label>' +
+        '<input type="date" id="dashRentasTo" value="' + (dashRentasDateTo || '') + '" style="padding:0.2rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.75rem;">' +
+        '<button onclick="applyDashRentasFilter()" style="background:var(--primary);color:white;border:none;border-radius:4px;padding:0.2rem 0.6rem;font-size:0.72rem;cursor:pointer;">Aplicar</button>' +
+        '<button onclick="clearDashRentasFilter()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">Todo</button>';
+    
+    container.insertBefore(picker, container.firstChild);
+}
+
+function applyDashRentasFilter() {
+    var from = document.getElementById('dashRentasFrom');
+    var to = document.getElementById('dashRentasTo');
+    dashRentasDateFrom = from ? from.value : null;
+    dashRentasDateTo = to ? to.value : null;
+    var picker = document.getElementById('dashRentasDatePicker');
+    if (picker) picker.remove();
+    renderDashInquilinos();
+}
+
+function clearDashRentasFilter() {
+    dashRentasDateFrom = null;
+    dashRentasDateTo = null;
+    var picker = document.getElementById('dashRentasDatePicker');
+    if (picker) picker.remove();
+    renderDashInquilinos();
 }
 
 function renderDashProveedores() {
