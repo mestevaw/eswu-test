@@ -676,9 +676,6 @@ function handleBancoDrop(files) {
 var MESES_CORTOS = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 function initBalanceTab() {
-    var sel = document.getElementById('balanceYearSelect');
-    if (!sel) return;
-    
     var years = new Set();
     var thisYear = new Date().getFullYear();
     years.add(thisYear);
@@ -696,14 +693,37 @@ function initBalanceTab() {
     });
     
     var sortedYears = Array.from(years).sort(function(a, b) { return b - a; });
-    sel.innerHTML = sortedYears.map(function(y) {
+    var yearOpts = sortedYears.map(function(y) {
         return '<option value="' + y + '"' + (y === thisYear ? ' selected' : '') + '>' + y + '</option>';
     }).join('');
     
-    var mSel = document.getElementById('balanceMonthSelect');
-    if (mSel) mSel.value = '0';
+    // Populate both desktop and mobile year selects
+    var selD = document.getElementById('balanceYearSelect');
+    var selM = document.getElementById('balanceYearSelectM');
+    if (selD) selD.innerHTML = yearOpts;
+    if (selM) selM.innerHTML = yearOpts;
+    
+    var mSelD = document.getElementById('balanceMonthSelect');
+    var mSelM = document.getElementById('balanceMonthSelectM');
+    if (mSelD) mSelD.value = '0';
+    if (mSelM) mSelM.value = '0';
     
     renderBalanceTab();
+}
+
+// Sync desktop/mobile balance filters
+function syncBalanceFilter(which, val) {
+    if (which === 'year') {
+        var d = document.getElementById('balanceYearSelect');
+        var m = document.getElementById('balanceYearSelectM');
+        if (d) d.value = val;
+        if (m) m.value = val;
+    } else {
+        var d = document.getElementById('balanceMonthSelect');
+        var m = document.getElementById('balanceMonthSelectM');
+        if (d) d.value = val;
+        if (m) m.value = val;
+    }
 }
 
 // Balance sort state
@@ -821,8 +841,8 @@ function renderBalanceTab() {
             if (currentGroup === null) return;
             if (groupIngresos || groupEgresos) {
                 var trSub = document.createElement('tr');
-                trSub.style.cssText = 'background:#f0f4f8;font-weight:600;font-size:0.82em;';
-                trSub.innerHTML = '<td></td><td style="color:var(--text-light);">Subtotal ' + currentGroup + '</td>' +
+                trSub.style.cssText = 'background:#dce6f1;font-weight:700;font-size:0.82em;';
+                trSub.innerHTML = '<td></td><td style="color:#3a5a8c;">Subtotal ' + currentGroup + '</td>' +
                     '<td style="text-align:right;color:var(--success);">' + (groupIngresos ? fmtMonto(groupIngresos) : '') + '</td>' +
                     '<td style="text-align:right;color:var(--danger);">' + (groupEgresos ? fmtMonto(groupEgresos) : '') + '</td>';
                 tbody.appendChild(trSub);
@@ -906,7 +926,7 @@ function renderBalanceTab() {
     function mobileFlushGroup() {
         if (mobileGroup === null) return '';
         if (!mGroupIng && !mGroupEgr) return '';
-        var s = '<div style="display:flex;padding:0.25rem 0.6rem;background:#f0f4f8;font-size:0.68rem;font-weight:600;color:var(--text-light);border-bottom:1px solid var(--border);">';
+        var s = '<div style="display:flex;padding:0.25rem 0.6rem;background:#dce6f1;font-size:0.68rem;font-weight:700;color:#3a5a8c;border-bottom:1px solid var(--border);">';
         s += '<div style="flex:1;">Sub. ' + (mobileGroup.length > 18 ? mobileGroup.substring(0,16) + '…' : mobileGroup) + '</div>';
         s += '<div style="width:80px;text-align:right;color:var(--success);">' + (mGroupIng ? fmtMonto(mGroupIng) : '') + '</div>';
         s += '<div style="width:80px;text-align:right;color:var(--danger);">' + (mGroupEgr ? fmtMonto(mGroupEgr) : '') + '</div>';
