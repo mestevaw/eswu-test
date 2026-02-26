@@ -1102,6 +1102,11 @@ async function deleteCarpetaContabilidad(id, label) {
 function applyUserLevel() {
     const nivel = (currentUser && currentUser.nivel) || 1;
     
+    // Show/hide nivel1-only elements
+    document.querySelectorAll('.nivel1-only').forEach(function(el) {
+        el.style.display = (nivel === 1) ? '' : 'none';
+    });
+    
     if (nivel === 4) {
         // Level 4: solo ve Contabilidad y Salir en el menú
         document.getElementById('menuInquilinos').style.display = 'none';
