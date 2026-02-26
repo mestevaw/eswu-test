@@ -38,13 +38,43 @@ function showInquilinosView(view) {
     
     document.getElementById('btnRegresa').classList.remove('hidden');
     
+    // Build nav items
+    var navLabels = [
+        { key: 'list', label: 'Inquilinos', action: "showInquilinosView('list')" },
+        { key: 'rentasRecibidas', label: 'Rentas', action: "showInquilinosView('rentasRecibidas')" },
+        { key: 'vencimientoContratos', label: 'Contratos', action: "showInquilinosView('vencimientoContratos')" }
+    ];
+    var navItems = [{ label: '🏠 Home', action: 'showDashboard()', isHome: true }];
+    var subtitle = '';
+    navLabels.forEach(function(n) {
+        var item = { label: n.label, action: n.action };
+        if (n.key === view) { item.active = true; subtitle = ' — ' + n.label; }
+        navItems.push(item);
+    });
+    
+    var headerCfg = { subtitle: subtitle, navItems: navItems };
+    
     if (view === 'list') {
-        document.getElementById('btnSearch').classList.remove('hidden');
         currentSearchContext = 'inquilinos';
-    } else {
-        document.getElementById('btnSearch').classList.add('hidden');
+        headerCfg.liveSearch = 'renderInquilinosTable';
+        headerCfg.actions = [
+            { icon: '📊', onclick: 'exportarInquilinosExcel()' },
+            { icon: '+', onclick: 'showAddInquilinoModal()' }
+        ];
+    } else if (view === 'rentasRecibidas') {
         currentSearchContext = null;
+        headerCfg.liveSearch = 'renderInquilinosRentasRecibidas';
+        headerCfg.filters = [
+            { type: 'year', syncFrom: 'inquilinosRentasYear', onChange: function(){ renderInquilinosRentasRecibidas(); } },
+            { type: 'month', syncFrom: 'inquilinosRentasMonth', onChange: function(){ renderInquilinosRentasRecibidas(); } }
+        ];
+        headerCfg.actions = [{ icon: '📊', onclick: 'exportarRentasExcel()' }];
+    } else if (view === 'vencimientoContratos') {
+        currentSearchContext = null;
+        headerCfg.actions = [{ icon: '📊', onclick: 'exportarContratosExcel()' }];
     }
+    
+    setHeaderContext(headerCfg);
     
     document.getElementById('contentArea').classList.remove('with-submenu');
     document.getElementById('menuSidebar').classList.add('hidden');
@@ -86,8 +116,14 @@ function renderInquilinosTable() {
         let sortedInquilinos = [...inquilinos];
         
         // Search filter
-        var searchEl = document.getElementById('inqListSearch');
-        var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        var searchQuery = '';
+        var hdrSearch = document.getElementById('headerInlineSearch');
+        if (hdrSearch && hdrSearch.classList.contains('open')) {
+            searchQuery = hdrSearch.value.toLowerCase().trim();
+        } else {
+            var searchEl = document.getElementById('inqListSearch');
+            searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        }
         if (searchQuery) {
             sortedInquilinos = sortedInquilinos.filter(function(inq) {
                 return inq.nombre.toLowerCase().includes(searchQuery);
@@ -263,8 +299,14 @@ function renderInquilinosRentasRecibidas() {
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
     const monthSelect = document.getElementById('inquilinosRentasMonth');
     const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
-    var searchEl = document.getElementById('inqRentasSearch');
-    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    var searchQuery = '';
+    var hdrSearch = document.getElementById('headerInlineSearch');
+    if (hdrSearch && hdrSearch.classList.contains('open')) {
+        searchQuery = hdrSearch.value.toLowerCase().trim();
+    } else {
+        var searchEl = document.getElementById('inqRentasSearch');
+        searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    }
     const rentas = [];
     let totalPeriodo = 0;
 
