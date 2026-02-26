@@ -1,528 +1,88 @@
 /* ========================================
-   MODALS.CSS - ESTILOS COMPLETOS DE MODALES
+   MODALS.JS v1
    ======================================== */
 
-/* ============================================
-   BASE MODAL - REGLAS FUNDAMENTALES
-   ============================================ */
-
-.modal {
-    display: none !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    overflow-y: auto;
-    pointer-events: none;
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
 }
 
-.modal.active {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    pointer-events: auto;
-}
-
-.modal-content {
-    background: white !important;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    max-width: 900px;
-    width: 95%;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    z-index: 2001;
-}
-
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 2px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg);
-}
-
-.modal-header-sticky {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: white !important;
-}
-
-.modal-header-sticky + div {
-    padding-top: 1rem !important;
-}
-
-.modal-header-left {
-    display: flex;
-    align-items: center;
-}
-
-.modal-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 0;
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--danger);
-    cursor: pointer;
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-}
-
-.close-modal:hover {
-    color: #c53030;
-    transform: scale(1.1);
-}
-
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-}
-
-.modal-actions-top {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-}
-
-/* ============================================
-   TABS DENTRO DE MODALES
-   ============================================ */
-
-.tabs-container {
-    margin-top: 1.5rem;
-}
-
-.tabs {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 1.5rem;
-    position: sticky;
-    top: 80px;
-    background: white;
-    z-index: 50;
-    padding-top: 0.5rem;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab {
-    background: #f1f5f9;
-    border: 1px solid var(--border);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 0.65rem 1.2rem;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--text-light);
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
-    margin-bottom: -2px;
-}
-
-.tab:hover {
-    color: var(--primary);
-    background: #e2e8f0;
-}
-
-.tab.active {
-    color: var(--primary);
-    background: white;
-    border-color: var(--border);
-    border-bottom: 2px solid white;
-    font-weight: 600;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ============================================
-   INFO BOXES DENTRO DE MODALES
-   ============================================ */
-
-.info-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.info-box-title {
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-}
-
-.info-box-content {
-    color: var(--text);
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.info-item {
-    background: white;
-    padding: 1rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-}
-
-.info-label {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    margin-bottom: 0.25rem;
-    font-weight: 500;
-}
-
-.info-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-}
-
-/* ============================================
-   PAYMENT ITEMS
-   ============================================ */
-
-.payment-item {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.payment-item-content {
-    flex: 1;
-}
-
-.payment-item-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-/* ============================================
-   PDF LINKS
-   ============================================ */
-
-.pdf-link {
-    background: #e6f2ff;
-    color: var(--primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    text-decoration: none;
-    border: 1px solid #b3d9ff;
-    display: inline-block;
-    font-size: 0.875rem;
-}
-
-.pdf-link:hover {
-    background: #cce5ff;
-}
-
-/* ============================================
-   PHOTO GALLERY
-   ============================================ */
-
-.photo-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.photo-item img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-}
-
-.photo-item img:hover {
-    opacity: 0.8;
-}
-
-/* ============================================
-   BOTÓN LÁPIZ - MÁS CERCA DE LA X
-   ============================================ */
-
-.btn-icon-edit {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--primary);
-    font-size: 1.5rem;
-    padding: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-right: 0.25rem !important;
-    margin-left: auto;
-}
-
-.btn-icon-edit:hover {
-    transform: scale(1.2);
-    color: var(--primary-dark);
-}
-
-/* ============================================
-   FICHA PROVEEDOR - NOMBRE AUTO-SIZE
-   ============================================ */
-
-.prov-nombre-auto {
-    font-size: 1.35rem;
-    line-height: 1.25;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
-
-/* Si el nombre es muy largo (más de ~30 chars), reducir fuente */
-.prov-nombre-auto.nombre-largo {
-    font-size: 1.05rem;
-}
-
-/* ============================================
-   FICHA PROVEEDOR - RECUADROS SOMBREADOS
-   ============================================ */
-
-.prov-info-box {
-    flex: 1;
-    min-width: 120px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.prov-info-box a {
-    color: var(--primary);
-    text-decoration: none;
-}
-
-.prov-info-box a:hover {
-    text-decoration: underline;
-}
-
-/* ============================================
-   FICHA PROVEEDOR - DROPDOWN CONTACTOS
-   ============================================ */
-
-.prov-contacts-toggle {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    transition: background 0.2s;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.prov-contacts-toggle:hover {
-    background: #e2e8f0;
-}
-
-.prov-contacts-toggle .chevron {
-    transition: transform 0.2s;
-    font-size: 0.75rem;
-}
-
-.prov-contacts-toggle.open .chevron {
-    transform: rotate(180deg);
-}
-
-.prov-contacts-list {
-    display: none;
-    margin-bottom: 0.5rem;
-}
-
-.prov-contacts-list.open {
-    display: block;
-}
-
-.prov-contacts-list .contact-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.35rem;
-    font-size: 0.85rem;
-}
-
-/* ============================================
-   HOVER EN ICONOS DE ACCIÓN
-   ============================================ */
-
-.btn-icon-action:hover {
-    transform: scale(1.4) !important;
-}
-
-/* ============================================
-   BOTÓN + INLINE EN PESTAÑAS - SIN CÍRCULO
-   ============================================ */
-
-.btn-add-inline {
-    background: transparent !important;
-    color: var(--success) !important;
-    border: none !important;
-    border-radius: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    display: inline !important;
-    font-size: 1.25rem !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-    margin-left: 0.5rem !important;
-    transition: all 0.2s !important;
-    vertical-align: middle !important;
-    padding: 0 !important;
-}
-
-.btn-add-inline:hover {
-    color: var(--primary) !important;
-    background: transparent !important;
-    transform: scale(1.2) !important;
-}
-
-/* Mostrar botón + solo en pestaña activa */
-.tab .btn-add-inline {
-    display: none !important;
-}
-
-.tab.active .btn-add-inline {
-    display: inline !important;
-}
-
-/* ============================================
-   BOTÓN DISKETTE EN MODAL HEADER
-   ============================================ */
-
-.btn-save-header {
-    background: transparent !important;
-    border: none !important;
-    color: var(--success) !important;
-    font-size: 1.5rem !important;
-    padding: 0.25rem !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    margin-left: auto !important;
-    margin-right: 0.25rem !important;
-}
-
-.btn-save-header:hover {
-    transform: scale(1.2) !important;
-    color: var(--primary) !important;
-}
-
-/* ============================================
-   SOMBRAS EN RECUADROS SUPERIORES
-   ============================================ */
-
-.contacto-item,
-[style*="background:var(--bg)"],
-[style*="background:white;padding:0.75rem"] {
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-}
-
-/* ============================================
-   RESPONSIVE - MODALES EN MÓVIL
-   ============================================ */
-
-@media (max-width: 768px) {
-    .modal.active {
-        padding: 0.1rem;
-    }
+function showAddInquilinoModal() {
+    isEditMode = false;
+    currentInquilinoId = null;
+    tempInquilinoContactos = [];
     
-    .modal-content {
-        width: 100%;
-        max-height: 97vh;
-        margin: 0;
-        border-radius: 4px;
-    }
+    document.getElementById('addInquilinoTitle').textContent = 'Agregar Inquilino';
+    document.getElementById('inquilinoForm').reset();
+    document.getElementById('inquilinoContactosList').innerHTML = '<p style="color:var(--text-light);font-size:0.875rem">No hay contactos agregados</p>';
+    document.getElementById('contratoFileName').textContent = '';
     
-    .modal-header {
-        padding: 1rem;
-    }
-    
-    .modal-title {
-        font-size: 1.2rem;
-    }
-    
-    .tabs {
-        gap: 0;
-    }
-    .tab {
-        padding: 0.45rem 0.65rem;
-        font-size: 0.75rem;
-        border-radius: 6px 6px 0 0;
-    }
-    
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .payment-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .payment-item-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
+    document.getElementById('addInquilinoModal').classList.add('active');
 }
+
+function showAddProveedorModal() {
+    isEditMode = false;
+    currentProveedorId = null;
+    tempProveedorContactos = [];
+    
+    document.getElementById('addProveedorTitle').textContent = 'Agregar Proveedor';
+    document.getElementById('proveedorForm').reset();
+    document.getElementById('proveedorContactosList').innerHTML = '';
+    document.getElementById('provDocAdicionalFileName').textContent = '';
+    document.getElementById('nombreProvDocGroup').classList.add('hidden');
+    
+    // Limpiar contacto inline
+    document.getElementById('proveedorContactoNombreInline').value = '';
+    document.getElementById('proveedorContactoTelInline').value = '';
+    document.getElementById('proveedorContactoEmailInline').value = '';
+    
+    document.getElementById('addProveedorModal').classList.add('active');
+}
+
+function showAddActivoModal() {
+    isEditMode = false;
+    currentActivoId = null;
+    
+    document.getElementById('addActivoTitle').textContent = 'Agregar Activo';
+    document.getElementById('activoForm').reset();
+    
+    // Reset drag & drop pending fotos
+    if (typeof activoPendingFotoFiles !== 'undefined') activoPendingFotoFiles = [];
+    var pendingDiv = document.getElementById('activoPendingFotos');
+    if (pendingDiv) pendingDiv.innerHTML = '';
+    
+    populateProveedoresDropdown();
+    
+    document.getElementById('addActivoModal').classList.add('active');
+}
+
+function showAddUsuarioModal() {
+    isEditMode = false;
+    currentUsuarioId = null;
+    
+    document.getElementById('addUsuarioTitle').textContent = 'Agregar Usuario';
+    document.getElementById('usuarioForm').reset();
+    document.getElementById('addUsuarioModal').classList.add('active');
+}
+
+function showAddBancoModal() {
+    document.getElementById('bancoForm').reset();
+    document.getElementById('bancoDocumentoFileName').textContent = '';
+    // Prefill with current year and month
+    document.getElementById('bancoAnio').value = new Date().getFullYear();
+    document.getElementById('bancoMes').value = new Date().getMonth() + 1;
+    document.getElementById('addBancoModal').classList.add('active');
+}
+
+function populateProveedoresDropdown() {
+    const select = document.getElementById('activoProveedor');
+    select.innerHTML = '<option value="">-- Seleccione un proveedor --</option>';
+    
+    proveedores.forEach(prov => {
+        const option = document.createElement('option');
+        option.value = prov.nombre;
+        option.textContent = prov.nombre;
+        select.appendChild(option);
+    });
+}
+
+console.log('✅ MODALS.JS cargado');
