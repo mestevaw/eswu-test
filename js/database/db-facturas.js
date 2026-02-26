@@ -92,6 +92,19 @@ function navigateAfterFacturaAction(defaultTab) {
 
 async function saveFactura(event) {
     event.preventDefault();
+    
+    // If standalone mode, pick up proveedor from search
+    if (window.facturaActionContext === 'standalone-porpagar') {
+        var selId = document.getElementById('facturaProveedorId');
+        if (selId && selId.value) {
+            currentProveedorId = parseInt(selId.value);
+        }
+        if (!currentProveedorId) {
+            alert('Selecciona un proveedor primero');
+            return;
+        }
+    }
+    
     showLoading();
     
     try {
@@ -254,27 +267,27 @@ function showRegistrarFacturaFromDash() {
         return a.nombre.localeCompare(b.nombre);
     });
     
-    // Reset
-    document.getElementById('proveedorSearchInput').value = '';
-    document.getElementById('selectedProveedorId').value = '';
-    document.getElementById('proveedorSearchResults').style.display = 'none';
-    document.getElementById('proveedorSearchResults').innerHTML = '';
-    document.getElementById('proveedorSelectedBadge').style.display = 'none';
+    // Mark as standalone context
+    window.facturaActionContext = 'standalone-porpagar';
+    currentProveedorId = null;
     
-    document.getElementById('selectProveedorModal').classList.add('active');
-    setTimeout(function() {
-        document.getElementById('proveedorSearchInput').focus();
-    }, 100);
+    // Open the regular factura modal (which will show the proveedor row)
+    if (typeof showRegistrarFacturaModal === 'function') {
+        showRegistrarFacturaModal();
+    }
 }
 
-function filterProveedorList() {
-    var input = document.getElementById('proveedorSearchInput');
+function filterFacturaProveedorList() {
+    var input = document.getElementById('facturaProveedorSearch');
     var query = input.value.toLowerCase().trim();
-    var results = document.getElementById('proveedorSearchResults');
+    var results = document.getElementById('facturaProveedorResults');
     
     // Clear selection when typing
-    document.getElementById('selectedProveedorId').value = '';
-    document.getElementById('proveedorSelectedBadge').style.display = 'none';
+    document.getElementById('facturaProveedorId').value = '';
+    currentProveedorId = null;
+    // Reset styling to normal
+    input.style.borderColor = 'var(--border)';
+    input.style.background = '';
     
     if (query.length === 0) {
         results.style.display = 'none';
@@ -288,13 +301,13 @@ function filterProveedorList() {
     
     if (matches.length === 0) {
         results.style.display = 'block';
-        results.innerHTML = '<div style="padding:0.5rem 0.7rem;color:var(--text-light);font-size:0.85rem;">No se encontraron proveedores</div>';
+        results.innerHTML = '<div style="padding:0.5rem 0.7rem;color:var(--text-light);font-size:0.85rem;">Sin resultados</div>';
         return;
     }
     
     var html = '';
     matches.forEach(function(p) {
-        html += '<div onclick="selectProveedorForFactura(' + p.id + ',\'' + p.nombre.replace(/'/g, "\\'") + '\')" style="padding:0.45rem 0.7rem;cursor:pointer;font-size:0.88rem;border-bottom:1px solid #f1f5f9;transition:background 0.1s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'">' +
+        html += '<div onclick="selectFacturaProveedor(' + p.id + ',\'' + p.nombre.replace(/'/g, "\\'") + '\')" style="padding:0.45rem 0.7rem;cursor:pointer;font-size:0.88rem;border-bottom:1px solid #f1f5f9;transition:background 0.1s;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'">' +
             '<strong>' + p.nombre + '</strong>' +
             (p.servicio ? '<span style="color:var(--text-light);font-size:0.78rem;margin-left:0.5rem;">' + p.servicio + '</span>' : '') +
             '</div>';
@@ -304,31 +317,16 @@ function filterProveedorList() {
     results.style.display = 'block';
 }
 
-function selectProveedorForFactura(id, nombre) {
-    document.getElementById('selectedProveedorId').value = id;
-    document.getElementById('proveedorSearchInput').value = nombre;
-    document.getElementById('proveedorSearchResults').style.display = 'none';
+function selectFacturaProveedor(id, nombre) {
+    document.getElementById('facturaProveedorId').value = id;
+    document.getElementById('facturaProveedorSearch').value = nombre;
+    document.getElementById('facturaProveedorResults').style.display = 'none';
+    currentProveedorId = id;
     
-    var badge = document.getElementById('proveedorSelectedBadge');
-    badge.innerHTML = '✅ <strong>' + nombre + '</strong>';
-    badge.style.display = 'block';
-}
-
-function continueRegistrarFacturaFromDash() {
-    var provId = parseInt(document.getElementById('selectedProveedorId').value);
-    if (!provId) {
-        alert('Escribe y selecciona un proveedor');
-        return;
-    }
-    
-    currentProveedorId = provId;
-    window.facturaActionContext = 'standalone-porpagar';
-    
-    closeModal('selectProveedorModal');
-    
-    if (typeof showRegistrarFacturaModal === 'function') {
-        showRegistrarFacturaModal();
-    }
+    // Visual confirmation
+    var input = document.getElementById('facturaProveedorSearch');
+    input.style.borderColor = '#86efac';
+    input.style.background = '#f0fdf4';
 }
 
 console.log('✅ DB-FACTURAS.JS v5 cargado');
