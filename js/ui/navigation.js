@@ -216,6 +216,7 @@ function showDashboard() {
     currentMenuContext = 'main';
     currentSubContext = null;
     currentSearchContext = null;
+    clearHeaderContext();
     
     renderDashboard();
 }
@@ -740,7 +741,12 @@ function showSubMenu(menu) {
     
     document.getElementById('btnRegresa').classList.remove('hidden');
     document.getElementById('btnSearch').classList.add('hidden');
-    document.getElementById('contentArea').classList.add('with-submenu');
+    // Only admin uses the submenu sidebar; inquilinos/proveedores use toolbar hamburger
+    if (menu === 'admin') {
+        document.getElementById('contentArea').classList.add('with-submenu');
+    } else {
+        document.getElementById('contentArea').classList.remove('with-submenu');
+    }
 }
 
 function handleRegresa() {
@@ -764,6 +770,7 @@ function handleRegresa() {
         if (isMobile()) {
             currentSubContext = null;
             currentSearchContext = null;
+            clearHeaderContext();
             document.getElementById('btnRegresa').classList.add('hidden');
             document.getElementById('btnSearch').classList.add('hidden');
             document.getElementById('contentArea').classList.remove('fullwidth');
@@ -837,6 +844,9 @@ function executeSearch() {
         return;
     }
     
+    // If live search is active, just let it filter (already happening via oninput)
+    if (_headerLiveSearchFn) return;
+    
     if (currentSearchContext === 'bitacora') {
         filtrarBitacora(query);
     } else if (currentSearchContext === 'proveedores') {
@@ -854,7 +864,9 @@ function executeSearch() {
 function clearSearch() {
     document.getElementById('searchInput').value = '';
     
-    if (currentSearchContext === 'bitacora') {
+    if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
+        window[_headerLiveSearchFn]();
+    } else if (currentSearchContext === 'bitacora') {
         renderBitacoraTable();
     } else if (currentSearchContext === 'proveedores') {
         renderProveedoresTable();
@@ -1097,6 +1109,94 @@ function togglePasswordVisibility(inputId, toggleEl) {
     } else {
         inp.type = 'password';
         if (toggleEl) toggleEl.textContent = '👁️';
+    }
+}
+
+// ============================================
+// HEADER CONTEXT — unified header bar
+// ============================================
+
+var _headerLiveSearchFn = null;
+
+function setHeaderContext(config) {
+    // Subtitle
+    var sub = document.getElementById('headerSubtitle');
+    if (sub) sub.textContent = config.subtitle || '';
+    
+    // Nav dropdown
+    var navMenu = document.getElementById('headerNavMenu');
+    var navDropdown = document.getElementById('headerNavDropdown');
+    if (config.navItems && config.navItems.length > 0) {
+        navMenu.style.display = '';
+        var html = '';
+        config.navItems.forEach(function(item) {
+            var cls = 'nav-dropdown-item';
+            if (item.isHome) cls += ' nav-home';
+            if (item.active) cls += ' active';
+            if (item.action && !item.active) {
+                html += '<div class="' + cls + '" onclick="' + item.action + '">' + item.label + '</div>';
+            } else {
+                html += '<div class="' + cls + '">' + item.label + '</div>';
+            }
+        });
+        navDropdown.innerHTML = html;
+    } else {
+        navMenu.style.display = 'none';
+    }
+    
+    // Context action buttons
+    var ctxExcel = document.getElementById('headerCtxExcel');
+    var ctxAdd = document.getElementById('headerCtxAdd');
+    ctxExcel.style.display = 'none';
+    ctxAdd.style.display = 'none';
+    
+    if (config.actions) {
+        config.actions.forEach(function(a) {
+            if (a.icon === '📊') {
+                ctxExcel.style.display = '';
+                ctxExcel.onclick = function() { eval(a.onclick); };
+                ctxExcel.title = a.title || 'Exportar';
+            } else if (a.icon === '+') {
+                ctxAdd.style.display = '';
+                ctxAdd.onclick = function() { eval(a.onclick); };
+                ctxAdd.title = a.title || 'Agregar';
+            }
+        });
+    }
+    
+    // Live search function name (called on input)
+    _headerLiveSearchFn = config.liveSearch || null;
+    
+    // Hide the separate btnSearch since search is now via 🔍 in header-actions toggle
+    // The existing btnSearch/toggleSearch mechanism stays active
+}
+
+function clearHeaderContext() {
+    var sub = document.getElementById('headerSubtitle');
+    if (sub) sub.textContent = '';
+    
+    var navMenu = document.getElementById('headerNavMenu');
+    if (navMenu) navMenu.style.display = 'none';
+    
+    var ctxExcel = document.getElementById('headerCtxExcel');
+    var ctxAdd = document.getElementById('headerCtxAdd');
+    if (ctxExcel) { ctxExcel.style.display = 'none'; ctxExcel.onclick = null; }
+    if (ctxAdd) { ctxAdd.style.display = 'none'; ctxAdd.onclick = null; }
+    
+    _headerLiveSearchFn = null;
+    
+    // Close search bar if open
+    var searchBar = document.getElementById('headerSearchBar');
+    var searchInput = document.getElementById('searchInput');
+    if (searchBar) searchBar.classList.remove('active');
+    if (searchInput) searchInput.value = '';
+    var btnSearch = document.getElementById('btnSearch');
+    if (btnSearch) btnSearch.classList.remove('hidden');
+}
+
+function headerSearchLive() {
+    if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
+        window[_headerLiveSearchFn]();
     }
 }
 
