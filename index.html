@@ -215,7 +215,7 @@
                                 <span class="active" onclick="switchDashProvView('list')">Listado</span>
                                 <span onclick="switchDashProvView('pagadas')">Fact. Pagadas</span>
                                 <span onclick="switchDashProvView('porpagar')">Fact. x Pagar</span>
-                                <span class="nivel1-only" onclick="event.stopPropagation(); showRegistrarFacturaFromDash();" title="Registrar Factura" style="flex:0;border:none;padding:0.3rem 0.4rem;color:#22c55e;font-size:1.1rem;font-weight:700;cursor:pointer;min-width:auto;">+</span>
+                                <span id="dashProvAddFactura" class="nivel1-only" onclick="event.stopPropagation(); showRegistrarFacturaFromDash();" title="Registrar Factura" style="flex:0;border:none;padding:0.3rem 0.4rem;color:#22c55e;font-size:1.1rem;font-weight:700;cursor:pointer;min-width:auto;display:none;">+</span>
                             </div>
                             <div id="dashProveedoresList" class="dash-tile-body"></div>
                         </div>
@@ -1028,7 +1028,7 @@
                     <!-- Desktop: tabs -->
                     <div class="tabs tabs-desktop-only" id="proveedorTabs">
                         <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
-                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); window.facturaActionContext=null; showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
@@ -1190,30 +1190,6 @@
         </div>
     </div>
 
-    <!-- Modal Seleccionar Proveedor (para registrar factura desde dashboard) -->
-    <div id="selectProveedorModal" class="modal">
-        <div class="modal-content" style="max-width:420px;">
-            <div class="modal-header" style="padding:0.75rem 1rem;">
-                <h2 class="modal-title" style="font-size:1.15rem;">Registrar Factura</h2>
-                <button class="close-modal" onclick="closeModal('selectProveedorModal')">×</button>
-            </div>
-            <div style="padding:1rem 1.25rem;">
-                <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Escribe el nombre del proveedor:</label>
-                <div style="position:relative;">
-                    <input type="text" id="proveedorSearchInput" placeholder="Buscar proveedor..." autocomplete="off" oninput="filterProveedorList()" style="width:100%; padding:0.5rem 0.7rem; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;">
-                    <input type="hidden" id="selectedProveedorId" value="">
-                    <div id="proveedorSearchResults" style="display:none; position:absolute; left:0; right:0; top:100%; max-height:200px; overflow-y:auto; background:white; border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:10;">
-                    </div>
-                </div>
-                <div id="proveedorSelectedBadge" style="display:none; margin-top:0.5rem; padding:0.4rem 0.7rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.88rem; color:#166534;">
-                </div>
-                <div style="margin-top:1rem; text-align:right;">
-                    <button onclick="continueRegistrarFacturaFromDash()" style="background:var(--primary); color:white; border:none; border-radius:6px; padding:0.5rem 1.25rem; font-size:0.9rem; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#2c5282'" onmouseout="this.style.background='var(--primary)'">Continuar →</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Registrar Factura -->
     <div id="registrarFacturaModal" class="modal">
         <div class="modal-content" style="max-width:550px;">
@@ -1226,6 +1202,17 @@
             </div>
             <div style="padding: 1rem 1.25rem;">
                 <form id="facturaForm" onsubmit="saveFactura(event)">
+                    <!-- Proveedor row: only visible when registering from dashboard -->
+                    <div id="facturaProveedorRow" style="display:none; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Proveedor *</label>
+                            <div style="flex:1; position:relative;">
+                                <input type="text" id="facturaProveedorSearch" placeholder="Escribe para buscar..." autocomplete="off" oninput="filterFacturaProveedorList()" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                                <input type="hidden" id="facturaProveedorId" value="">
+                                <div id="facturaProveedorResults" style="display:none; position:absolute; left:0; right:0; top:100%; max-height:180px; overflow-y:auto; background:white; border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:20;"></div>
+                            </div>
+                        </div>
+                    </div>
                     <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
                         <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">No. Factura</label>
                         <input type="text" id="facturaNumero" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
@@ -1919,11 +1906,11 @@
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=23"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
-    <script src="js/database/db-facturas.js?v=26"></script>
+    <script src="js/database/db-facturas.js?v=27"></script>
     <script src="js/database/db-fetch-docs.js?v=24"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=45"></script>
+    <script src="js/ui/navigation.js?v=46"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=35"></script>
     <script src="js/ui/proveedores-ui.js?v=38"></script>
@@ -1935,7 +1922,7 @@
     <script src="js/ui/mensajes-ui.js?v=30"></script>
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=24"></script>
-    <script src="js/modals/proveedor-modals.js?v=23"></script>
+    <script src="js/modals/proveedor-modals.js?v=24"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
