@@ -685,16 +685,14 @@ function renderDashMensajes() {
 }
 
 function updateDashBadge() {
-    var msgBadge = document.getElementById('dashMensajesBadge');
-    if (!msgBadge) return;
-    var noLeidos = (typeof mensajes !== 'undefined') ? mensajes.filter(function(m) { return !m.leido; }).length : 0;
+    var alertBadge = document.getElementById('dashAlertasBadge');
+    if (!alertBadge) return;
     var alertasCount = (typeof alertasSistema !== 'undefined') ? alertasSistema.length : 0;
-    var total = noLeidos + alertasCount;
-    if (total > 0) {
-        msgBadge.textContent = total;
-        msgBadge.style.display = 'inline-flex';
+    if (alertasCount > 0) {
+        alertBadge.textContent = alertasCount;
+        alertBadge.style.display = 'inline-flex';
     } else {
-        msgBadge.style.display = 'none';
+        alertBadge.style.display = 'none';
     }
 }
 
@@ -986,6 +984,22 @@ function switchTab(type, tabName) {
 // ============================================
 // DROPDOWN
 // ============================================
+
+// Proveedores page navigation hamburger
+function toggleProvNav(btn) {
+    var dropdown = btn.nextElementSibling;
+    var isOpen = dropdown.style.display === 'block';
+    // Close all prov-nav-dropdowns first
+    document.querySelectorAll('.prov-nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    if (!isOpen) dropdown.style.display = 'block';
+}
+
+// Close prov-nav on click outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.prov-nav-menu')) {
+        document.querySelectorAll('.prov-nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    }
+});
 
 function toggleDropdown(dropdownId) {
     const dropdown = document.getElementById(dropdownId);
