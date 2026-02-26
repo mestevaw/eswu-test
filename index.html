@@ -233,26 +233,15 @@
                         </div>
                         <div style="padding: 1.5rem;">
                             <div class="filter-section">
-                                <label>Filtro:</label>
-                                <select id="homeFilter" onchange="updateHomeView()">
-                                    <option value="anual">Anual</option>
-                                    <option value="mensual">Mensual</option>
-                                </select>
                                 <label>Año:</label>
                                 <select id="homeYear" onchange="updateHomeView()"></select>
-                                <select id="homeMonth" class="hidden" onchange="updateHomeView()">
-                                    <option value="0">Enero</option>
-                                    <option value="1">Febrero</option>
-                                    <option value="2">Marzo</option>
-                                    <option value="3">Abril</option>
-                                    <option value="4">Mayo</option>
-                                    <option value="5">Junio</option>
-                                    <option value="6">Julio</option>
-                                    <option value="7">Agosto</option>
-                                    <option value="8">Septiembre</option>
-                                    <option value="9">Octubre</option>
-                                    <option value="10">Noviembre</option>
-                                    <option value="11">Diciembre</option>
+                                <label>Mes:</label>
+                                <select id="homeMonth" onchange="updateHomeView()">
+                                    <option value="">Todos</option>
+                                    <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
+                                    <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
+                                    <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
+                                    <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
                                 </select>
                             </div>
                             <div class="summary-grid">
@@ -318,14 +307,11 @@
                             </div>
                             <div style="padding: 1.5rem;">
                                 <div class="filter-section">
-                                    <label>Filtro:</label>
-                                    <select id="inquilinosRentasFilter" onchange="renderInquilinosRentasRecibidas()">
-                                        <option value="anual">Anual</option>
-                                        <option value="mensual">Mensual</option>
-                                    </select>
                                     <label>Año:</label>
                                     <select id="inquilinosRentasYear" onchange="renderInquilinosRentasRecibidas()"></select>
-                                    <select id="inquilinosRentasMonth" class="hidden" onchange="renderInquilinosRentasRecibidas()">
+                                    <label>Mes:</label>
+                                    <select id="inquilinosRentasMonth" onchange="renderInquilinosRentasRecibidas()">
+                                        <option value="">Todos</option>
                                         <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
                                         <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
                                         <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
@@ -394,14 +380,11 @@
                         <div style="padding: 1.5rem;">
                             <div class="filter-section">
                                 <input type="text" id="provFactPagSearch" placeholder="Buscar proveedor..." oninput="renderProveedoresFacturasPagadas()" autocomplete="off" style="padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem; width:150px;">
-                                <label>Filtro:</label>
-                                <select id="provFactPagFilter" onchange="renderProveedoresFacturasPagadas()">
-                                    <option value="anual">Anual</option>
-                                    <option value="mensual">Mensual</option>
-                                </select>
                                 <label>Año:</label>
                                 <select id="provFactPagYear" onchange="renderProveedoresFacturasPagadas()"></select>
-                                <select id="provFactPagMonth" class="hidden" onchange="renderProveedoresFacturasPagadas()">
+                                <label>Mes:</label>
+                                <select id="provFactPagMonth" onchange="renderProveedoresFacturasPagadas()">
+                                    <option value="">Todos</option>
                                     <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
                                     <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
                                     <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
@@ -427,14 +410,11 @@
                         </div>
                         <div style="padding: 1.5rem;">
                             <div class="filter-section">
-                                <label>Filtro:</label>
-                                <select id="provFactPorPagFilter" onchange="renderProveedoresFacturasPorPagar()">
-                                    <option value="anual">Anual</option>
-                                    <option value="mensual">Mensual</option>
-                                </select>
                                 <label>Año:</label>
                                 <select id="provFactPorPagYear" onchange="renderProveedoresFacturasPorPagar()"></select>
-                                <select id="provFactPorPagMonth" class="hidden" onchange="renderProveedoresFacturasPorPagar()">
+                                <label>Mes:</label>
+                                <select id="provFactPorPagMonth" onchange="renderProveedoresFacturasPorPagar()">
+                                    <option value="">Todos</option>
                                     <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
                                     <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
                                     <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
