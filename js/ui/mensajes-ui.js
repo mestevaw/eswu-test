@@ -375,8 +375,10 @@ var _drivePickerStack = []; // [{label, folderId}]
 
 async function toggleDrivePicker() {
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        alert('Conecta Google Drive primero');
-        return;
+        if (typeof requireGdrive === 'function') {
+            var ok = await requireGdrive();
+            if (!ok) return;
+        } else { return; }
     }
     var area = document.getElementById('drivePickerArea');
     if (!area) return;
@@ -628,8 +630,10 @@ async function submitNuevoMensaje(event) {
     // Subir archivos a Google Drive
     if (mensajePendingFiles.length > 0) {
         if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-            alert('Para adjuntar documentos, conecta Google Drive primero.');
-            return;
+            if (typeof requireGdrive === 'function') {
+                var driveOk = await requireGdrive();
+                if (!driveOk) { alert('No se pudo conectar a Google Drive para adjuntar documentos.'); return; }
+            } else { alert('No se pudo conectar a Google Drive para adjuntar documentos.'); return; }
         }
         
         showLoading();
