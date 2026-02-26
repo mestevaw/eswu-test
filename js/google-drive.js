@@ -107,6 +107,9 @@ function handleGoogleAuthResponse(response) {
     
     console.log('✅ Google Drive conectado (' + Math.round(expiresIn / 60000) + ' min)');
     
+    // Dismiss connect banner if showing
+    if (typeof dismissGdriveBanner === 'function') dismissGdriveBanner();
+    
     // Save login_hint (skips account picker next time)
     fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
