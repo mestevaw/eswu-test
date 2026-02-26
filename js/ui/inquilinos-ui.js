@@ -85,6 +85,15 @@ function renderInquilinosTable() {
     setTimeout(() => {
         let sortedInquilinos = [...inquilinos];
         
+        // Search filter
+        var searchEl = document.getElementById('inqListSearch');
+        var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
+        if (searchQuery) {
+            sortedInquilinos = sortedInquilinos.filter(function(inq) {
+                return inq.nombre.toLowerCase().includes(searchQuery);
+            });
+        }
+        
         if (inquilinosSortColumn) {
             sortedInquilinos.sort((a, b) => {
                 let valA, valB;
@@ -254,10 +263,13 @@ function renderInquilinosRentasRecibidas() {
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
     const monthSelect = document.getElementById('inquilinosRentasMonth');
     const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
+    var searchEl = document.getElementById('inqRentasSearch');
+    var searchQuery = searchEl ? searchEl.value.toLowerCase().trim() : '';
     const rentas = [];
     let totalPeriodo = 0;
 
     inquilinos.forEach(inq => {
+        if (searchQuery && !inq.nombre.toLowerCase().includes(searchQuery)) return;
         if (inq.pagos) {
             inq.pagos.forEach(pago => {
                 const pd = new Date(pago.fecha + 'T00:00:00');
