@@ -814,7 +814,7 @@ function renderBalanceTab() {
     var mh = '';
     
     rows.forEach(function(r, idx) {
-        var concepto = r.concepto;
+        var concepto = r.concepto.length > 25 ? r.concepto.substring(0, 23) + '…' : r.concepto;
         var ingresoStr = r.ingreso ? fmtMonto(r.ingreso) : '';
         var egresoStr = r.egreso ? fmtMonto(r.egreso) : '';
         
