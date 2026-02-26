@@ -1113,12 +1113,16 @@ function togglePasswordVisibility(inputId, toggleEl) {
 }
 
 // ============================================
-// HEADER CONTEXT — unified header bar
+// HEADER CONTEXT — unified header bar (desktop)
 // ============================================
 
 var _headerLiveSearchFn = null;
+var _headerFilterYearCb = null;
+var _headerFilterMonthCb = null;
 
 function setHeaderContext(config) {
+    if (isMobile()) return; // Desktop only
+    
     // Subtitle
     var sub = document.getElementById('headerSubtitle');
     if (sub) sub.textContent = config.subtitle || '';
@@ -1144,6 +1148,74 @@ function setHeaderContext(config) {
         navMenu.style.display = 'none';
     }
     
+    // Inline search
+    var searchBtn = document.getElementById('headerCtxSearchBtn');
+    var searchInput = document.getElementById('headerInlineSearch');
+    if (config.liveSearch) {
+        searchBtn.style.display = '';
+        _headerLiveSearchFn = config.liveSearch;
+        // Reset search state
+        searchInput.classList.remove('open');
+        searchInput.value = '';
+    } else {
+        searchBtn.style.display = 'none';
+        searchInput.style.display = 'none';
+        searchInput.classList.remove('open');
+        _headerLiveSearchFn = null;
+    }
+    
+    // Filter selects
+    var yearSel = document.getElementById('headerFilterYear');
+    var monthSel = document.getElementById('headerFilterMonth');
+    _headerFilterYearCb = null;
+    _headerFilterMonthCb = null;
+    
+    if (config.filters) {
+        config.filters.forEach(function(f) {
+            if (f.type === 'year') {
+                yearSel.style.display = '';
+                yearSel.innerHTML = '';
+                // Populate with years from current-2 to current+1
+                var cy = new Date().getFullYear();
+                for (var y = cy + 1; y >= cy - 3; y--) {
+                    var opt = document.createElement('option');
+                    opt.value = y; opt.textContent = y;
+                    if (y === cy) opt.selected = true;
+                    yearSel.appendChild(opt);
+                }
+                if (f.syncFrom) {
+                    var src = document.getElementById(f.syncFrom);
+                    if (src) { yearSel.innerHTML = src.innerHTML; yearSel.value = src.value; }
+                }
+                _headerFilterYearCb = f.onChange || null;
+                yearSel.onchange = function() {
+                    if (f.syncFrom) { var s = document.getElementById(f.syncFrom); if (s) s.value = yearSel.value; }
+                    if (_headerFilterYearCb) _headerFilterYearCb();
+                };
+            }
+            if (f.type === 'month') {
+                monthSel.style.display = '';
+                monthSel.innerHTML = '<option value="">Todos</option>' +
+                    '<option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>' +
+                    '<option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>' +
+                    '<option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>' +
+                    '<option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>';
+                if (f.syncFrom) {
+                    var src2 = document.getElementById(f.syncFrom);
+                    if (src2) monthSel.value = src2.value;
+                }
+                _headerFilterMonthCb = f.onChange || null;
+                monthSel.onchange = function() {
+                    if (f.syncFrom) { var s = document.getElementById(f.syncFrom); if (s) s.value = monthSel.value; }
+                    if (_headerFilterMonthCb) _headerFilterMonthCb();
+                };
+            }
+        });
+    } else {
+        yearSel.style.display = 'none';
+        monthSel.style.display = 'none';
+    }
+    
     // Context action buttons
     var ctxExcel = document.getElementById('headerCtxExcel');
     var ctxAdd = document.getElementById('headerCtxAdd');
@@ -1155,20 +1227,15 @@ function setHeaderContext(config) {
             if (a.icon === '📊') {
                 ctxExcel.style.display = '';
                 ctxExcel.onclick = function() { eval(a.onclick); };
-                ctxExcel.title = a.title || 'Exportar';
             } else if (a.icon === '+') {
                 ctxAdd.style.display = '';
                 ctxAdd.onclick = function() { eval(a.onclick); };
-                ctxAdd.title = a.title || 'Agregar';
             }
         });
     }
     
-    // Live search function name (called on input)
-    _headerLiveSearchFn = config.liveSearch || null;
-    
-    // Hide the separate btnSearch since search is now via 🔍 in header-actions toggle
-    // The existing btnSearch/toggleSearch mechanism stays active
+    // Hide the old btnSearch since we use headerCtxSearchBtn
+    document.getElementById('btnSearch').classList.add('hidden');
 }
 
 function clearHeaderContext() {
@@ -1178,23 +1245,52 @@ function clearHeaderContext() {
     var navMenu = document.getElementById('headerNavMenu');
     if (navMenu) navMenu.style.display = 'none';
     
+    var searchBtn = document.getElementById('headerCtxSearchBtn');
+    var searchInput = document.getElementById('headerInlineSearch');
+    if (searchBtn) searchBtn.style.display = 'none';
+    if (searchInput) { searchInput.classList.remove('open'); searchInput.style.display = 'none'; searchInput.value = ''; }
+    
+    var yearSel = document.getElementById('headerFilterYear');
+    var monthSel = document.getElementById('headerFilterMonth');
+    if (yearSel) yearSel.style.display = 'none';
+    if (monthSel) monthSel.style.display = 'none';
+    _headerFilterYearCb = null;
+    _headerFilterMonthCb = null;
+    
     var ctxExcel = document.getElementById('headerCtxExcel');
     var ctxAdd = document.getElementById('headerCtxAdd');
     if (ctxExcel) { ctxExcel.style.display = 'none'; ctxExcel.onclick = null; }
     if (ctxAdd) { ctxAdd.style.display = 'none'; ctxAdd.onclick = null; }
     
     _headerLiveSearchFn = null;
-    
-    // Close search bar if open
-    var searchBar = document.getElementById('headerSearchBar');
-    var searchInput = document.getElementById('searchInput');
-    if (searchBar) searchBar.classList.remove('active');
-    if (searchInput) searchInput.value = '';
-    var btnSearch = document.getElementById('btnSearch');
-    if (btnSearch) btnSearch.classList.remove('hidden');
+}
+
+function toggleHeaderInlineSearch() {
+    var input = document.getElementById('headerInlineSearch');
+    if (!input) return;
+    if (input.classList.contains('open')) {
+        input.classList.remove('open');
+        input.value = '';
+        // Trigger refresh
+        if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
+            window[_headerLiveSearchFn]();
+        }
+    } else {
+        input.classList.add('open');
+        input.focus();
+    }
 }
 
 function headerSearchLive() {
+    // Check inline search first (desktop)
+    var inlineInput = document.getElementById('headerInlineSearch');
+    if (inlineInput && inlineInput.classList.contains('open') && _headerLiveSearchFn) {
+        if (typeof window[_headerLiveSearchFn] === 'function') {
+            window[_headerLiveSearchFn]();
+        }
+        return;
+    }
+    // Fallback: old header search bar
     if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
         window[_headerLiveSearchFn]();
     }
