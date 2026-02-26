@@ -207,7 +207,7 @@
                             <div class="dash-tile-links dash-tile-links-top">
                                 <span class="active" onclick="switchDashProvView('list')">Listado</span>
                                 <span onclick="switchDashProvView('pagadas')">Fact. Pagadas</span>
-                                <span onclick="switchDashProvView('porpagar')">Fact. x Pagar</span>
+                                <span onclick="switchDashProvView('porpagar')">Fact. x Pagar<span class="nivel1-only btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaFromDash();" title="Registrar Factura" style="color:#22c55e;font-size:1.1rem;margin-left:0.3rem;cursor:pointer;">+</span></span>
                             </div>
                             <div id="dashProveedoresList" class="dash-tile-body"></div>
                         </div>
@@ -1182,6 +1182,25 @@
         </div>
     </div>
 
+    <!-- Modal Seleccionar Proveedor (para registrar factura desde dashboard) -->
+    <div id="selectProveedorModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header" style="padding:0.75rem 1rem;">
+                <h2 class="modal-title" style="font-size:1.15rem;">Registrar Factura</h2>
+                <button class="close-modal" onclick="document.getElementById('selectProveedorModal').classList.remove('active')">×</button>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Selecciona el proveedor:</label>
+                <select id="selectProveedorForFactura" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:6px; font-size:0.9rem;">
+                    <option value="">— Elige proveedor —</option>
+                </select>
+                <div style="margin-top:1rem; text-align:right;">
+                    <button onclick="continueRegistrarFacturaFromDash()" style="background:var(--primary); color:white; border:none; border-radius:6px; padding:0.5rem 1.25rem; font-size:0.9rem; cursor:pointer; transition:background 0.2s;" onmouseover="this.style.background='#2c5282'" onmouseout="this.style.background='var(--primary)'">Continuar →</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Registrar Factura -->
     <div id="registrarFacturaModal" class="modal">
         <div class="modal-content" style="max-width:550px;">
@@ -1887,7 +1906,7 @@
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=23"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
-    <script src="js/database/db-facturas.js?v=24"></script>
+    <script src="js/database/db-facturas.js?v=25"></script>
     <script src="js/database/db-fetch-docs.js?v=24"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
@@ -1896,7 +1915,7 @@
     <script src="js/ui/inquilinos-ui.js?v=35"></script>
     <script src="js/ui/proveedores-ui.js?v=38"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
-    <script src="js/ui/contabilidad-ui.js?v=26"></script>
+    <script src="js/ui/contabilidad-ui.js?v=27"></script>
     <script src="js/ui/eswu-ui.js?v=40"></script>
     <script src="js/ui/admin-ui.js?v=34"></script>
     <script src="js/ui/numeros-ui.js?v=24"></script>
@@ -1904,7 +1923,7 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=24"></script>
     <script src="js/modals/proveedor-modals.js?v=23"></script>
-    <script src="js/main.js?v=28"></script>
+    <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
         document.addEventListener('dragover', function(e) { e.preventDefault(); });
