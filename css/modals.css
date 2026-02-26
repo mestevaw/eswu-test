@@ -575,3 +575,158 @@
         justify-content: flex-end;
     }
 }
+
+/* ============================================
+   SECTION TOOLBAR - Compact header bar
+   ============================================ */
+
+.section-toolbar {
+    padding: 0.5rem 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem;
+    min-height: 42px;
+    flex-wrap: nowrap !important;
+}
+
+.toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    flex-shrink: 1;
+}
+
+.toolbar-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.toolbar-hamburger {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.15rem 0.4rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    color: var(--text-light);
+    line-height: 1;
+    flex-shrink: 0;
+}
+.toolbar-hamburger:hover {
+    background: #f1f5f9;
+}
+
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+}
+
+.toolbar-btn {
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    transition: background 0.15s;
+    user-select: none;
+    line-height: 1;
+}
+.toolbar-btn:hover {
+    background: #e2e8f0;
+}
+
+.toolbar-search {
+    width: 0;
+    padding: 0;
+    border: none;
+    font-size: 0.82rem;
+    transition: width 0.25s ease, padding 0.25s ease, border 0.25s ease;
+    outline: none;
+    border-radius: 4px;
+    background: #f8fafc;
+}
+.toolbar-search.open {
+    width: 140px;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.toolbar-filter {
+    padding: 0.2rem 0.3rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    background: white;
+    cursor: pointer;
+}
+
+/* Nav dropdown shared (proveedores + inquilinos) */
+.nav-menu {
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.nav-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 100;
+    min-width: 180px;
+    margin-top: 4px;
+}
+.nav-dropdown-item {
+    padding: 0.45rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.88rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+.nav-dropdown-item:last-child {
+    border-bottom: none;
+    border-radius: 0 0 6px 6px;
+}
+.nav-dropdown-item:first-child {
+    border-radius: 6px 6px 0 0;
+}
+.nav-dropdown-item:hover {
+    background: #f1f5f9;
+}
+.nav-dropdown-item.active {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+}
+.nav-dropdown-item.active:hover {
+    background: var(--primary);
+}
+.nav-dropdown-item.nav-home {
+    color: var(--text-light);
+    font-size: 0.82rem;
+}
+.nav-dropdown-item.nav-home:hover {
+    background: #e2e8f0;
+}
+
+@media (max-width: 600px) {
+    .section-toolbar {
+        padding: 0.4rem 0.5rem !important;
+    }
+    .toolbar-title {
+        font-size: 0.88rem;
+    }
+    .toolbar-search.open {
+        width: 100px;
+    }
+}
