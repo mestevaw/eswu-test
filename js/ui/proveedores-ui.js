@@ -231,19 +231,11 @@ function renderProveedoresFacturasPagadas() {
     }
     mobileDiv.innerHTML = '';
     
-    const filterType = document.getElementById('provFactPagFilter').value;
     const year = parseInt(document.getElementById('provFactPagYear').value);
     const monthSelect = document.getElementById('provFactPagMonth');
     const searchInput = document.getElementById('provFactPagSearch');
     const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    
-    if (filterType === 'mensual') {
-        monthSelect.classList.remove('hidden');
-    } else {
-        monthSelect.classList.add('hidden');
-    }
-    
-    const month = filterType === 'mensual' ? parseInt(monthSelect.value) : null;
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     const pagadas = [];
     let totalPagadas = 0;
     
@@ -363,17 +355,9 @@ function renderProveedoresFacturasPorPagar() {
     }
     mobileDiv.innerHTML = '';
     
-    const filterType = document.getElementById('provFactPorPagFilter').value;
     const year = parseInt(document.getElementById('provFactPorPagYear').value);
     const monthSelect = document.getElementById('provFactPorPagMonth');
-    
-    if (filterType === 'mensual') {
-        monthSelect.classList.remove('hidden');
-    } else {
-        monthSelect.classList.add('hidden');
-    }
-    
-    const month = filterType === 'mensual' ? parseInt(monthSelect.value) : null;
+    const month = monthSelect.value !== '' ? parseInt(monthSelect.value) : null;
     const porPagar = [];
     let totalPorPagar = 0;
     
