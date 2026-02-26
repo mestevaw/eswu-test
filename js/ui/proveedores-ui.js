@@ -984,9 +984,10 @@ async function showLinkFacturaFileModal(facturaId, tipo) {
     
     // Ensure Drive is connected
     if (!isGoogleConnected()) {
-        googleSignIn();
-        alert('Conéctate a Google Drive primero, luego intenta de nuevo.');
-        return;
+        if (typeof requireGdrive === 'function') {
+            var driveOk = await requireGdrive();
+            if (!driveOk) return;
+        } else { return; }
     }
     
     var title = (tipo === 'pago') ? 'Vincular Comprobante de Pago' : 'Vincular Factura PDF';
