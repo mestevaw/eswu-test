@@ -58,9 +58,15 @@ function showRegistrarFacturaModal() {
     document.getElementById('facturaIVA').value = '';
     document.getElementById('facturaDocumento').value = '';
     document.getElementById('facturaDocumentoFileName').textContent = '';
+    if (typeof _resetFacturaFile === 'function') _resetFacturaFile();
     
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
     document.getElementById('registrarFacturaModal').classList.add('active');
+    
+    // Init paste listener (needs element to be visible)
+    setTimeout(function() {
+        if (typeof _initFacturaPaste === 'function') _initFacturaPaste();
+    }, 100);
 }
 
 function showEditFacturaModal(facturaId) {
