@@ -379,3 +379,31 @@ body.dash-no-header { padding-top: 0 !important; }
     background: #e6f2ff !important;
     border: 2px solid #5a9fd4;
 }
+
+/* Compact table for Facturas x Pagar */
+#proveedoresFacturasPorPagarTable {
+    table-layout: fixed;
+    width: 100%;
+}
+#proveedoresFacturasPorPagarTable th,
+#proveedoresFacturasPorPagarTable td {
+    padding: 0.35rem 0.4rem;
+    font-size: 0.82rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#proveedoresFacturasPorPagarTable th:nth-child(1),
+#proveedoresFacturasPorPagarTable td:nth-child(1) { width: 22%; }
+#proveedoresFacturasPorPagarTable th:nth-child(2),
+#proveedoresFacturasPorPagarTable td:nth-child(2) { width: 11%; }
+#proveedoresFacturasPorPagarTable th:nth-child(3),
+#proveedoresFacturasPorPagarTable td:nth-child(3) { width: 20%; }
+#proveedoresFacturasPorPagarTable th:nth-child(4),
+#proveedoresFacturasPorPagarTable td:nth-child(4) { width: 14%; }
+#proveedoresFacturasPorPagarTable th:nth-child(5),
+#proveedoresFacturasPorPagarTable td:nth-child(5) { width: 10%; }
+#proveedoresFacturasPorPagarTable th:nth-child(6),
+#proveedoresFacturasPorPagarTable td:nth-child(6) { width: 13%; }
+#proveedoresFacturasPorPagarTable th:nth-child(7),
+#proveedoresFacturasPorPagarTable td:nth-child(7) { width: 10%; }
