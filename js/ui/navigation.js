@@ -746,9 +746,12 @@ function switchTab(type, tabName) {
         
         window.eswuActiveTab = tabName;
         
-        // Initialize balance tab when first shown
+        // Initialize data-dependent tabs when first shown
         if (tabName === 'balance' && typeof initBalanceTab === 'function') {
             initBalanceTab();
+        }
+        if (tabName === 'bancos' && typeof renderEswuBancosTable === 'function') {
+            renderEswuBancosTable();
         }
     } else if (type === 'inquilino') {
         document.querySelectorAll('#inquilinoDetailModal .tab').forEach(t => t.classList.remove('active'));
