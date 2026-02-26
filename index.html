@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/base.css?v=22">
     <link rel="stylesheet" href="css/layout.css?v=22">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=24">
+    <link rel="stylesheet" href="css/modals.css?v=25">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -481,12 +481,12 @@
                             </div>
                             <!-- Pestañas -->
                             <div class="tabs-container">
-                                <div class="tabs">
-                                    <button class="tab active" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
-                                    <button class="tab" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
-                                    <button class="tab" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                <div class="tabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                                    <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('eswu', 'balance')">Balance</button>
                                 </div>
                                 <div id="eswuLegalesTab" class="tab-content active">
                                     <div style="margin-bottom:0.5rem;">
@@ -640,11 +640,11 @@
     <!-- Modal Inquilino Detail -->
     <div id="inquilinoDetailModal" class="modal">
         <div class="modal-content" style="max-width:1050px;">
-            <div class="modal-header modal-header-sticky">
+            <div class="modal-header modal-header-sticky" style="z-index:200;">
                 <h2 class="modal-title" id="inquilinoDetailNombre"></h2>
                 <div style="display:flex; align-items:center; gap:0.25rem;">
                     <span onclick="editInquilino()" title="Modificar datos inquilino" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
-                    <button class="close-modal" onclick="closeModal('inquilinoDetailModal')">×</button>
+                    <button class="close-modal" onclick="closeModal('inquilinoDetailModal')" style="min-width:44px;min-height:44px;font-size:2.2rem;">×</button>
                 </div>
             </div>
             <div style="padding: 1.25rem; padding-top: 5rem;">
@@ -692,10 +692,10 @@
                 </div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs">
-                        <button class="tab active" onclick="switchTab('inquilino', 'pagos')">Historial de Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
-                        <button class="tab" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
-                        <button class="tab" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    <div class="tabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                        <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'pagos')">Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="inquilinoPagosTab" class="tab-content active">
                         <div id="historialPagos"></div>
@@ -881,13 +881,13 @@
     <!-- Modal Proveedor Detail (REDISEÑADO) -->
     <div id="proveedorDetailModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header modal-header-sticky">
+            <div class="modal-header modal-header-sticky" style="z-index:200;">
                 <div style="flex:1; min-width:0; overflow:hidden;">
                     <h2 class="modal-title prov-nombre-auto" id="proveedorDetailNombre" style="text-align:left; padding:0; margin:0;"></h2>
                     <div id="proveedorDetailServicio" style="font-size:0.85rem; color:var(--text-light); font-weight:normal; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
                 </div>
                 <button class="btn-icon-edit" onclick="editProveedor()" title="Modificar datos">✏️</button>
-                <button class="close-modal" onclick="closeModal('proveedorDetailModal')" style="position:static;">×</button>
+                <button class="close-modal" onclick="closeModal('proveedorDetailModal')" style="position:static;min-width:44px;min-height:44px;font-size:2.2rem;">×</button>
             </div>
             <div style="padding: 1.25rem;">
                 <!-- Teléfono y Email -->
@@ -901,12 +901,12 @@
                 <div id="provDetailAdditionalContacts"></div>
                 <!-- Pestañas -->
                 <div class="tabs-container">
-                    <div class="tabs" id="proveedorTabs">
-                        <button class="tab active" onclick="switchTab('proveedor', 'pagadas')">Facturas Pagadas</button>
-                        <button class="tab" onclick="switchTab('proveedor', 'porpagar')">Facturas X Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
-                        <button class="tab" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
-                        <button class="tab" onclick="switchTab('proveedor', 'mantenimiento')">Mantenimiento<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
-                        <button class="tab" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    <div class="tabs" id="proveedorTabs" style="flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;">
+                        <button class="tab active" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="white-space:nowrap;flex-shrink:0;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                     </div>
                     <div id="proveedorPagadasTab" class="tab-content active">
                         <div id="facturasPagadas"></div>
@@ -1759,7 +1759,7 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=36"></script>
+    <script src="js/ui/navigation.js?v=37"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
