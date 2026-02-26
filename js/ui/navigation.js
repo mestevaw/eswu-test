@@ -361,6 +361,57 @@ function renderDashInquilinos() {
     }
 }
 
+// --- Dashboard Pagadas date range ---
+var dashPagadasDateFrom = null;
+var dashPagadasDateTo = null;
+
+(function() {
+    // Default: current month
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = now.getMonth();
+    dashPagadasDateFrom = new Date(y, m, 1).toISOString().slice(0, 10);
+    dashPagadasDateTo = new Date(y, m + 1, 0).toISOString().slice(0, 10);
+})();
+
+function toggleDashPagadasDatePicker() {
+    var existing = document.getElementById('dashPagadasDatePicker');
+    if (existing) { existing.remove(); return; }
+    
+    var container = document.getElementById('dashProveedoresList');
+    if (!container) return;
+    
+    var picker = document.createElement('div');
+    picker.id = 'dashPagadasDatePicker';
+    picker.style.cssText = 'padding:0.5rem 0.6rem;background:#f8fafc;border-bottom:1px solid var(--border);display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;font-size:0.75rem;';
+    picker.innerHTML = '<label style="font-weight:500;">De:</label>' +
+        '<input type="date" id="dashPagadasFrom" value="' + (dashPagadasDateFrom || '') + '" style="padding:0.2rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.75rem;">' +
+        '<label style="font-weight:500;">A:</label>' +
+        '<input type="date" id="dashPagadasTo" value="' + (dashPagadasDateTo || '') + '" style="padding:0.2rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.75rem;">' +
+        '<button onclick="applyDashPagadasFilter()" style="background:var(--primary);color:white;border:none;border-radius:4px;padding:0.2rem 0.6rem;font-size:0.72rem;cursor:pointer;">Aplicar</button>' +
+        '<button onclick="clearDashPagadasFilter()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:0.72rem;cursor:pointer;">Todo</button>';
+    
+    container.insertBefore(picker, container.firstChild);
+}
+
+function applyDashPagadasFilter() {
+    var from = document.getElementById('dashPagadasFrom');
+    var to = document.getElementById('dashPagadasTo');
+    dashPagadasDateFrom = from ? from.value : null;
+    dashPagadasDateTo = to ? to.value : null;
+    var picker = document.getElementById('dashPagadasDatePicker');
+    if (picker) picker.remove();
+    renderDashProveedores();
+}
+
+function clearDashPagadasFilter() {
+    dashPagadasDateFrom = null;
+    dashPagadasDateTo = null;
+    var picker = document.getElementById('dashPagadasDatePicker');
+    if (picker) picker.remove();
+    renderDashProveedores();
+}
+
 function renderDashProveedores() {
     var div = document.getElementById('dashProveedoresList');
     if (!div) return;
@@ -424,8 +475,40 @@ function renderDashProveedores() {
             return (db || '').localeCompare(da || '');
         });
         if (q) facturasList = facturasList.filter(function(f) { return f.provNombre.toLowerCase().includes(q); });
-        if (facturasList.length === 0) { div.innerHTML = '<div class="dash-empty">Sin facturas</div>'; return; }
-        var h = '';
+        
+        // Date range filter for pagadas
+        if (isPagadas && (dashPagadasDateFrom || dashPagadasDateTo)) {
+            facturasList = facturasList.filter(function(f) {
+                var d = f.fechaPago || f.fechaFactura;
+                if (!d) return false;
+                if (dashPagadasDateFrom && d < dashPagadasDateFrom) return false;
+                if (dashPagadasDateTo && d > dashPagadasDateTo) return false;
+                return true;
+            });
+        }
+        
+        // Calendar icon for pagadas
+        var headerHtml = '';
+        if (isPagadas) {
+            headerHtml += '<div style="display:flex;align-items:center;justify-content:flex-end;padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">';
+            var rangeLabel = '';
+            if (dashPagadasDateFrom || dashPagadasDateTo) {
+                var fl = dashPagadasDateFrom ? fmtFechaDash(dashPagadasDateFrom) : '…';
+                var tl = dashPagadasDateTo ? fmtFechaDash(dashPagadasDateTo) : '…';
+                rangeLabel = '<span style="font-size:0.68rem;color:var(--text-light);margin-right:auto;">' + fl + ' – ' + tl + '</span>';
+            } else {
+                rangeLabel = '<span style="font-size:0.68rem;color:var(--text-light);margin-right:auto;">Todas las fechas</span>';
+            }
+            headerHtml += rangeLabel;
+            headerHtml += '<span onclick="toggleDashPagadasDatePicker()" style="cursor:pointer;font-size:0.9rem;padding:0.1rem 0.3rem;border-radius:4px;" onmouseover="this.style.background=\'#e2e8f0\'" onmouseout="this.style.background=\'transparent\'" title="Filtrar por fecha">📅</span>';
+            headerHtml += '</div>';
+        }
+        
+        if (facturasList.length === 0) {
+            div.innerHTML = headerHtml + '<div class="dash-empty">Sin facturas</div>';
+            return;
+        }
+        var h = headerHtml;
         var totalMonto = 0;
         facturasList.forEach(function(f) {
             totalMonto += f.monto;
@@ -454,11 +537,13 @@ function renderDashProveedores() {
             h += '</div>';
             h += '</div>';
         });
-        // Sticky total for porPagar
-        if (!isPagadas && totalMonto > 0) {
+        // Sticky total for both views
+        if (totalMonto > 0) {
+            var totalLabel = isPagadas ? 'Total pagado' : 'Total por pagar';
+            var totalColor = isPagadas ? 'color:var(--text);' : 'color:var(--danger);';
             h += '<div style="position:sticky;bottom:0;background:#e6f2ff;border-top:2px solid var(--primary);padding:0.4rem 0.6rem;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:0.8rem;">';
-            h += '<span>Total por pagar</span>';
-            h += '<span style="color:var(--danger);">' + formatCurrency(totalMonto) + '</span>';
+            h += '<span>' + totalLabel + '</span>';
+            h += '<span style="' + totalColor + '">' + formatCurrency(totalMonto) + '</span>';
             h += '</div>';
         }
         div.innerHTML = h;
@@ -853,6 +938,17 @@ function logout() {
         currentMenuContext = 'main';
         currentSubContext = null;
     }
+}
+
+// ============================================
+// DATE FORMAT HELPER
+// ============================================
+
+function fmtFechaDash(dateStr) {
+    if (!dateStr) return '';
+    var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var d = new Date(dateStr + 'T00:00:00');
+    return d.getDate() + ' ' + meses[d.getMonth()] + ' ' + String(d.getFullYear()).slice(-2);
 }
 
 // ============================================
