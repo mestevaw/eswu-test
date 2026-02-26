@@ -735,7 +735,7 @@ function switchTab(type, tabName) {
         document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
         
-        var tabMap = { legales: 1, generales: 2, mensajes: 3, bancos: 4 };
+        var tabMap = { legales: 1, generales: 2, mensajes: 3, bancos: 4, balance: 5 };
         var tabIndex = tabMap[tabName] || 1;
         var tabBtn = document.querySelector('#eswuDocsPage .tab:nth-child(' + tabIndex + ')');
         if (tabBtn) tabBtn.classList.add('active');
@@ -745,6 +745,11 @@ function switchTab(type, tabName) {
         if (tabContent) tabContent.classList.add('active');
         
         window.eswuActiveTab = tabName;
+        
+        // Initialize balance tab when first shown
+        if (tabName === 'balance' && typeof initBalanceTab === 'function') {
+            initBalanceTab();
+        }
     } else if (type === 'inquilino') {
         document.querySelectorAll('#inquilinoDetailModal .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#inquilinoDetailModal .tab-content').forEach(tc => tc.classList.remove('active'));
@@ -838,4 +843,20 @@ function logout() {
     }
 }
 
-console.log('✅ NAVIGATION.JS v2 cargado (mobile menu)');
+// ============================================
+// PASSWORD VISIBILITY TOGGLE
+// ============================================
+
+function togglePasswordVisibility(inputId, toggleEl) {
+    var inp = document.getElementById(inputId);
+    if (!inp) return;
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        if (toggleEl) toggleEl.textContent = '🔒';
+    } else {
+        inp.type = 'password';
+        if (toggleEl) toggleEl.textContent = '👁️';
+    }
+}
+
+console.log('✅ NAVIGATION.JS v3 cargado (mobile menu)');
