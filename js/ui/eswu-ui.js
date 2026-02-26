@@ -783,17 +783,16 @@ function renderBalanceTab() {
         });
     });
     
-    // EGRESOS — facturas de proveedores (pagadas)
+    // EGRESOS — facturas de proveedores (solo pagadas)
     (typeof proveedores !== 'undefined' ? proveedores : []).forEach(function(prov) {
         (prov.facturas || []).forEach(function(f) {
-            var fechaRef = f.fecha_pago || f.fecha;
-            if (!fechaRef) return;
-            var d = new Date(fechaRef);
+            if (!f.fecha_pago) return; // Skip unpaid invoices
+            var d = new Date(f.fecha_pago);
             if (d.getFullYear() !== filterYear) return;
             if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
             var montoTotal = (parseFloat(f.monto) || 0) + (parseFloat(f.iva) || 0);
             rows.push({
-                fecha: fechaRef,
+                fecha: f.fecha_pago,
                 concepto: prov.nombre + (f.numero ? ' #' + f.numero : ''),
                 ingreso: 0,
                 egreso: montoTotal
