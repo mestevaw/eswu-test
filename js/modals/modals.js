@@ -14,7 +14,7 @@
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
+    z-index: 2000;
     overflow-y: auto;
     pointer-events: none;
 }
@@ -36,7 +36,7 @@
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    z-index: 1001;
+    z-index: 2001;
 }
 
 .modal-header {
@@ -134,26 +134,31 @@
 .tabs::-webkit-scrollbar { display: none; }
 
 .tab {
-    background: none;
-    border: none;
-    padding: 0.75rem 1.2rem;
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    padding: 0.65rem 1.2rem;
     font-size: 0.88rem;
     font-weight: 500;
     color: var(--text-light);
     cursor: pointer;
-    border-bottom: 3px solid transparent;
     transition: all 0.2s;
     white-space: nowrap;
     flex-shrink: 0;
+    margin-bottom: -2px;
 }
 
 .tab:hover {
     color: var(--primary);
+    background: #e2e8f0;
 }
 
 .tab.active {
     color: var(--primary);
-    border-bottom-color: var(--primary);
+    background: white;
+    border-color: var(--border);
+    border-bottom: 2px solid white;
     font-weight: 600;
 }
 
@@ -501,8 +506,9 @@
         gap: 0;
     }
     .tab {
-        padding: 0.5rem 0.7rem;
-        font-size: 0.78rem;
+        padding: 0.45rem 0.65rem;
+        font-size: 0.75rem;
+        border-radius: 6px 6px 0 0;
     }
     
     .info-grid {
