@@ -216,12 +216,32 @@ async function loadEswuDocsTab(tipo, retryCount) {
     if (!contentDiv) return;
     retryCount = retryCount || 0;
     
+    contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando...</p>';
+    
+    // ── STRATEGY 1: Try loading from drive_index (no Google Drive needed) ──
+    try {
+        var indexItems = await loadDocsFromIndex(ESWU_FOLDER_NAMES[tipo]);
+        if (indexItems && indexItems.length > 0) {
+            // We got indexed data — use it
+            eswuNavStacks[tipo] = [{ label: ESWU_FOLDER_NAMES[tipo], folderId: indexItems._parentId || 'index' }];
+            eswuCurrentFolders[tipo] = indexItems._parentId || 'index';
+            if (indexItems._parentId) eswuFolderIds[tipo] = indexItems._parentId;
+            
+            renderEswuBreadcrumb(tipo);
+            renderEswuDocsList(tipo, indexItems);
+            console.log('📇 ' + ESWU_FOLDER_NAMES[tipo] + ': ' + indexItems.length + ' items del índice');
+            return;
+        }
+    } catch (e) {
+        console.log('drive_index lookup failed, fallback to Drive API:', e.message);
+    }
+    
+    // ── STRATEGY 2: Fallback to Google Drive API ──
     if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
         if (retryCount < 3) {
             contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Conectando a Google Drive...</p>';
             setTimeout(function() { loadEswuDocsTab(tipo, retryCount + 1); }, 2000);
         } else {
-            // Try auto-reconnect one last time
             if (typeof requireGdrive === 'function') {
                 requireGdrive().then(function(ok) {
                     if (ok) { loadEswuDocsTab(tipo, 0); }
@@ -233,8 +253,6 @@ async function loadEswuDocsTab(tipo, retryCount) {
         }
         return;
     }
-    
-    contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Cargando...</p>';
     
     try {
         if (!eswuFolderIds[tipo]) {
@@ -255,6 +273,63 @@ async function loadEswuDocsTab(tipo, retryCount) {
     }
 }
 
+// Load docs from Supabase drive_index by folder name or parent_folder_id
+async function loadDocsFromIndex(folderNameOrId) {
+    if (typeof supabaseClient === 'undefined') return null;
+    
+    var parentId = folderNameOrId;
+    
+    // If it looks like a folder name (not a Drive ID), find the folder first
+    if (folderNameOrId && folderNameOrId.length > 30 && !folderNameOrId.includes(' ')) {
+        // Looks like a Drive folder ID — use directly
+        parentId = folderNameOrId;
+    } else {
+        // It's a folder name — find it in the index
+        var { data: folderRow, error: fe } = await supabaseClient
+            .from('drive_index')
+            .select('drive_file_id')
+            .eq('nombre', folderNameOrId)
+            .eq('mime_type', 'application/vnd.google-apps.folder')
+            .limit(1)
+            .single();
+        
+        if (fe || !folderRow) return null;
+        parentId = folderRow.drive_file_id;
+    }
+    
+    // Get all items in this folder
+    var { data, error } = await supabaseClient
+        .from('drive_index')
+        .select('drive_file_id, nombre, mime_type, tamanio, ruta, fecha_modificacion')
+        .eq('parent_folder_id', parentId)
+        .order('nombre');
+    
+    if (error || !data || data.length === 0) return null;
+    
+    // Convert to the same format as listDriveFolder results
+    var items = data.map(function(row) {
+        return {
+            id: row.drive_file_id,
+            name: row.nombre,
+            mimeType: row.mime_type,
+            size: row.tamanio || 0,
+            modifiedTime: row.fecha_modificacion,
+            _fromIndex: true
+        };
+    });
+    
+    // Sort: folders first, then files
+    items.sort(function(a, b) {
+        var aFolder = a.mimeType === 'application/vnd.google-apps.folder' ? 0 : 1;
+        var bFolder = b.mimeType === 'application/vnd.google-apps.folder' ? 0 : 1;
+        if (aFolder !== bFolder) return aFolder - bFolder;
+        return a.name.localeCompare(b.name);
+    });
+    
+    items._parentId = parentId;
+    return items;
+}
+
 async function renderEswuFolder(tipo, folderId) {
     var contentDiv = document.getElementById('eswu' + cap(tipo) + 'Content');
     if (!contentDiv) return;
@@ -266,6 +341,17 @@ async function renderEswuFolder(tipo, folderId) {
     var ruta = stack.map(function(s) { return s.label; }).join('/');
     
     try {
+        // Try drive_index first (faster, no Google Drive required)
+        var indexItems = await loadDocsFromIndex(folderId);
+        if (indexItems && indexItems.length > 0) {
+            eswuFolderContents[tipo] = indexItems;
+            eswuCurrentFolders[tipo] = folderId;
+            renderEswuBreadcrumb(tipo);
+            renderEswuDocsList(tipo, indexItems);
+            return;
+        }
+        
+        // Fallback to Google Drive API
         var result = await listDriveFolder(folderId, ruta);
         var allItems = (result.folders || []).concat(result.files || []);
         eswuFolderContents[tipo] = allItems;
@@ -583,4 +669,139 @@ function handleBancoDrop(files) {
     }, 100);
 }
 
-console.log('✅ ESWU-UI.JS v8 cargado');
+// ============================================
+// BALANCE TAB - Ingresos vs Egresos
+// ============================================
+
+function initBalanceTab() {
+    var sel = document.getElementById('balanceYearSelect');
+    if (!sel) return;
+    
+    // Collect all years from pagos and facturas
+    var years = new Set();
+    var thisYear = new Date().getFullYear();
+    years.add(thisYear);
+    
+    (typeof inquilinos !== 'undefined' ? inquilinos : []).forEach(function(inq) {
+        (inq.pagos || []).forEach(function(p) {
+            if (p.fecha) years.add(new Date(p.fecha).getFullYear());
+        });
+    });
+    (typeof proveedores !== 'undefined' ? proveedores : []).forEach(function(prov) {
+        (prov.facturas || []).forEach(function(f) {
+            var d = f.fecha_pago || f.fecha;
+            if (d) years.add(new Date(d).getFullYear());
+        });
+    });
+    
+    var sortedYears = Array.from(years).sort(function(a, b) { return b - a; });
+    sel.innerHTML = sortedYears.map(function(y) {
+        return '<option value="' + y + '"' + (y === thisYear ? ' selected' : '') + '>' + y + '</option>';
+    }).join('');
+    
+    // Default month = current
+    var mSel = document.getElementById('balanceMonthSelect');
+    if (mSel) mSel.value = '0'; // "Todo el año" by default
+    
+    renderBalanceTab();
+}
+
+function renderBalanceTab() {
+    var tbody = document.querySelector('#eswuBalanceTable tbody');
+    if (!tbody) return;
+    
+    var yearSel = document.getElementById('balanceYearSelect');
+    var monthSel = document.getElementById('balanceMonthSelect');
+    var filterYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
+    var filterMonth = monthSel ? parseInt(monthSel.value) : 0; // 0 = all
+    
+    var rows = [];
+    
+    // Collect INCOME — pagos de inquilinos
+    (typeof inquilinos !== 'undefined' ? inquilinos : []).forEach(function(inq) {
+        (inq.pagos || []).forEach(function(p) {
+            if (!p.fecha || !p.monto) return;
+            var d = new Date(p.fecha);
+            if (d.getFullYear() !== filterYear) return;
+            if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
+            rows.push({
+                fecha: p.fecha,
+                concepto: '⬆ ' + inq.nombre,
+                monto: parseFloat(p.monto) || 0,
+                tipo: 'ingreso'
+            });
+        });
+    });
+    
+    // Collect EXPENSES — facturas de proveedores (only paid ones: fecha_pago exists)
+    (typeof proveedores !== 'undefined' ? proveedores : []).forEach(function(prov) {
+        (prov.facturas || []).forEach(function(f) {
+            var fechaRef = f.fecha_pago || f.fecha;
+            if (!fechaRef) return;
+            var d = new Date(fechaRef);
+            if (d.getFullYear() !== filterYear) return;
+            if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
+            var montoTotal = (parseFloat(f.monto) || 0) + (parseFloat(f.iva) || 0);
+            rows.push({
+                fecha: fechaRef,
+                concepto: '⬇ ' + prov.nombre + (f.numero ? ' #' + f.numero : ''),
+                monto: -montoTotal,
+                tipo: 'egreso'
+            });
+        });
+    });
+    
+    // Sort by date ascending
+    rows.sort(function(a, b) { return new Date(a.fecha) - new Date(b.fecha); });
+    
+    // Render
+    tbody.innerHTML = '';
+    var acumulado = 0;
+    var totalIngresos = 0;
+    var totalEgresos = 0;
+    
+    if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:1.5rem;">No hay movimientos en este periodo</td></tr>';
+    } else {
+        rows.forEach(function(r) {
+            acumulado += r.monto;
+            if (r.monto > 0) totalIngresos += r.monto;
+            else totalEgresos += Math.abs(r.monto);
+            
+            var tr = document.createElement('tr');
+            var colorMonto = r.monto >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
+            var colorAcum = acumulado >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
+            var fechaStr = formatBalanceDate(r.fecha);
+            
+            tr.innerHTML = '<td style="font-size:0.82rem;white-space:nowrap;">' + fechaStr + '</td>' +
+                '<td style="font-size:0.85rem;">' + r.concepto + '</td>' +
+                '<td style="text-align:right;font-size:0.85rem;font-weight:600;' + colorMonto + '">' + formatCurrency(r.monto) + '</td>' +
+                '<td style="text-align:right;font-size:0.85rem;font-weight:500;' + colorAcum + '">' + formatCurrency(acumulado) + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+    
+    // Summary
+    var summaryEl = document.getElementById('balanceSummary');
+    if (summaryEl) {
+        var balColor = acumulado >= 0 ? 'var(--success)' : 'var(--danger)';
+        summaryEl.innerHTML = '<span style="color:var(--success);">Ingresos: ' + formatCurrency(totalIngresos) + '</span>' +
+            ' &nbsp;|&nbsp; <span style="color:var(--danger);">Egresos: ' + formatCurrency(totalEgresos) + '</span>' +
+            ' &nbsp;|&nbsp; <span style="font-weight:700;color:' + balColor + ';">Balance: ' + formatCurrency(acumulado) + '</span>';
+    }
+}
+
+function formatBalanceDate(dateStr) {
+    if (!dateStr) return '—';
+    var d = new Date(dateStr);
+    var dd = String(d.getDate()).padStart(2, '0');
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    return dd + '/' + mm + '/' + d.getFullYear();
+}
+
+function formatCurrency(amount) {
+    var prefix = amount < 0 ? '-$' : '$';
+    return prefix + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+console.log('✅ ESWU-UI.JS v9 cargado');
