@@ -71,7 +71,13 @@ function renderContabilidadContent() {
     
     if (!connected) {
         document.getElementById('gdriveConnectBar').style.display = 'flex';
-        document.getElementById('gdriveConnectBar').innerHTML = '<span style="font-size:0.85rem; color:var(--text-light);">Google Drive no conectado.</span> <span onclick="googleSignIn()" style="font-size:0.85rem; color:var(--primary); cursor:pointer; text-decoration:underline;">Reconectar</span>';
+        document.getElementById('gdriveConnectBar').innerHTML = '<span style="font-size:0.85rem; color:var(--text-light);">Reconectando Google Drive...</span>';
+        // Auto-reconnect silently
+        if (typeof requireGdrive === 'function') {
+            requireGdrive().then(function(ok) {
+                if (ok) renderContabilidadContent();
+            });
+        }
     } else {
         document.getElementById('gdriveConnectBar').style.display = 'none';
     }
@@ -461,7 +467,7 @@ function uploadToCurrentFolder() {
         return;
     }
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        if (typeof requireGdrive === 'function') { requireGdrive(); } return;
         return;
     }
     
@@ -703,7 +709,7 @@ async function searchContabilidadDocs() {
 
 function showCrearEstructuraAnio() {
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        if (typeof requireGdrive === 'function') { requireGdrive(); } return;
         return;
     }
     
@@ -729,7 +735,7 @@ function showCrearEstructuraAnio() {
 
 async function crearEstructuraAnio(anio) {
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        if (typeof requireGdrive === 'function') { requireGdrive(); } return;
         return;
     }
     
@@ -835,7 +841,7 @@ function checkAutoCreateNextYear() {
 
 async function importarAniosExistentes() {
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        if (typeof requireGdrive === 'function') { requireGdrive(); } return;
         return;
     }
     
@@ -935,7 +941,7 @@ async function importarAniosExistentes() {
 
 async function sincronizarIndiceCompleto() {
     if (!isGoogleConnected()) {
-        alert('Conecta con Google Drive primero');
+        if (typeof requireGdrive === 'function') { requireGdrive(); } return;
         return;
     }
     
