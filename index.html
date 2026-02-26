@@ -385,7 +385,7 @@
                 <!-- Facturas Pagadas -->
                 <div id="proveedoresFacturasPagadasView" class="hidden">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
                             <div style="display:flex;align-items:center;gap:0.5rem;">
                                 <div class="prov-nav-menu" style="position:relative;display:inline-block;">
                                     <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
@@ -398,22 +398,20 @@
                                 </div>
                                 <h2 class="card-title">Facturas Pagadas</h2>
                             </div>
-                            <span onclick="exportFacturasPagadasToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <div class="filter-section">
-                                <input type="text" id="provFactPagSearch" placeholder="Buscar proveedor..." oninput="renderProveedoresFacturasPagadas()" autocomplete="off" style="padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem; width:150px;">
-                                <label>Año:</label>
-                                <select id="provFactPagYear" onchange="renderProveedoresFacturasPagadas()"></select>
-                                <label>Mes:</label>
-                                <select id="provFactPagMonth" onchange="renderProveedoresFacturasPagadas()">
+                            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                                <input type="text" id="provFactPagSearch" placeholder="Buscar..." oninput="renderProveedoresFacturasPagadas()" autocomplete="off" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;width:120px;">
+                                <select id="provFactPagYear" onchange="renderProveedoresFacturasPagadas()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;"></select>
+                                <select id="provFactPagMonth" onchange="renderProveedoresFacturasPagadas()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;">
                                     <option value="">Todos</option>
-                                    <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
-                                    <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
-                                    <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
-                                    <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+                                    <option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>
+                                    <option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>
+                                    <option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>
+                                    <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
                                 </select>
+                                <span onclick="exportFacturasPagadasToExcel()" title="Exportar a Excel" style="font-size:1.2rem;cursor:pointer;">📊</span>
                             </div>
+                        </div>
+                        <div style="padding: 1rem;">
                             <div class="table-container">
                                 <table id="proveedoresFacturasPagadasTable" class="sticky-header-table">
                                     <thead><tr><th>Proveedor</th><th style="text-align:right">No. Factura</th><th>Pagada en</th><th style="text-align:right">Monto</th></tr></thead>
@@ -427,7 +425,7 @@
                 <!-- Facturas Por Pagar -->
                 <div id="proveedoresFacturasPorPagarView" class="hidden">
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header" style="flex-wrap:wrap;gap:0.5rem;">
                             <div style="display:flex;align-items:center;gap:0.5rem;">
                                 <div class="prov-nav-menu" style="position:relative;display:inline-block;">
                                     <button onclick="toggleProvNav(this)" style="background:none;border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;font-size:1.1rem;cursor:pointer;color:var(--text-light);">☰</button>
@@ -440,21 +438,19 @@
                                 </div>
                                 <h2 class="card-title">Facturas Por Pagar</h2>
                             </div>
-                            <span onclick="exportFacturasPorPagarToExcel()" title="Exportar lista a Excel" style="font-size:1.3rem; cursor:pointer; transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">📊</span>
-                        </div>
-                        <div style="padding: 1.5rem;">
-                            <div class="filter-section">
-                                <label>Año:</label>
-                                <select id="provFactPorPagYear" onchange="renderProveedoresFacturasPorPagar()"></select>
-                                <label>Mes:</label>
-                                <select id="provFactPorPagMonth" onchange="renderProveedoresFacturasPorPagar()">
+                            <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
+                                <select id="provFactPorPagYear" onchange="renderProveedoresFacturasPorPagar()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;"></select>
+                                <select id="provFactPorPagMonth" onchange="renderProveedoresFacturasPorPagar()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;">
                                     <option value="">Todos</option>
-                                    <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
-                                    <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
-                                    <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
-                                    <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+                                    <option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>
+                                    <option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>
+                                    <option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>
+                                    <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
                                 </select>
+                                <span onclick="exportFacturasPorPagarToExcel()" title="Exportar a Excel" style="font-size:1.2rem;cursor:pointer;">📊</span>
                             </div>
+                        </div>
+                        <div style="padding: 1rem;">
                             <div class="table-container">
                              <table id="proveedoresFacturasPorPagarTable" style="width:100%;">
     <thead><tr><th>Proveedor</th><th>Número</th><th style="text-align:right">Monto</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
@@ -1846,7 +1842,7 @@
     <script src="js/database/db-inquilinos.js?v=23"></script>
     <script src="js/database/db-proveedores.js?v=22"></script>
     <script src="js/database/db-facturas.js?v=22"></script>
-    <script src="js/database/db-fetch-docs.js?v=22"></script>
+    <script src="js/database/db-fetch-docs.js?v=23"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=41"></script>
