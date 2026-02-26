@@ -627,9 +627,12 @@ function handleTrabajoFotosDrop(files) {
 }
 
 async function uploadTrabajoFotos(files) {
-    if (!currentTrabajoId || !isGoogleConnected()) {
-        alert('Conecta Google Drive primero');
-        return;
+    if (!currentTrabajoId) return;
+    if (!isGoogleConnected()) {
+        if (typeof requireGdrive === 'function') {
+            var driveOk = await requireGdrive();
+            if (!driveOk) return;
+        } else { return; }
     }
     
     var t = mantenimientoTrabajos.find(function(w) { return w.id === currentTrabajoId; });
