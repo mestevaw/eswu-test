@@ -265,4 +265,23 @@ async function showForgotPasswordDialog() {
     }
 }
 
+// ============================================
+// GOOGLE DRIVE STATUS INDICATOR
+// ============================================
+
+function updateGdriveStatus() {
+    var ind = document.getElementById('gdriveStatusIndicator');
+    var dot = document.getElementById('gdriveStatusDot');
+    var txt = document.getElementById('gdriveStatusText');
+    if (!ind) return;
+    
+    var connected = typeof isGoogleConnected === 'function' && isGoogleConnected();
+    ind.style.display = 'block';
+    dot.style.background = connected ? '#22c55e' : '#ccc';
+    txt.textContent = connected ? 'Google Drive' : 'Drive desconectado';
+}
+
+// Check status every 30 seconds
+setInterval(updateGdriveStatus, 30000);
+
 console.log('✅ MAIN.JS v16 cargado');
