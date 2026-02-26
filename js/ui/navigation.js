@@ -986,18 +986,42 @@ function switchTab(type, tabName) {
 // ============================================
 
 // Proveedores page navigation hamburger
-function toggleProvNav(btn) {
+// ============================================
+// SECTION TOOLBAR — Nav menu & search toggle
+// ============================================
+
+function toggleNavMenu(btn) {
     var dropdown = btn.nextElementSibling;
     var isOpen = dropdown.style.display === 'block';
-    // Close all prov-nav-dropdowns first
-    document.querySelectorAll('.prov-nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    // Close all nav-dropdowns first
+    document.querySelectorAll('.nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
     if (!isOpen) dropdown.style.display = 'block';
 }
 
-// Close prov-nav on click outside
+function toggleToolbarSearch(btn) {
+    // Find the sibling toolbar-search input (previous sibling)
+    var toolbar = btn.closest('.toolbar-right');
+    if (!toolbar) return;
+    var input = toolbar.querySelector('.toolbar-search');
+    if (!input) return;
+    if (input.classList.contains('open')) {
+        input.classList.remove('open');
+        input.value = '';
+        // Trigger oninput to refresh
+        input.dispatchEvent(new Event('input'));
+    } else {
+        input.classList.add('open');
+        input.focus();
+    }
+}
+
+// Legacy alias
+function toggleProvNav(btn) { toggleNavMenu(btn); }
+
+// Close nav-dropdown on click outside
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.prov-nav-menu')) {
-        document.querySelectorAll('.prov-nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
+    if (!e.target.closest('.nav-menu') && !e.target.closest('.prov-nav-menu')) {
+        document.querySelectorAll('.nav-dropdown, .prov-nav-dropdown').forEach(function(d) { d.style.display = 'none'; });
     }
 });
 
