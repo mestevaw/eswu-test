@@ -37,6 +37,7 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
         document.getElementById('loginContainer').classList.add('hidden');
         document.getElementById('loginContainer').style.visibility = '';
         document.getElementById('appContainer').classList.add('active');
+        document.getElementById('appContainer').style.opacity = '0';
         document.body.classList.add('logged-in');
         
         await initializeApp();
@@ -53,6 +54,9 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
                 initMensajes().then(function() { renderDashboard(); });
             }
         }
+        
+        // Reveal app after everything is set up
+        document.getElementById('appContainer').style.opacity = '1';
         
     } catch (error) {
         document.getElementById('loginContainer').classList.remove('hidden');
