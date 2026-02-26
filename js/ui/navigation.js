@@ -255,6 +255,9 @@ function switchDashProvView(view) {
     links.forEach(function(s) { s.classList.remove('active'); });
     var idx = view === 'list' ? 0 : view === 'pagadas' ? 1 : 2;
     if (links[idx]) links[idx].classList.add('active');
+    // Show green + only on porpagar
+    var addBtn = document.getElementById('dashProvAddFactura');
+    if (addBtn) addBtn.style.display = (view === 'porpagar') ? '' : 'none';
     renderDashProveedores();
 }
 
