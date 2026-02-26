@@ -752,6 +752,13 @@ function handleRegresa() {
         return;
     }
     
+    // Close any open modals first
+    var openModals = document.querySelectorAll('.modal.active');
+    if (openModals.length > 0) {
+        openModals.forEach(function(m) { m.classList.remove('active'); });
+        return;
+    }
+    
     if (currentSubContext) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         
