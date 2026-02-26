@@ -812,25 +812,22 @@ function renderBalanceTab() {
     }
     
     var mh = '';
-    // Header row
-    mh += '<div style="display:flex;padding:0.25rem 0.6rem;border-bottom:2px solid var(--border);font-size:0.62rem;font-weight:600;color:var(--text-light);text-transform:uppercase;">';
-    mh += '<div style="flex:1;">Concepto</div>';
-    mh += '<div style="width:75px;text-align:right;">Ingreso</div>';
-    mh += '<div style="width:75px;text-align:right;">Egreso</div>';
-    mh += '</div>';
     
     rows.forEach(function(r, idx) {
-        var concepto = r.concepto.length > 25 ? r.concepto.substring(0, 23) + '…' : r.concepto;
+        var concepto = r.concepto;
         var ingresoStr = r.ingreso ? fmtMonto(r.ingreso) : '';
         var egresoStr = r.egreso ? fmtMonto(r.egreso) : '';
         
         mh += '<div class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '" style="cursor:default;padding:0.3rem 0.6rem;">';
-        mh += '<div style="display:flex;align-items:baseline;">';
-        mh += '<div style="flex:1;min-width:0;"><div class="mc-title" style="font-size:0.75rem;">' + concepto + '</div></div>';
-        mh += '<div style="width:75px;text-align:right;font-size:0.72rem;font-weight:600;color:var(--success);flex-shrink:0;">' + ingresoStr + '</div>';
-        mh += '<div style="width:75px;text-align:right;font-size:0.72rem;font-weight:600;color:var(--danger);flex-shrink:0;">' + egresoStr + '</div>';
+        // Line 1: full concept name
+        mh += '<div class="mc-title" style="font-size:0.75rem;">' + concepto + '</div>';
+        // Line 2: date | ingreso | egreso
+        mh += '<div style="display:flex;align-items:baseline;gap:0.3rem;">';
+        mh += '<div class="mc-meta" style="font-size:0.62rem;flex-shrink:0;">' + fmtFechaCorta(r.fecha) + '</div>';
+        mh += '<div style="flex:1;"></div>';
+        mh += '<div style="width:80px;text-align:right;font-size:0.72rem;font-weight:600;color:var(--success);flex-shrink:0;">' + ingresoStr + '</div>';
+        mh += '<div style="width:80px;text-align:right;font-size:0.72rem;font-weight:600;color:var(--danger);flex-shrink:0;">' + egresoStr + '</div>';
         mh += '</div>';
-        mh += '<div class="mc-meta" style="font-size:0.62rem;">' + fmtFechaCorta(r.fecha) + '</div>';
         mh += '</div>';
     });
     
@@ -839,12 +836,12 @@ function renderBalanceTab() {
     var balColor = balance >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
     mh += '<div style="display:flex;padding:0.4rem 0.6rem;border-top:2px solid var(--primary);font-weight:700;font-size:0.75rem;background:#e6f2ff;">';
     mh += '<div style="flex:1;">Totales</div>';
-    mh += '<div style="width:75px;text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</div>';
-    mh += '<div style="width:75px;text-align:right;color:var(--danger);">' + fmtMonto(totalEgresos) + '</div>';
+    mh += '<div style="width:80px;text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</div>';
+    mh += '<div style="width:80px;text-align:right;color:var(--danger);">' + fmtMonto(totalEgresos) + '</div>';
     mh += '</div>';
     mh += '<div style="display:flex;padding:0.4rem 0.6rem;font-weight:700;font-size:0.75rem;background:#f0f4f8;">';
     mh += '<div style="flex:1;">Balance</div>';
-    mh += '<div style="width:150px;text-align:right;' + balColor + '">' + fmtMonto(balance) + '</div>';
+    mh += '<div style="width:160px;text-align:right;' + balColor + '">' + fmtMonto(balance) + '</div>';
     mh += '</div>';
     
     mobileDiv.innerHTML = mh;
