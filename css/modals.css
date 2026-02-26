@@ -729,4 +729,23 @@
     .toolbar-search.open {
         width: 100px;
     }
+    /* Hide header context items on mobile */
+    #headerNavMenu, #headerCtxSearchBtn, #headerInlineSearch,
+    #headerFilterYear, #headerFilterMonth,
+    #headerCtxExcel, #headerCtxAdd, #headerSubtitle {
+        display: none !important;
+    }
+}
+
+@media (min-width: 601px) {
+    /* Hide section-toolbars on desktop — header takes over */
+    .section-toolbar.desktop-hidden {
+        display: none !important;
+    }
+    #headerInlineSearch.open {
+        display: inline-block !important;
+        width: 130px;
+        padding: 0.3rem 0.5rem;
+        border: 1px solid var(--border);
+    }
 }
