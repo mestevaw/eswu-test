@@ -122,22 +122,23 @@ async function saveFactura(event) {
         // Upload doc to Drive if provided
         if (docFile) {
             if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
-                var prov = proveedores.find(p => p.id === currentProveedorId);
-                if (prov) {
-                    try {
-                        var folderId = prov.google_drive_folder_id;
-                        if (!folderId) {
-                            folderId = await getOrCreateProveedorFolder(prov.nombre);
-                            await supabaseClient.from('proveedores')
-                                .update({ google_drive_folder_id: folderId })
-                                .eq('id', currentProveedorId);
-                        }
-                        var result = await uploadFileToDrive(docFile, folderId);
-                        facturaData.documento_drive_file_id = result.id;
-                    } catch (e) {
-                        console.error('⚠️ Drive upload failed, using base64');
-                        facturaData.documento_file = await fileToBase64(docFile);
-                    }
+                try {
+                    // Use date-based folder: Year / MM. MES / Facturas proveedores /
+                    var facturaFecha = facturaData.fecha;
+                    var folderId = await getFacturasProveedoresFolderId(facturaFecha);
+                    
+                    // Rename file: PROVEEDOR original_name.ext
+                    var prov = proveedores.find(p => p.id === currentProveedorId);
+                    var provName = prov ? prov.nombre.toUpperCase() : '';
+                    var originalName = docFile.name;
+                    var uploadName = provName ? (provName + ' ' + originalName) : originalName;
+                    var renamedFile = new File([docFile], uploadName, { type: docFile.type });
+                    
+                    var result = await uploadFileToDrive(renamedFile, folderId);
+                    facturaData.documento_drive_file_id = result.id;
+                } catch (e) {
+                    console.error('⚠️ Drive upload failed, using base64:', e);
+                    facturaData.documento_file = await fileToBase64(docFile);
                 }
             } else {
                 facturaData.documento_file = await fileToBase64(docFile);
@@ -191,22 +192,20 @@ async function savePagoFactura(event) {
         
         if (pagoFile) {
             if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
-                var prov = proveedores.find(p => p.id === currentProveedorId);
-                if (prov) {
-                    try {
-                        var folderId = prov.google_drive_folder_id;
-                        if (!folderId) {
-                            folderId = await getOrCreateProveedorFolder(prov.nombre);
-                            await supabaseClient.from('proveedores')
-                                .update({ google_drive_folder_id: folderId })
-                                .eq('id', currentProveedorId);
-                        }
-                        var result = await uploadFileToDrive(pagoFile, folderId);
-                        updateData.pago_drive_file_id = result.id;
-                    } catch (e) {
-                        console.error('⚠️ Drive upload failed, using base64');
-                        updateData.pago_file = await fileToBase64(pagoFile);
-                    }
+                try {
+                    // Use date-based folder: Year / MM. MES / Pagos proveedores /
+                    var folderId = await getPagosProveedoresFolderId(fechaPago);
+                    
+                    var prov = proveedores.find(p => p.id === currentProveedorId);
+                    var provName = prov ? prov.nombre.toUpperCase() : '';
+                    var uploadName = provName ? (provName + ' ' + pagoFile.name) : pagoFile.name;
+                    var renamedFile = new File([pagoFile], uploadName, { type: pagoFile.type });
+                    
+                    var result = await uploadFileToDrive(renamedFile, folderId);
+                    updateData.pago_drive_file_id = result.id;
+                } catch (e) {
+                    console.error('⚠️ Drive upload failed, using base64:', e);
+                    updateData.pago_file = await fileToBase64(pagoFile);
                 }
             } else {
                 updateData.pago_file = await fileToBase64(pagoFile);
