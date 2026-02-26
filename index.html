@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
     <link rel="stylesheet" href="css/base.css?v=22">
-    <link rel="stylesheet" href="css/layout.css?v=22">
+    <link rel="stylesheet" href="css/layout.css?v=23">
     <link rel="stylesheet" href="css/components.css?v=23">
     <link rel="stylesheet" href="css/modals.css?v=30">
     <link rel="stylesheet" href="css/tables.css?v=23">
@@ -92,13 +92,21 @@
 
     <div id="appContainer" class="app-container">
         <header class="header">
-            <h1 class="header-title" onclick="if(!isMobile()) showDashboard(); else showMobileMenu();" style="cursor:pointer;">ESWU</h1>
+            <div style="display:flex;align-items:center;gap:0.4rem;padding-left:0.75rem;">
+                <div id="headerNavMenu" class="nav-menu" style="display:none;">
+                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger" style="font-size:1rem;padding:0.2rem 0.45rem;">☰</button>
+                    <div class="nav-dropdown" id="headerNavDropdown"></div>
+                </div>
+                <h1 class="header-title" onclick="if(!isMobile()) showDashboard(); else showMobileMenu();" style="cursor:pointer;padding-left:0;">ESWU<span id="headerSubtitle" style="font-weight:500;font-size:1.1rem;"></span></h1>
+            </div>
             <div id="headerSearchBar" class="header-search-bar">
-                <input type="text" id="searchInput" placeholder="Buscar..." onkeypress="if(event.key==='Enter') executeSearch()">
+                <input type="text" id="searchInput" placeholder="Buscar..." onkeypress="if(event.key==='Enter') executeSearch()" oninput="headerSearchLive()">
                 <button class="btn-icon search" onclick="executeSearch()" title="Buscar">🔍</button>
                 <button class="btn-icon clear" onclick="clearSearch()" title="Limpiar">🧹</button>
             </div>
             <div class="header-actions">
+                <span id="headerCtxExcel" style="display:none;font-size:1.1rem;cursor:pointer;padding:0.15rem 0.3rem;border-radius:4px;transition:background 0.15s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="Exportar">📊</span>
+                <span id="headerCtxAdd" style="display:none;font-size:1.3rem;cursor:pointer;padding:0.15rem 0.3rem;border-radius:4px;transition:background 0.15s;line-height:1;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'" title="Agregar">+</span>
                 <button id="btnNotif" class="btn-notif" onclick="toggleNotifPanel()" title="Notificaciones" style="position:relative; background:none; border:none; font-size:1.3rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🔔<span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px;">0</span></button>
                 <button id="btnSearch" class="btn-search hidden" onclick="toggleSearch()">🔍</button>
                 <button id="btnRegresa" class="btn-regresa-simple hidden" onclick="handleRegresa()" style="color:var(--danger);">✖</button>
@@ -342,19 +350,17 @@
                                     <span class="toolbar-btn" onclick="exportarRentasExcel()" title="Exportar">📊</span>
                                 </div>
                             </div>
-                            <div style="padding: 1.5rem;">
-                                <div class="table-container">
-                                    <table id="inquilinosRentasRecibidasTable">
-                                        <thead>
-                                            <tr>
-                                                <th class="sortable" data-column="inquilino" onclick="sortRentasRecibidas('inquilino')">Inquilino</th>
-                                                <th>Monto</th>
-                                                <th class="sortable" data-column="fecha" onclick="sortRentasRecibidas('fecha')">Fecha</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
+                            <div class="table-container">
+                                <table id="inquilinosRentasRecibidasTable" class="sticky-header-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-column="inquilino" onclick="sortRentasRecibidas('inquilino')">Inquilino</th>
+                                            <th>Monto</th>
+                                            <th class="sortable" data-column="fecha" onclick="sortRentasRecibidas('fecha')">Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -392,27 +398,6 @@
                 <!-- Listado de Proveedores -->
                 <div id="proveedoresListView" class="hidden">
                     <div class="card">
-                       <div class="card-header section-toolbar">
-    <div class="toolbar-left">
-        <div class="nav-menu">
-            <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
-            <div class="nav-dropdown">
-                <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
-                <div class="nav-dropdown-item active">Listado</div>
-                <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
-                <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
-                <div class="nav-dropdown-item" onclick="showProveedoresView('mantenimiento')">Mantenimiento</div>
-            </div>
-        </div>
-        <span class="toolbar-title">ESWU — Listado</span>
-    </div>
-    <div class="toolbar-right">
-        <input type="text" class="toolbar-search" id="provListSearch" placeholder="Buscar..." oninput="renderProveedoresTable()">
-        <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
-        <span class="toolbar-btn" onclick="exportProveedoresToExcel()" title="Exportar">📊</span>
-        <span class="toolbar-btn" onclick="showAddProveedorModal()" title="Agregar">+</span>
-    </div>
-</div>
                         <div class="table-container">
                             <table id="proveedoresTable" class="sticky-header-table">
                                 <thead><tr><th>Proveedor</th><th>Servicio</th><th>Contacto</th><th>Teléfono</th><th>Email</th></tr></thead>
@@ -453,13 +438,11 @@
                                 <span class="toolbar-btn" onclick="exportFacturasPagadasToExcel()" title="Exportar">📊</span>
                             </div>
                         </div>
-                        <div style="padding: 1rem;">
-                            <div class="table-container">
-                                <table id="proveedoresFacturasPagadasTable" class="sticky-header-table">
-                                    <thead><tr><th>Proveedor</th><th style="text-align:right">No. Factura</th><th>Pagada en</th><th style="text-align:right">Monto</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
+                        <div class="table-container">
+                            <table id="proveedoresFacturasPagadasTable" class="sticky-header-table">
+                                <thead><tr><th>Proveedor</th><th style="text-align:right">No. Factura</th><th>Pagada en</th><th style="text-align:right">Monto</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -495,13 +478,11 @@
                                 <span class="toolbar-btn" onclick="exportFacturasPorPagarToExcel()" title="Exportar">📊</span>
                             </div>
                         </div>
-                        <div style="padding: 1rem;">
-                            <div class="table-container">
-                             <table id="proveedoresFacturasPorPagarTable" style="width:100%;">
-    <thead><tr><th>Proveedor</th><th>Número</th><th style="text-align:right">Monto</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
-    <tbody></tbody>
-</table>
-                            </div>
+                        <div class="table-container">
+                            <table id="proveedoresFacturasPorPagarTable" class="sticky-header-table">
+                                <thead><tr><th>Proveedor</th><th>Número</th><th style="text-align:right">Monto</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -1891,10 +1872,10 @@
     <script src="js/database/db-fetch-docs.js?v=24"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=42"></script>
+    <script src="js/ui/navigation.js?v=43"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=34"></script>
-    <script src="js/ui/proveedores-ui.js?v=36"></script>
+    <script src="js/ui/proveedores-ui.js?v=37"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=26"></script>
     <script src="js/ui/eswu-ui.js?v=40"></script>
