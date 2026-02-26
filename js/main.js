@@ -1,21 +1,7 @@
 /* ========================================
-   ESWU - MAIN.JS v15 (LIMPIO)
-   Última actualización: 2026-02-21
+   ESWU - MAIN.JS v16
+   Última actualización: 2026-02-25
    Solo: Login, Init, File Listeners, ForgotPassword
-   
-   Funciones movidas a módulos:
-   - showLoading/hideLoading → db-core.js
-   - fileToBase64 → db-core.js
-   - saveInquilino, savePagoRenta, saveDocumentoAdicional,
-     editInquilino, deleteInquilino, terminarContratoInquilino → db-inquilinos.js
-   - showRegistrarPagoModal, toggleMontoInput,
-     showAgregarDocumentoModal → inquilino-modals.js
-   - loadActivos, loadEstacionamiento, loadBitacoraSemanal,
-     loadUsuarios, loadBancosDocumentos, saveEstacionamiento,
-     saveBitacora, saveBancoDoc, populateYearSelect,
-     populateInquilinosYearSelects, populateProveedoresYearSelects,
-     loadInquilinosBasico, loadProveedoresBasico,
-     ensure*Loaded, eliminarProveedoresMigrados → db-admin.js
    ======================================== */
 
 // ============================================
@@ -25,13 +11,13 @@
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    var username = document.getElementById('username').value;
+    var password = document.getElementById('password').value;
     
     showLoading();
     
     try {
-        const { data, error } = await supabaseClient
+        var resp = await supabaseClient
             .from('usuarios')
             .select('*')
             .eq('nombre', username)
@@ -39,40 +25,38 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
             .eq('activo', true)
             .single();
         
-        if (error || !data) {
+        if (resp.error || !resp.data) {
             throw new Error('Usuario o contraseña incorrectos');
         }
         
-        currentUser = data;
+        currentUser = resp.data;
         
         localStorage.setItem('eswu_remembered_user', username);
         localStorage.setItem('eswu_remembered_pass', password);
         
         document.getElementById('loginContainer').classList.add('hidden');
+        document.getElementById('loginContainer').style.visibility = '';
         document.getElementById('appContainer').classList.add('active');
         document.body.classList.add('logged-in');
         
         await initializeApp();
         
-        // Aplicar restricciones de nivel
         applyUserLevel();
         
-        // Mostrar dashboard en desktop, menú en móvil
         if (isMobile()) {
             if (!currentUser || currentUser.nivel !== 4) {
                 showMobileMenu();
             }
         } else if (!currentUser || currentUser.nivel !== 4) {
             showDashboard();
-            // Cargar mensajes y actualizar dashboard
             if (typeof initMensajes === 'function') {
                 initMensajes().then(function() { renderDashboard(); });
             }
         }
         
     } catch (error) {
-        // Restaurar visibilidad del login en caso de error
-        document.getElementById('loginContainer').style.opacity = '1';
+        document.getElementById('loginContainer').classList.remove('hidden');
+        document.getElementById('loginContainer').style.visibility = '';
         alert(error.message);
     } finally {
         hideLoading();
@@ -80,20 +64,23 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
 });
 
 // ============================================
-// AUTO-LOGIN
+// AUTO-LOGIN (flash-free)
 // ============================================
 
 window.addEventListener('DOMContentLoaded', function() {
-    // Limpiar estado visual antes de cualquier cosa
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+    // Limpiar estado visual ANTES de cualquier cosa
+    document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.modal').forEach(function(m) { m.classList.remove('active'); });
     
-    const rememberedUser = localStorage.getItem('eswu_remembered_user');
-    const rememberedPass = localStorage.getItem('eswu_remembered_pass');
+    var rememberedUser = localStorage.getItem('eswu_remembered_user');
+    var rememberedPass = localStorage.getItem('eswu_remembered_pass');
     
     if (rememberedUser && rememberedPass) {
-        // Mostrar loading inmediatamente para evitar parpadeo
-        document.getElementById('loginContainer').style.opacity = '0';
+        // 1) Mostrar loading overlay inmediatamente (cubre toda la pantalla, z-index 10000)
+        showLoading();
+        // 2) Esconder login container por completo (no flash del gradiente azul)
+        document.getElementById('loginContainer').style.visibility = 'hidden';
+        // 3) Llenar credenciales y disparar submit
         document.getElementById('username').value = rememberedUser;
         document.getElementById('password').value = rememberedPass;
         document.getElementById('loginForm').dispatchEvent(new Event('submit'));
@@ -122,7 +109,6 @@ async function initializeApp() {
         populateInquilinosYearSelects();
         populateProveedoresYearSelects();
         
-        // Marcar todas las cargas como completadas
         inquilinosFullLoaded = true;
         proveedoresFullLoaded = true;
         activosLoaded = true;
@@ -133,10 +119,10 @@ async function initializeApp() {
         
         console.log('✅ App inicializada correctamente');
         
-        // Initialize Google Drive — wait for GSI library (loaded async defer)
+        // Initialize Google Drive — espera a que cargue la librería GSI (async defer)
         waitForGoogleAndConnect();
         
-        // Pre-load contabilidad carpetas (needed for bancos upload to Drive)
+        // Pre-load contabilidad carpetas
         try {
             if (typeof loadContabilidadCarpetas === 'function') {
                 loadContabilidadCarpetas();
@@ -160,30 +146,22 @@ async function initializeApp() {
 function waitForGoogleAndConnect(attempt) {
     attempt = attempt || 0;
     
-    // google.accounts comes from the async-loaded GSI script
     if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
         try {
-            if (typeof initGoogleDrive === 'function') {
-                initGoogleDrive();
-            }
+            if (typeof initGoogleDrive === 'function') initGoogleDrive();
         } catch (e) {
             console.warn('Error init Google Drive:', e);
         }
         
-        // Give auto-reconnect 3 seconds, then prompt if still not connected
-        setTimeout(async function() {
+        // Dar 3 seg para auto-reconnect silencioso, luego mostrar banner si no conectó
+        setTimeout(function() {
             if (typeof isGoogleConnected === 'function' && !isGoogleConnected()) {
-                var ok = await ensureGdriveToken();
-                if (!ok) {
-                    // Not connected — prompt user interactively
-                    googleSignIn();
-                }
+                showGdriveConnectBanner();
             }
         }, 3000);
         return;
     }
     
-    // GSI not loaded yet — retry up to 15 seconds
     if (attempt < 30) {
         setTimeout(function() { waitForGoogleAndConnect(attempt + 1); }, 500);
     } else {
@@ -192,45 +170,55 @@ function waitForGoogleAndConnect(attempt) {
 }
 
 // ============================================
+// GOOGLE DRIVE — BANNER VISIBLE PARA CONECTAR
+// ============================================
+
+function showGdriveConnectBanner() {
+    if (document.getElementById('gdriveConnectBanner')) return;
+    
+    var banner = document.createElement('div');
+    banner.id = 'gdriveConnectBanner';
+    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:linear-gradient(135deg,#1a365d,#2d4a7c);color:white;padding:0.6rem 1rem;display:flex;align-items:center;justify-content:center;gap:0.8rem;box-shadow:0 2px 8px rgba(0,0,0,0.3);font-size:0.85rem;';
+    banner.innerHTML = '<span>📁 Conecta Google Drive para ver documentos y bancos</span>' +
+        '<button onclick="connectGdriveFromBanner()" style="background:white;color:#1a365d;border:none;border-radius:4px;padding:0.3rem 0.9rem;font-weight:600;font-size:0.82rem;cursor:pointer;">Conectar</button>' +
+        '<button onclick="dismissGdriveBanner()" style="background:none;border:none;color:rgba(255,255,255,0.7);font-size:1.1rem;cursor:pointer;padding:0 0.3rem;" title="Cerrar">✕</button>';
+    
+    document.body.appendChild(banner);
+    document.body.style.marginTop = '44px';
+}
+
+function connectGdriveFromBanner() {
+    dismissGdriveBanner();
+    if (typeof googleSignIn === 'function') googleSignIn();
+}
+
+function dismissGdriveBanner() {
+    var banner = document.getElementById('gdriveConnectBanner');
+    if (banner) banner.remove();
+    document.body.style.marginTop = '';
+}
+
+// ============================================
 // FILE INPUT LISTENERS
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    const inquilinoContrato = document.getElementById('inquilinoContrato');
-    if (inquilinoContrato) {
-        inquilinoContrato.addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            const display = document.getElementById('contratoFileName');
-            if (display) display.textContent = fileName ? 'Seleccionado: ' + fileName : '';
-        });
-    }
-    
-    const nuevoDocPDF = document.getElementById('nuevoDocPDF');
-    if (nuevoDocPDF) {
-        nuevoDocPDF.addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            const display = document.getElementById('nuevoDocPDFFileName');
-            if (display) display.textContent = fileName ? 'Seleccionado: ' + fileName : '';
-        });
-    }
-    
-    const pagoPDF = document.getElementById('pagoPDF');
-    if (pagoPDF) {
-        pagoPDF.addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            const display = document.getElementById('pagoPDFFileName');
-            if (display) display.textContent = fileName ? 'Seleccionado: ' + fileName : '';
-        });
-    }
-    
-    const facturaDocumento = document.getElementById('facturaDocumento');
-    if (facturaDocumento) {
-        facturaDocumento.addEventListener('change', function() {
-            const fileName = this.files[0]?.name || '';
-            const display = document.getElementById('facturaDocumentoFileName');
-            if (display) display.textContent = fileName ? 'Seleccionado: ' + fileName : '';
-        });
-    }
+    var inputs = [
+        ['inquilinoContrato', 'contratoFileName'],
+        ['nuevoDocPDF', 'nuevoDocPDFFileName'],
+        ['pagoPDF', 'pagoPDFFileName'],
+        ['facturaDocumento', 'facturaDocumentoFileName']
+    ];
+    inputs.forEach(function(pair) {
+        var el = document.getElementById(pair[0]);
+        if (el) {
+            el.addEventListener('change', function() {
+                var name = this.files[0] ? this.files[0].name : '';
+                var display = document.getElementById(pair[1]);
+                if (display) display.textContent = name ? 'Seleccionado: ' + name : '';
+            });
+        }
+    });
 });
 
 // ============================================
@@ -256,10 +244,8 @@ async function showForgotPasswordDialog() {
             return;
         }
         
-        // Generate temp password
         var tempPass = 'temp' + Math.floor(1000 + Math.random() * 9000);
         
-        // Update in DB
         var { error: updateErr } = await supabaseClient
             .from('usuarios')
             .update({ password: tempPass })
@@ -277,4 +263,4 @@ async function showForgotPasswordDialog() {
     }
 }
 
-console.log('✅ MAIN.JS v15 cargado (limpio - 2026-02-21)');
+console.log('✅ MAIN.JS v16 cargado');
