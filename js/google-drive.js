@@ -189,6 +189,29 @@ async function ensureGdriveToken() {
     });
 }
 
+// Helper: require Google Drive connected before an action.
+// Tries silent reconnect first. If all fails, triggers interactive sign-in.
+// Returns true if connected, false if user still not connected.
+async function requireGdrive() {
+    // Already connected?
+    if (gdriveAccessToken && gdriveTokenExpiry > Date.now() + 30000) {
+        return true;
+    }
+    
+    // Try silent auto-connect first
+    var ok = await ensureGdriveToken();
+    if (ok) return true;
+    
+    // Last resort: interactive sign-in (returns a promise that resolves when done)
+    return new Promise(function(resolve) {
+        gdrivePostConnectCallbacks.push(function() {
+            resolve(!!gdriveAccessToken);
+        });
+        setTimeout(function() { resolve(false); }, 30000); // 30s timeout for interactive
+        googleSignIn();
+    });
+}
+
 // ============================================
 // DRIVE API - LIST FOLDER CONTENTS
 // ============================================
@@ -389,9 +412,22 @@ async function viewDriveFileInline(fileId, fileName) {
         var contentDiv = document.getElementById('driveViewerContent');
         if (contentDiv) {
             contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
-                '<p style="margin-bottom:1rem;color:var(--text);font-size:0.95rem;">Para ver documentos, conecta Google Drive.</p>' +
-                '<button onclick="connectAndRetryView()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:0.95rem;">Conectar Google Drive</button>' +
+                '<p style="margin-bottom:1rem;color:var(--text);font-size:0.95rem;">Reconectando Google Drive...</p>' +
                 '</div>';
+        }
+        // Try auto-reconnect
+        if (typeof requireGdrive === 'function') {
+            var ok = await requireGdrive();
+            if (ok && pendingViewFile) {
+                var f = pendingViewFile;
+                pendingViewFile = null;
+                await loadFileInViewer(f.fileId, f.fileName);
+            } else if (contentDiv) {
+                contentDiv.innerHTML = '<div style="text-align:center;padding:2rem;">' +
+                    '<p style="margin-bottom:1rem;color:var(--text);font-size:0.95rem;">No se pudo conectar a Google Drive.</p>' +
+                    '<button onclick="connectAndRetryView()" style="background:var(--primary);color:white;border:none;padding:0.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:0.95rem;">Reintentar</button>' +
+                    '</div>';
+            }
         }
         return;
     }
