@@ -347,16 +347,18 @@ async function createDriveFolder(folderName, parentId) {
 }
 
 async function uploadFileToDrive(file, folderId) {
+    console.log('📤 Uploading "' + file.name + '" to folder: ' + folderId);
     const metadata = {
         name: file.name,
         parents: folderId ? [folderId] : []
     };
+    console.log('📤 Upload metadata:', JSON.stringify(metadata));
     
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], {type: 'application/json'}));
     form.append('file', file);
     
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink', {
+    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,parents', {
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + gdriveAccessToken
@@ -366,10 +368,13 @@ async function uploadFileToDrive(file, folderId) {
     
     if (!response.ok) {
         const err = await response.json();
+        console.error('📤 Upload error:', JSON.stringify(err));
         throw new Error(err.error?.message || 'Error subiendo archivo');
     }
     
-    return await response.json();
+    var result = await response.json();
+    console.log('📤 Upload result:', JSON.stringify(result));
+    return result;
 }
 
 async function searchDriveFiles(queryText) {
@@ -627,18 +632,22 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
 
 var _MESES_DRIVE = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
-// Cache the correct ESWU root folder ID to avoid repeated lookups
+// Cache the correct ESWU root folder ID
 var _eswuRootId = null;
 
 async function findEswuRootWithYears() {
-    if (_eswuRootId) return _eswuRootId;
+    if (_eswuRootId) {
+        console.log('📁 Using cached ESWU root:', _eswuRootId);
+        return _eswuRootId;
+    }
     
-    // Search for ALL folders named "Inmobilaris ESWU"
+    // Search for ALL folders named "Inmobilaris ESWU" — include parents field
     var q = "name = 'Inmobilaris ESWU' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name,parents)', {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
     });
     var data = await resp.json();
+    console.log('📁 Found "Inmobilaris ESWU" folders:', JSON.stringify(data.files));
     
     if (!data.files || data.files.length === 0) {
         throw new Error('No se encontró la carpeta "Inmobilaris ESWU" en Google Drive');
@@ -647,30 +656,50 @@ async function findEswuRootWithYears() {
     // If only one, use it
     if (data.files.length === 1) {
         _eswuRootId = data.files[0].id;
+        console.log('📁 Only one ESWU folder, using:', _eswuRootId);
         return _eswuRootId;
     }
     
-    // Multiple found — find the one that contains year subfolders (e.g. "2026", "2025")
+    // Multiple found — the INNER one is the correct one.
+    // The inner one has a parent that is also named "Inmobilaris ESWU"
+    var folderIds = data.files.map(function(f) { return f.id; });
+    
     for (var i = 0; i < data.files.length; i++) {
-        var candidateId = data.files[i].id;
-        var yearQ = "'" + candidateId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-        var yearResp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(yearQ) + '&fields=files(id,name)&maxResults=10&key=' + GOOGLE_API_KEY, {
-            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-        });
-        var yearData = await yearResp.json();
-        // Check if any child looks like a year folder (4 digits)
-        if (yearData.files) {
-            var hasYear = yearData.files.some(function(f) { return /^\d{4}$/.test(f.name); });
-            if (hasYear) {
-                _eswuRootId = candidateId;
-                console.log('✅ Found correct ESWU root:', candidateId);
+        var folder = data.files[i];
+        var parentIds = folder.parents || [];
+        // Check if any parent is also an "Inmobilaris ESWU" folder
+        for (var j = 0; j < parentIds.length; j++) {
+            if (folderIds.indexOf(parentIds[j]) !== -1) {
+                // This folder's parent is also named "Inmobilaris ESWU" — this is the inner/correct one
+                _eswuRootId = folder.id;
+                console.log('📁 Found INNER ESWU folder (parent is also ESWU):', _eswuRootId);
                 return _eswuRootId;
             }
         }
     }
     
-    // Fallback: use last one (innermost)
+    // Fallback: check which one has year subfolders
+    for (var i = 0; i < data.files.length; i++) {
+        var candidateId = data.files[i].id;
+        var yearQ = "'" + candidateId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        var yearResp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(yearQ) + '&fields=files(id,name)&pageSize=20', {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var yearData = await yearResp.json();
+        console.log('📁 Children of', candidateId, ':', JSON.stringify((yearData.files || []).map(function(f){return f.name;})));
+        if (yearData.files) {
+            var hasYear = yearData.files.some(function(f) { return /^\d{4}$/.test(f.name); });
+            if (hasYear) {
+                _eswuRootId = candidateId;
+                console.log('📁 Found ESWU root with year folders:', _eswuRootId);
+                return _eswuRootId;
+            }
+        }
+    }
+    
+    // Last fallback
     _eswuRootId = data.files[data.files.length - 1].id;
+    console.log('📁 Fallback ESWU root:', _eswuRootId);
     return _eswuRootId;
 }
 
@@ -681,13 +710,19 @@ async function getFacturasProveedoresFolderId(fechaStr) {
     var monthNum = String(parseInt(parts[1])).padStart(2, '0');
     var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];
     
-    // Find the correct root
-    var rootId = await findEswuRootWithYears();
+    console.log('📁 Navigating to: ' + year + ' / ' + monthName + ' / Facturas proveedores');
     
-    // Navigate: year / month / Facturas proveedores
+    var rootId = await findEswuRootWithYears();
+    console.log('📁 Root ID:', rootId);
+    
     var yearId = await findOrCreateSubfolder(year, rootId);
+    console.log('📁 Year folder (' + year + '):', yearId);
+    
     var monthId = await findOrCreateSubfolder(monthName, yearId);
+    console.log('📁 Month folder (' + monthName + '):', monthId);
+    
     var facturasId = await findOrCreateSubfolder('Facturas proveedores', monthId);
+    console.log('📁 Facturas proveedores folder:', facturasId);
     
     return facturasId;
 }
@@ -720,17 +755,20 @@ async function findOrCreateSubfolder(folderName, parentId) {
         q = "name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
     }
     
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name,parents)', {
         headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
     });
     var data = await resp.json();
     
     if (data.files && data.files.length > 0) {
+        console.log('📁 Found "' + folderName + '" in parent ' + parentId + ' → ' + data.files[0].id);
         return data.files[0].id;
     }
     
     // Create it
+    console.log('📁 Creating "' + folderName + '" in parent ' + (parentId || 'root'));
     var result = await createDriveFolder(folderName, parentId || 'root');
+    console.log('📁 Created "' + folderName + '" → ' + result.id);
     return result.id;
 }
 
