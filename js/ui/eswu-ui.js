@@ -812,8 +812,10 @@ function renderBalanceTab() {
     }
     
     var mh = '';
-    // Header
-    mh += '<div style="display:flex;padding:0.25rem 0.6rem;border-bottom:2px solid var(--border);font-size:0.62rem;font-weight:600;color:var(--text-light);text-transform:uppercase;">';
+    // Scrollable container with sticky header and footer
+    mh += '<div style="max-height:65vh;overflow-y:auto;border:1px solid var(--border);border-radius:6px;position:relative;">';
+    // Sticky Header
+    mh += '<div style="position:sticky;top:0;z-index:10;background:white;display:flex;padding:0.25rem 0.6rem;border-bottom:2px solid var(--border);font-size:0.62rem;font-weight:600;color:var(--text-light);text-transform:uppercase;">';
     mh += '<div style="flex:1;">Concepto</div>';
     mh += '<div style="width:80px;text-align:right;">Ingreso</div>';
     mh += '<div style="width:80px;text-align:right;">Egreso</div>';
@@ -837,9 +839,10 @@ function renderBalanceTab() {
         mh += '</div>';
     });
     
-    // Totals
+    // Sticky Totals
     var balance = totalIngresos - totalEgresos;
     var balColor = balance >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
+    mh += '<div style="position:sticky;bottom:0;z-index:10;">';
     mh += '<div style="display:flex;padding:0.4rem 0.6rem;border-top:2px solid var(--primary);font-weight:700;font-size:0.75rem;background:#e6f2ff;">';
     mh += '<div style="flex:1;">Totales</div>';
     mh += '<div style="width:80px;text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</div>';
@@ -849,6 +852,8 @@ function renderBalanceTab() {
     mh += '<div style="flex:1;">Balance</div>';
     mh += '<div style="width:160px;text-align:right;' + balColor + '">' + fmtMonto(balance) + '</div>';
     mh += '</div>';
+    mh += '</div>'; // close sticky totals
+    mh += '</div>'; // close scrollable container
     
     mobileDiv.innerHTML = mh;
 }
