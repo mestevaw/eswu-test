@@ -627,24 +627,66 @@ async function getOrCreateProveedorFolder(proveedorNombre) {
 
 var _MESES_DRIVE = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
 
+// Cache the correct ESWU root folder ID to avoid repeated lookups
+var _eswuRootId = null;
+
+async function findEswuRootWithYears() {
+    if (_eswuRootId) return _eswuRootId;
+    
+    // Search for ALL folders named "Inmobilaris ESWU"
+    var q = "name = 'Inmobilaris ESWU' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    var data = await resp.json();
+    
+    if (!data.files || data.files.length === 0) {
+        throw new Error('No se encontró la carpeta "Inmobilaris ESWU" en Google Drive');
+    }
+    
+    // If only one, use it
+    if (data.files.length === 1) {
+        _eswuRootId = data.files[0].id;
+        return _eswuRootId;
+    }
+    
+    // Multiple found — find the one that contains year subfolders (e.g. "2026", "2025")
+    for (var i = 0; i < data.files.length; i++) {
+        var candidateId = data.files[i].id;
+        var yearQ = "'" + candidateId + "' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
+        var yearResp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(yearQ) + '&fields=files(id,name)&maxResults=10&key=' + GOOGLE_API_KEY, {
+            headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+        });
+        var yearData = await yearResp.json();
+        // Check if any child looks like a year folder (4 digits)
+        if (yearData.files) {
+            var hasYear = yearData.files.some(function(f) { return /^\d{4}$/.test(f.name); });
+            if (hasYear) {
+                _eswuRootId = candidateId;
+                console.log('✅ Found correct ESWU root:', candidateId);
+                return _eswuRootId;
+            }
+        }
+    }
+    
+    // Fallback: use last one (innermost)
+    _eswuRootId = data.files[data.files.length - 1].id;
+    return _eswuRootId;
+}
+
 async function getFacturasProveedoresFolderId(fechaStr) {
-    // fechaStr = "2026-02-15" format
     var parts = fechaStr.split('-');
-    var year = parts[0];                          // "2026"
-    var monthIdx = parseInt(parts[1]) - 1;        // 0-based
-    var monthNum = String(parseInt(parts[1])).padStart(2, '0'); // "02"
-    var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];  // "02. FEBRERO"
+    var year = parts[0];
+    var monthIdx = parseInt(parts[1]) - 1;
+    var monthNum = String(parseInt(parts[1])).padStart(2, '0');
+    var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];
     
-    // 1) Find root "Inmobilaris ESWU"
-    var rootId = await findOrCreateSubfolder('Inmobilaris ESWU', null);
+    // Find the correct root
+    var rootId = await findEswuRootWithYears();
     
-    // 2) Year folder
+    // Navigate: year / month / Facturas proveedores
     var yearId = await findOrCreateSubfolder(year, rootId);
-    
-    // 3) Month folder
     var monthId = await findOrCreateSubfolder(monthName, yearId);
-    
-    // 4) "Facturas proveedores" folder
     var facturasId = await findOrCreateSubfolder('Facturas proveedores', monthId);
     
     return facturasId;
@@ -657,7 +699,7 @@ async function getPagosProveedoresFolderId(fechaStr) {
     var monthNum = String(parseInt(parts[1])).padStart(2, '0');
     var monthName = monthNum + '. ' + _MESES_DRIVE[monthIdx];
     
-    var rootId = await findOrCreateSubfolder('Inmobilaris ESWU', null);
+    var rootId = await findEswuRootWithYears();
     var yearId = await findOrCreateSubfolder(year, rootId);
     var monthId = await findOrCreateSubfolder(monthName, yearId);
     var pagosId = await findOrCreateSubfolder('Pagos proveedores', monthId);
