@@ -65,6 +65,66 @@ function _initFacturaPaste() {
     });
 }
 
+// ============================================
+// PAGO FILE HANDLING (paste, drag, drop)
+// ============================================
+
+var _pagoFile = null;
+
+function handlePagoFileSelect(input) {
+    if (input.files && input.files[0]) {
+        _pagoFile = input.files[0];
+        _showPagoFilePreview(_pagoFile.name);
+    }
+}
+
+function handlePagoDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : null;
+    if (files && files.length > 0) {
+        _pagoFile = files[0];
+        _showPagoFilePreview(_pagoFile.name);
+    }
+}
+
+function _showPagoFilePreview(name) {
+    var preview = document.getElementById('pagoFilePreview');
+    if (preview) {
+        preview.style.display = 'block';
+        preview.innerHTML = '✅ <strong>' + name + '</strong>';
+    }
+    var fn = document.getElementById('pagoPDFFacturaFileName');
+    if (fn) fn.textContent = name;
+}
+
+function _resetPagoFile() {
+    _pagoFile = null;
+    var preview = document.getElementById('pagoFilePreview');
+    if (preview) preview.style.display = 'none';
+    var fn = document.getElementById('pagoPDFFacturaFileName');
+    if (fn) fn.textContent = '';
+    var input = document.getElementById('pagoPDFFactura');
+    if (input) input.value = '';
+}
+
+function _initPagoPaste() {
+    var pasteZone = document.getElementById('pagoPasteZone');
+    if (!pasteZone || pasteZone._pasteInit) return;
+    pasteZone._pasteInit = true;
+    pasteZone.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var items = e.clipboardData ? e.clipboardData.items : [];
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                _pagoFile = items[i].getAsFile();
+                var name = _pagoFile.name || 'comprobante_pegado.' + (_pagoFile.type.split('/')[1] || 'png');
+                _showPagoFilePreview(name);
+                return;
+            }
+        }
+        alert('No se detectó archivo. Intenta copiar la imagen primero.');
+    });
+}
+
 // Función auxiliar: navegar al lugar correcto después de una acción
 function navigateAfterFacturaAction(defaultTab) {
     const ctx = window.facturaActionContext;
@@ -197,7 +257,7 @@ async function savePagoFactura(event) {
     showLoading();
     
     try {
-        const pagoFile = document.getElementById('pagoPDFFactura').files[0];
+        const pagoFile = _pagoFile || document.getElementById('pagoPDFFactura').files[0] || null;
         const fechaPago = document.getElementById('fechaPagoFactura').value;
         
         const updateData = { fecha_pago: fechaPago };
@@ -232,6 +292,7 @@ async function savePagoFactura(event) {
         if (error) throw error;
         
         await loadProveedores();
+        _resetPagoFile();
         var pModal = document.getElementById('pagarFacturaModal');
         if (pModal) pModal.classList.remove('active');
         navigateAfterFacturaAction('pagadas');
