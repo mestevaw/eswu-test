@@ -2,6 +2,69 @@
    DB-FACTURAS.JS v2
    ======================================== */
 
+// File captured from any input method (click, paste, drag)
+var _facturaFile = null;
+
+function handleFacturaFileSelect(input) {
+    if (input.files && input.files[0]) {
+        _facturaFile = input.files[0];
+        _showFacturaFilePreview(_facturaFile.name);
+    }
+}
+
+function handleFacturaDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : null;
+    if (files && files.length > 0) {
+        _facturaFile = files[0];
+        _showFacturaFilePreview(_facturaFile.name);
+    }
+}
+
+function _showFacturaFilePreview(name) {
+    var preview = document.getElementById('facturaFilePreview');
+    if (preview) {
+        preview.style.display = 'block';
+        preview.innerHTML = '✅ <strong>' + name + '</strong>';
+    }
+    // Update the click zone text too
+    var fn = document.getElementById('facturaDocumentoFileName');
+    if (fn) fn.textContent = name;
+}
+
+function _resetFacturaFile() {
+    _facturaFile = null;
+    var preview = document.getElementById('facturaFilePreview');
+    if (preview) preview.style.display = 'none';
+    var fn = document.getElementById('facturaDocumentoFileName');
+    if (fn) fn.textContent = '';
+    var input = document.getElementById('facturaDocumento');
+    if (input) input.value = '';
+}
+
+// Listen for paste on the paste zone
+document.addEventListener('DOMContentLoaded', function() {
+    _initFacturaPaste();
+});
+// Also call after dynamic content
+function _initFacturaPaste() {
+    var pasteZone = document.getElementById('facturaPasteZone');
+    if (!pasteZone || pasteZone._pasteInit) return;
+    pasteZone._pasteInit = true;
+    pasteZone.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var items = e.clipboardData ? e.clipboardData.items : [];
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                _facturaFile = items[i].getAsFile();
+                var name = _facturaFile.name || 'imagen_pegada.' + (_facturaFile.type.split('/')[1] || 'png');
+                _showFacturaFilePreview(name);
+                return;
+            }
+        }
+        alert('No se detectó archivo. Intenta copiar la imagen primero.');
+    });
+}
+
 // Función auxiliar: navegar al lugar correcto después de una acción
 function navigateAfterFacturaAction(defaultTab) {
     const ctx = window.facturaActionContext;
@@ -32,7 +95,7 @@ async function saveFactura(event) {
     showLoading();
     
     try {
-        const docFile = document.getElementById('facturaDocumento').files[0];
+        const docFile = _facturaFile || document.getElementById('facturaDocumento').files[0] || null;
         
         const facturaData = {
             proveedor_id: currentProveedorId,
@@ -88,6 +151,7 @@ async function saveFactura(event) {
         
         await loadProveedores();
         closeModal('registrarFacturaModal');
+        if (typeof _resetFacturaFile === 'function') _resetFacturaFile();
         navigateAfterFacturaAction('porpagar');
         
         window.isEditingFactura = false;
