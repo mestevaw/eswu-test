@@ -3,7 +3,6 @@
    Ficha ESWU - Select dropdown contacts, subfolder nav
    ======================================== */
 
-<script src="js/ui/eswu-ui.js?v=34"></script>
 
 var eswuFolderIds = { legales: null, generales: null };
 var eswuFolderContents = { legales: [], generales: [] };
