@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/base.css?v=22">
     <link rel="stylesheet" href="css/layout.css?v=22">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=28">
+    <link rel="stylesheet" href="css/modals.css?v=29">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -481,21 +481,41 @@
                             </div>
                             <!-- Pestañas -->
                             <div class="tabs-container">
-                                <!-- Mobile: dropdown -->
-                                <select class="tabs-mobile-select" onchange="switchTab('eswu', this.value); this.blur();">
-                                    <option value="legales" selected>📄 Legales</option>
-                                    <option value="generales">📋 Generales</option>
-                                    <option value="mensajes">💬 Mensajes</option>
-                                    <option value="bancos">🏦 Bancos</option>
-                                    <option value="balance">📊 Balance</option>
-                                </select>
-                                <!-- Desktop: tabs -->
-                                <div class="tabs tabs-desktop-only">
+                                <!-- Mobile: dropdown + balance filters -->
+                                <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:nowrap;" class="tabs-mobile-row">
+                                    <select class="tabs-mobile-select" onchange="switchTab('eswu', this.value); this.blur();" style="margin-bottom:0;">
+                                        <option value="legales" selected>📄 Legales</option>
+                                        <option value="generales">📋 Generales</option>
+                                        <option value="mensajes">💬 Mensajes</option>
+                                        <option value="bancos">🏦 Bancos</option>
+                                        <option value="balance">📊 Balance</option>
+                                    </select>
+                                    <select id="balanceYearSelectM" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;"></select>
+                                    <select id="balanceMonthSelectM" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;">
+                                        <option value="0">Todos</option>
+                                        <option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option>
+                                        <option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option>
+                                        <option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option>
+                                        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+                                    </select>
+                                </div>
+                                <!-- Desktop: tabs + inline balance filters -->
+                                <div class="tabs tabs-desktop-only" style="display:flex;align-items:center;">
                                     <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                    <span id="balanceInlineFilters" style="display:none;margin-left:auto;white-space:nowrap;">
+                                        <select id="balanceYearSelect" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;"></select>
+                                        <select id="balanceMonthSelect" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;">
+                                            <option value="0">Todos</option>
+                                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                                            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                                            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                                        </select>
+                                    </span>
                                 </div>
                                 <div id="eswuLegalesTab" class="tab-content active">
                                     <div style="margin-bottom:0.5rem;">
@@ -532,16 +552,6 @@
                                     </div>
                                 </div>
                                 <div id="eswuBalanceTab" class="tab-content">
-                                    <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;">
-                                        <select id="balanceYearSelect" onchange="renderBalanceTab()" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;"></select>
-                                        <select id="balanceMonthSelect" onchange="renderBalanceTab()" style="padding:0.3rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
-                                            <option value="0">Todos</option>
-                                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-                                            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-                                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-                                            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
-                                        </select>
-                                    </div>
                                     <div class="table-container">
                                         <table id="eswuBalanceTable" class="sticky-header-table">
                                             <thead><tr>
@@ -1789,13 +1799,13 @@
     <script src="js/database/db-fetch-docs.js?v=22"></script>
     <script src="js/database/db-admin.js?v=25"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=38"></script>
+    <script src="js/ui/navigation.js?v=39"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=33"></script>
     <script src="js/ui/proveedores-ui.js?v=35"></script>
     <script src="js/ui/mantenimiento-ui.js?v=2"></script>
     <script src="js/ui/contabilidad-ui.js?v=26"></script>
-    <script src="js/ui/eswu-ui.js?v=37"></script>
+    <script src="js/ui/eswu-ui.js?v=38"></script>
     <script src="js/ui/admin-ui.js?v=34"></script>
     <script src="js/ui/numeros-ui.js?v=24"></script>
     <script src="js/ui/mensajes-ui.js?v=30"></script>
