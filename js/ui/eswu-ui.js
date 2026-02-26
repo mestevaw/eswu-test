@@ -42,6 +42,7 @@ function renderEswuFicha() {
     renderEswuContacts();
     loadEswuDocsTab('legales');
     loadEswuDocsTab('generales');
+    renderEswuBancosTable();
     if (typeof renderMensajesFicha === 'function') {
         renderMensajesFicha('eswu', 0);
     }
@@ -415,7 +416,6 @@ function renderEswuDocsList(tipo, items) {
             html += '<div style="background:white;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.7rem;display:flex;align-items:center;gap:0.5rem;">';
             html += '<span style="font-size:1rem;">' + icon + '</span>';
             html += '<span onclick="viewDriveFileInline(\'' + f.id + '\', \'' + f.name.replace(/'/g, "\\'") + '\')" style="flex:1;font-size:0.85rem;color:var(--primary);cursor:pointer;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + f.name + '</span>';
-            if (f.size) html += '<span style="font-size:0.72rem;color:var(--text-light);white-space:nowrap;">' + formatFileSize(f.size) + '</span>';
             html += '</div>';
         }
     });
@@ -673,11 +673,12 @@ function handleBancoDrop(files) {
 // BALANCE TAB - Ingresos vs Egresos
 // ============================================
 
+var MESES_CORTOS = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+
 function initBalanceTab() {
     var sel = document.getElementById('balanceYearSelect');
     if (!sel) return;
     
-    // Collect all years from pagos and facturas
     var years = new Set();
     var thisYear = new Date().getFullYear();
     years.add(thisYear);
@@ -699,9 +700,8 @@ function initBalanceTab() {
         return '<option value="' + y + '"' + (y === thisYear ? ' selected' : '') + '>' + y + '</option>';
     }).join('');
     
-    // Default month = current
     var mSel = document.getElementById('balanceMonthSelect');
-    if (mSel) mSel.value = '0'; // "Todo el año" by default
+    if (mSel) mSel.value = '0';
     
     renderBalanceTab();
 }
@@ -713,11 +713,11 @@ function renderBalanceTab() {
     var yearSel = document.getElementById('balanceYearSelect');
     var monthSel = document.getElementById('balanceMonthSelect');
     var filterYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
-    var filterMonth = monthSel ? parseInt(monthSel.value) : 0; // 0 = all
+    var filterMonth = monthSel ? parseInt(monthSel.value) : 0;
     
     var rows = [];
     
-    // Collect INCOME — pagos de inquilinos
+    // INGRESOS — pagos de inquilinos
     (typeof inquilinos !== 'undefined' ? inquilinos : []).forEach(function(inq) {
         (inq.pagos || []).forEach(function(p) {
             if (!p.fecha || !p.monto) return;
@@ -726,14 +726,14 @@ function renderBalanceTab() {
             if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
             rows.push({
                 fecha: p.fecha,
-                concepto: '⬆ ' + inq.nombre,
-                monto: parseFloat(p.monto) || 0,
-                tipo: 'ingreso'
+                concepto: inq.nombre,
+                ingreso: parseFloat(p.monto) || 0,
+                egreso: 0
             });
         });
     });
     
-    // Collect EXPENSES — facturas de proveedores (only paid ones: fecha_pago exists)
+    // EGRESOS — facturas de proveedores (pagadas)
     (typeof proveedores !== 'undefined' ? proveedores : []).forEach(function(prov) {
         (prov.facturas || []).forEach(function(f) {
             var fechaRef = f.fecha_pago || f.fecha;
@@ -744,19 +744,16 @@ function renderBalanceTab() {
             var montoTotal = (parseFloat(f.monto) || 0) + (parseFloat(f.iva) || 0);
             rows.push({
                 fecha: fechaRef,
-                concepto: '⬇ ' + prov.nombre + (f.numero ? ' #' + f.numero : ''),
-                monto: -montoTotal,
-                tipo: 'egreso'
+                concepto: prov.nombre + (f.numero ? ' #' + f.numero : ''),
+                ingreso: 0,
+                egreso: montoTotal
             });
         });
     });
     
-    // Sort by date ascending
     rows.sort(function(a, b) { return new Date(a.fecha) - new Date(b.fecha); });
     
-    // Render
     tbody.innerHTML = '';
-    var acumulado = 0;
     var totalIngresos = 0;
     var totalEgresos = 0;
     
@@ -764,44 +761,51 @@ function renderBalanceTab() {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:1.5rem;">No hay movimientos en este periodo</td></tr>';
     } else {
         rows.forEach(function(r) {
-            acumulado += r.monto;
-            if (r.monto > 0) totalIngresos += r.monto;
-            else totalEgresos += Math.abs(r.monto);
+            totalIngresos += r.ingreso;
+            totalEgresos += r.egreso;
             
             var tr = document.createElement('tr');
-            var colorMonto = r.monto >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
-            var colorAcum = acumulado >= 0 ? 'color:var(--success);' : 'color:var(--danger);';
-            var fechaStr = formatBalanceDate(r.fecha);
-            
-            tr.innerHTML = '<td style="font-size:0.82rem;white-space:nowrap;">' + fechaStr + '</td>' +
-                '<td style="font-size:0.85rem;">' + r.concepto + '</td>' +
-                '<td style="text-align:right;font-size:0.85rem;font-weight:600;' + colorMonto + '">' + formatCurrency(r.monto) + '</td>' +
-                '<td style="text-align:right;font-size:0.85rem;font-weight:500;' + colorAcum + '">' + formatCurrency(acumulado) + '</td>';
+            tr.innerHTML = '<td style="white-space:nowrap;">' + fmtFechaCorta(r.fecha) + '</td>' +
+                '<td>' + r.concepto + '</td>' +
+                '<td style="text-align:right;color:var(--success);">' + (r.ingreso ? fmtMonto(r.ingreso) : '') + '</td>' +
+                '<td style="text-align:right;color:var(--danger);">' + (r.egreso ? fmtMonto(r.egreso) : '') + '</td>';
             tbody.appendChild(tr);
         });
-    }
-    
-    // Summary
-    var summaryEl = document.getElementById('balanceSummary');
-    if (summaryEl) {
-        var balColor = acumulado >= 0 ? 'var(--success)' : 'var(--danger)';
-        summaryEl.innerHTML = '<span style="color:var(--success);">Ingresos: ' + formatCurrency(totalIngresos) + '</span>' +
-            ' &nbsp;|&nbsp; <span style="color:var(--danger);">Egresos: ' + formatCurrency(totalEgresos) + '</span>' +
-            ' &nbsp;|&nbsp; <span style="font-weight:700;color:' + balColor + ';">Balance: ' + formatCurrency(acumulado) + '</span>';
+        
+        // Fila de totales
+        var balance = totalIngresos - totalEgresos;
+        var balColor = balance >= 0 ? 'var(--success)' : 'var(--danger)';
+        
+        var trTotals = document.createElement('tr');
+        trTotals.style.cssText = 'border-top:2px solid var(--primary);font-weight:700;';
+        trTotals.innerHTML = '<td></td><td>Totales</td>' +
+            '<td style="text-align:right;color:var(--success);">' + fmtMonto(totalIngresos) + '</td>' +
+            '<td style="text-align:right;color:var(--danger);">' + fmtMonto(totalEgresos) + '</td>';
+        tbody.appendChild(trTotals);
+        
+        var trBalance = document.createElement('tr');
+        trBalance.style.cssText = 'font-weight:700;';
+        trBalance.innerHTML = '<td></td><td>Balance</td>' +
+            '<td colspan="2" style="text-align:right;color:' + balColor + ';font-size:1em;">' + fmtMonto(balance) + '</td>';
+        tbody.appendChild(trBalance);
     }
 }
 
-function formatBalanceDate(dateStr) {
+// Formato fecha: "25 feb 26"
+function fmtFechaCorta(dateStr) {
     if (!dateStr) return '—';
     var d = new Date(dateStr);
-    var dd = String(d.getDate()).padStart(2, '0');
-    var mm = String(d.getMonth() + 1).padStart(2, '0');
-    return dd + '/' + mm + '/' + d.getFullYear();
+    var dd = d.getDate();
+    var mm = MESES_CORTOS[d.getMonth() + 1];
+    var yy = String(d.getFullYear()).slice(-2);
+    return dd + ' ' + mm + ' ' + yy;
 }
 
-function formatCurrency(amount) {
+// Formato moneda
+function fmtMonto(amount) {
+    if (!amount && amount !== 0) return '';
     var prefix = amount < 0 ? '-$' : '$';
     return prefix + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-console.log('✅ ESWU-UI.JS v9 cargado');
+console.log('✅ ESWU-UI.JS v10 cargado');
