@@ -137,6 +137,20 @@ async function initializeApp() {
             if (typeof initGoogleDrive === 'function') {
                 initGoogleDrive();
             }
+            // Prompt user to connect Google Drive if not already connected
+            if (typeof isGoogleConnected === 'function' && !isGoogleConnected()) {
+                // Small delay to let auto-reconnect finish first
+                setTimeout(async function() {
+                    if (!isGoogleConnected()) {
+                        // Try silent auto-connect one more time
+                        var ok = await ensureGdriveToken();
+                        if (!ok) {
+                            // Not connected - prompt user
+                            googleSignIn();
+                        }
+                    }
+                }, 2000);
+            }
         } catch (e) {
             console.log('Google Drive init diferido');
         }
