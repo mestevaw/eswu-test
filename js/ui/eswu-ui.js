@@ -75,7 +75,7 @@ function renderEswuActa() {
 }
 
 async function selectEswuActa() {
-    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+    if (typeof requireGdrive === 'function' && !(await requireGdrive())) { return; }
     if (!eswuFolderIds.legales) eswuFolderIds.legales = await findEswuFolder(ESWU_FOLDER_NAMES.legales);
     if (!eswuFolderIds.legales) { alert('No se encontró DOCUMENTOS LEGALES'); return; }
     
@@ -221,7 +221,15 @@ async function loadEswuDocsTab(tipo, retryCount) {
             contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1rem;">Conectando a Google Drive...</p>';
             setTimeout(function() { loadEswuDocsTab(tipo, retryCount + 1); }, 2000);
         } else {
-            contentDiv.innerHTML = '<div style="text-align:center;padding:1.5rem;"><p style="color:var(--text-light);margin-bottom:0.5rem;">No se pudo conectar a Google Drive.</p><button onclick="googleSignIn()" style="background:var(--primary);color:white;border:none;padding:0.35rem 0.7rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">Conectar</button></div>';
+            // Try auto-reconnect one last time
+            if (typeof requireGdrive === 'function') {
+                requireGdrive().then(function(ok) {
+                    if (ok) { loadEswuDocsTab(tipo, 0); }
+                    else { contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">No se pudo conectar a Google Drive.</p>'; }
+                });
+            } else {
+                contentDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:1.5rem;">No se pudo conectar a Google Drive.</p>';
+            }
         }
         return;
     }
@@ -352,7 +360,7 @@ function filterEswuDocs(tipo) {
 // ============================================
 
 async function uploadToEswuFolder(tipo) {
-    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+    if (typeof requireGdrive === 'function' && !(await requireGdrive())) { return; }
     
     var targetFolder = eswuCurrentFolders[tipo] || eswuFolderIds[tipo];
     if (!targetFolder) {
@@ -521,8 +529,7 @@ function renderBancosTable() {
 // ============================================
 
 async function handleEswuDrop(tipo, files) {
-    if (typeof isGoogleConnected !== 'function' || !isGoogleConnected()) {
-        alert('Conecta Google Drive primero');
+    if (typeof requireGdrive === 'function' && !(await requireGdrive())) {
         return;
     }
     
