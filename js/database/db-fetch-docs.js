@@ -14,6 +14,12 @@ function openPDFViewer(base64Data) {
         return;
     }
     
+    // Safety: reject short strings that aren't real base64 (e.g. UUIDs, IDs)
+    if (base64Data.length < 200 && !base64Data.startsWith('data:') && !base64Data.startsWith('blob:')) {
+        alert('Este documento está en Google Drive. Conecta Google Drive para verlo.');
+        return;
+    }
+    
     try {
         var mime = '';
         var blobUrl;
