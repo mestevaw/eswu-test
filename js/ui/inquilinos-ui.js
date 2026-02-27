@@ -626,17 +626,18 @@ function showInquilinoDetail(id) {
                 }
                 return `
                     <tr class="doc-item">
-                        <td onclick="${docClickAction}" style="cursor:pointer;">${d.nombre}</td>
-                        <td onclick="${docClickAction}" style="cursor:pointer;">${formatDate(d.fecha)}</td>
-                        <td onclick="${docClickAction}" style="cursor:pointer;">${d.usuario}</td>
-                        <td style="white-space:nowrap;">
+                        <td onclick="${docClickAction}" style="cursor:pointer;">
+                            <div style="font-weight:500;">${d.nombre}</div>
+                            <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.15rem;">${formatDate(d.fecha)} · ${d.usuario}</div>
+                        </td>
+                        <td style="width:70px; white-space:nowrap; vertical-align:middle;">
                             <span onclick="event.stopPropagation(); openEditDocInquilinoModal(${d.id}, '${safeNombre}')" title="Modificar datos documento" style="cursor:pointer; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
                             <span onclick="event.stopPropagation(); deleteDocInquilinoConConfirm(${d.id}, '${safeNombre}')" title="Eliminar documento" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1.1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
                         </td>
                     </tr>
                 `;
             }).join('');
-            docsDiv.innerHTML = '<table id="inqDocsTable" style="width:100%"><thead><tr><th style="cursor:pointer;" onclick="toggleDocSort(\'inqDocsTable\', 0)">Nombre ▲</th><th>Fecha</th><th>Usuario</th><th style="width:70px;"></th></tr></thead><tbody>' + docRows + '</tbody></table>';
+            docsDiv.innerHTML = '<table id="inqDocsTable" style="width:100%"><thead><tr><th style="cursor:pointer;" onclick="toggleDocSort(\'inqDocsTable\', 0)">Nombre ▲</th><th style="width:70px;"></th></tr></thead><tbody>' + docRows + '</tbody></table>';
         } else {
             docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos</p>';
         }
