@@ -739,29 +739,57 @@
     .header-ctx-active .section-toolbar.desktop-hidden {
         display: none !important;
     }
+    
+    /* ── MOBILE HEADER: compact everything ── */
+    .header {
+        padding: 0.5rem 0.4rem 0.5rem 0;
+    }
+    .header-title {
+        font-size: 1.05rem !important;
+        white-space: nowrap;
+    }
+    #headerSubtitle {
+        font-size: 0.9rem !important;
+        font-weight: 500;
+    }
+    .header-actions {
+        gap: 0.3rem !important;
+        padding-right: 0.4rem !important;
+        flex-shrink: 0;
+    }
+    
     /* Header context elements on mobile — smaller */
     .hdr-ctx-el.visible {
         display: inline-block !important;
     }
     .hdr-ctx-btn {
-        font-size: 0.9rem;
-        padding: 0.1rem 0.2rem;
+        font-size: 0.8rem !important;
+        padding: 0.1rem 0.15rem !important;
     }
     .hdr-ctx-add {
-        font-size: 1.1rem;
+        font-size: 0.95rem !important;
     }
     .hdr-ctx-filter {
-        font-size: 0.72rem;
-        padding: 0.15rem 0.2rem;
+        font-size: 0.68rem;
+        padding: 0.1rem 0.15rem;
+        max-width: 60px;
     }
     .hdr-inline-search.open {
-        width: 80px !important;
-        font-size: 0.78rem;
-        padding: 0.2rem 0.4rem !important;
+        width: 70px !important;
+        font-size: 0.75rem;
+        padding: 0.15rem 0.3rem !important;
     }
-    #headerSubtitle {
-        font-size: 0.85rem !important;
+    
+    /* Notification bell smaller */
+    .btn-notif {
+        font-size: 1rem !important;
+        padding: 0.1rem 0.2rem !important;
     }
+    /* X button smaller but red */
+    .btn-regresa-simple {
+        font-size: 1.3rem !important;
+    }
+    
     /* Hide nav menu on mobile — mobile section-toolbars have their own */
     #headerNavMenu {
         display: none !important;
