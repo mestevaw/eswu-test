@@ -137,7 +137,7 @@ function calculateIVA() {
 
 function showPagarFacturaModal(facturaId) {
     currentFacturaId = facturaId;
-    document.getElementById('fechaPagoFactura').value = new Date().toISOString().split('T')[0];
+    document.getElementById('fechaPagoFactura').value = todayLocal();
     document.getElementById('pagoPDFFactura').value = '';
     document.getElementById('pagoPDFFacturaFileName').textContent = '';
     if (typeof _resetPagoFile === 'function') _resetPagoFile();
