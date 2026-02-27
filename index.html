@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/base.css?v=22">
     <link rel="stylesheet" href="css/layout.css?v=23">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=33">
+    <link rel="stylesheet" href="css/modals.css?v=34">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -415,6 +415,27 @@
                 <!-- Listado de Proveedores -->
                 <div id="proveedoresListView" class="hidden">
                     <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item active">Listado</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('mantenimiento')">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Proveedores</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <input type="text" class="toolbar-search" id="provListSearch" placeholder="Buscar..." oninput="renderProveedoresTable()">
+                                <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                <span class="toolbar-btn" onclick="exportProveedoresToExcel()" title="Exportar">📊</span>
+                                <span class="toolbar-btn" onclick="showAddProveedorModal()" title="Agregar">+</span>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="proveedoresTable" class="sticky-header-table">
                                 <thead><tr><th>Proveedor</th><th>Servicio</th><th>Contacto</th><th>Teléfono</th><th>Email</th></tr></thead>
@@ -1954,8 +1975,8 @@
     <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=47"></script>
     <script src="js/ui/tables.js?v=22"></script>
-    <script src="js/ui/inquilinos-ui.js?v=35"></script>
-    <script src="js/ui/proveedores-ui.js?v=41"></script>
+    <script src="js/ui/inquilinos-ui.js?v=36"></script>
+    <script src="js/ui/proveedores-ui.js?v=42"></script>
     <script src="js/ui/mantenimiento-ui.js?v=16"></script>
     <script src="js/ui/contabilidad-ui.js?v=27"></script>
     <script src="js/ui/eswu-ui.js?v=40"></script>
