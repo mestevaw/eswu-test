@@ -154,6 +154,20 @@ async function saveInquilino(event) {
             
             if (error) throw error;
             inquilinoId = data[0].id;
+            
+            // Create Drive folder for new inquilino
+            if (typeof isGoogleConnected === 'function' && isGoogleConnected()) {
+                try {
+                    var folderId = await getOrCreateInquilinoFolder(inquilinoData.nombre);
+                    await supabaseClient
+                        .from('inquilinos')
+                        .update({ google_drive_folder_id: folderId })
+                        .eq('id', inquilinoId);
+                    console.log('📁 ✅ Carpeta Drive creada para inquilino:', inquilinoData.nombre, folderId);
+                } catch (driveErr) {
+                    console.error('⚠️ No se pudo crear carpeta Drive para inquilino:', driveErr);
+                }
+            }
         }
         
         if (tempInquilinoContactos.length > 0) {
@@ -260,16 +274,68 @@ async function savePagoRenta(event) {
 // SAVE DOCUMENTO ADICIONAL
 // ============================================
 
+var _inqDocFile = null;
+
+function handleInqDocFileSelect(input) {
+    if (input.files && input.files[0]) {
+        _inqDocFile = input.files[0];
+        _showInqDocPreview(_inqDocFile.name);
+    }
+}
+
+function handleInqDocDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : null;
+    if (files && files.length > 0) {
+        _inqDocFile = files[0];
+        _showInqDocPreview(_inqDocFile.name);
+    }
+}
+
+function _showInqDocPreview(name) {
+    var preview = document.getElementById('inqDocFilePreview');
+    if (preview) { preview.style.display = 'block'; preview.innerHTML = '✅ <strong>' + name + '</strong>'; }
+    var fn = document.getElementById('nuevoDocPDFFileName');
+    if (fn) fn.textContent = name;
+}
+
+function _resetInqDocFile() {
+    _inqDocFile = null;
+    var preview = document.getElementById('inqDocFilePreview');
+    if (preview) preview.style.display = 'none';
+    var fn = document.getElementById('nuevoDocPDFFileName');
+    if (fn) fn.textContent = '';
+    var input = document.getElementById('nuevoDocPDF');
+    if (input) input.value = '';
+}
+
+function _initInqDocPaste() {
+    var z = document.getElementById('inqDocPasteZone');
+    if (!z || z._pasteInit) return;
+    z._pasteInit = true;
+    z.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var items = e.clipboardData ? e.clipboardData.items : [];
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                _inqDocFile = items[i].getAsFile();
+                _showInqDocPreview(_inqDocFile.name || 'documento_pegado.' + (_inqDocFile.type.split('/')[1] || 'pdf'));
+                return;
+            }
+        }
+        alert('No se detectó archivo.');
+    });
+}
+
 async function saveDocumentoAdicional(event) {
     event.preventDefault();
     showLoading();
     
     try {
         const inq = inquilinos.find(i => i.id === currentInquilinoId);
-        const file = document.getElementById('nuevoDocPDF').files[0];
+        const file = _inqDocFile || document.getElementById('nuevoDocPDF').files[0] || null;
         
         if (!file) {
-            throw new Error('Seleccione un archivo PDF');
+            throw new Error('Seleccione un archivo');
         }
         
         // Check if marked as contrato original
