@@ -727,7 +727,13 @@
         font-size: 0.88rem;
     }
     .toolbar-search.open {
-        width: 100px;
+        width: 80px;
+        font-size: 0.78rem;
+        padding: 0.2rem 0.4rem;
+    }
+    .toolbar-btn {
+        font-size: 0.85rem;
+        padding: 0.1rem 0.2rem;
     }
     /* Hide header context items on mobile — mobile uses section-toolbars */
     .hdr-ctx-el, #headerNavMenu, #headerSubtitle {
