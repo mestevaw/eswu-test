@@ -1264,16 +1264,18 @@ function toggleHeaderInlineSearch() {
     var input = document.getElementById('headerInlineSearch');
     if (!input) return;
     var header = document.querySelector('.header');
-    if (input.classList.contains('open')) {
-        input.classList.remove('open', 'visible');
+    if (header && header.classList.contains('header-search-open')) {
+        // Close search
+        input.classList.remove('open');
         input.value = '';
-        if (header) header.classList.remove('header-search-open');
+        header.classList.remove('header-search-open');
         document.body.classList.remove('header-search-open');
         if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
             window[_headerLiveSearchFn]();
         }
     } else {
-        input.classList.add('open', 'visible');
+        // Open search
+        input.classList.add('open');
         if (header) header.classList.add('header-search-open');
         document.body.classList.add('header-search-open');
         setTimeout(function() { input.focus(); }, 50);
