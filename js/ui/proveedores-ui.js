@@ -1250,8 +1250,10 @@ async function selectLinkFile(fileId, fileName) {
     showLoading();
     try {
         var column = (linkFacturaTipo === 'pago') ? 'pago_drive_file_id' : 'documento_drive_file_id';
+        var clearColumn = (linkFacturaTipo === 'pago') ? 'pago_file' : 'documento_file';
         var updateData = {};
         updateData[column] = fileId;
+        updateData[clearColumn] = null; // Clear base64 — file is in Drive
         
         var { error } = await supabaseClient
             .from('facturas')
