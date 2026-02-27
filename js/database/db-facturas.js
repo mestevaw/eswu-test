@@ -208,6 +208,7 @@ async function saveFactura(event) {
                     
                     var result = await uploadFileToDrive(renamedFile, folderId);
                     facturaData.documento_drive_file_id = result.id;
+                    facturaData.documento_file = null; // Clear base64 — file is in Drive
                 } catch (e) {
                     console.error('⚠️ Drive upload failed, using base64:', e);
                     facturaData.documento_file = await fileToBase64(docFile);
@@ -275,6 +276,7 @@ async function savePagoFactura(event) {
                     
                     var result = await uploadFileToDrive(renamedFile, folderId);
                     updateData.pago_drive_file_id = result.id;
+                    updateData.pago_file = null; // Clear base64 — file is in Drive
                 } catch (e) {
                     console.error('⚠️ Drive upload failed, using base64:', e);
                     updateData.pago_file = await fileToBase64(pagoFile);
