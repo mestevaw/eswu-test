@@ -208,7 +208,8 @@ async function saveFactura(event) {
                     
                     var result = await uploadFileToDrive(renamedFile, folderId);
                     facturaData.documento_drive_file_id = result.id;
-                    facturaData.documento_file = null; // Clear base64 — file is in Drive
+                    // Don't set documento_file — leave it out of the insert entirely
+                    console.log('📤 Factura PDF subido a Drive:', result.id, uploadName);
                 } catch (e) {
                     console.error('⚠️ Drive upload failed, using base64:', e);
                     facturaData.documento_file = await fileToBase64(docFile);
@@ -228,6 +229,12 @@ async function saveFactura(event) {
             if (error) throw error;
         } else {
             if (!docFile) facturaData.documento_file = null;
+            
+            console.log('💾 Insertando factura:', JSON.stringify({
+                numero: facturaData.numero,
+                documento_drive_file_id: facturaData.documento_drive_file_id || '(ninguno)',
+                tiene_base64: !!(facturaData.documento_file && facturaData.documento_file.length > 100)
+            }));
             
             const { error } = await supabaseClient
                 .from('facturas')
@@ -276,7 +283,8 @@ async function savePagoFactura(event) {
                     
                     var result = await uploadFileToDrive(renamedFile, folderId);
                     updateData.pago_drive_file_id = result.id;
-                    updateData.pago_file = null; // Clear base64 — file is in Drive
+                    // Don't set pago_file — leave it out; this is an UPDATE so existing value stays
+                    console.log('📤 Pago PDF subido a Drive:', result.id, uploadName);
                 } catch (e) {
                     console.error('⚠️ Drive upload failed, using base64:', e);
                     updateData.pago_file = await fileToBase64(pagoFile);
