@@ -54,6 +54,13 @@ function showMobileMenu() {
     mm.classList.remove('hidden');
     mm.style.display = '';
     
+    // Clear header context so icons don't float over menu
+    clearHeaderContext();
+    document.getElementById('btnRegresa').classList.add('hidden');
+    document.getElementById('btnSearch').classList.add('hidden');
+    currentSubContext = null;
+    currentSearchContext = null;
+    
     // Reset to main menu
     document.getElementById('mobileMenuMain').style.display = '';
     document.getElementById('mobileMenuSub').style.display = 'none';
