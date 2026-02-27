@@ -766,7 +766,7 @@ async function saveDocumentoProveedor(event) {
         var docData = {
             proveedor_id: currentProveedorId,
             nombre_documento: nombre,
-            fecha_guardado: new Date().toISOString().split('T')[0],
+            fecha_guardado: todayLocal(),
             usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
         };
         
@@ -890,7 +890,7 @@ function replaceProveedorDoc(docId) {
         showLoading();
         try {
             var updateData = {
-                fecha_guardado: new Date().toISOString().split('T')[0],
+                fecha_guardado: todayLocal(),
                 usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
             };
             
@@ -960,7 +960,7 @@ function exportProveedoresToExcel() {
     ws['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 30 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Proveedores');
-    XLSX.writeFile(wb, `Proveedores_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Proveedores_${todayLocal()}.xlsx`);
 }
 
 // ============================================
@@ -993,7 +993,7 @@ function exportFacturasPagadasToExcel() {
     ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Facturas Pagadas');
-    XLSX.writeFile(wb, `Facturas_Pagadas_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Facturas_Pagadas_${todayLocal()}.xlsx`);
 }
 
 // ============================================
@@ -1026,7 +1026,7 @@ function exportFacturasPorPagarToExcel() {
     ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Facturas Por Pagar');
-    XLSX.writeFile(wb, `Facturas_Por_Pagar_${new Date().toISOString().split('T')[0]}.xlsx`);
+    XLSX.writeFile(wb, `Facturas_Por_Pagar_${todayLocal()}.xlsx`);
 }
 
 // ============================================
