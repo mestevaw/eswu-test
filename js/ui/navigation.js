@@ -1145,8 +1145,10 @@ function _hideAllCtx() {
 }
 
 function setHeaderContext(config) {
-    if (isMobile()) return;
     _hideAllCtx();
+    
+    // Mark body so we can hide section-toolbars via CSS
+    document.body.classList.add('header-ctx-active');
     
     // Subtitle
     var sub = document.getElementById('headerSubtitle');
@@ -1243,6 +1245,7 @@ function setHeaderContext(config) {
 
 function clearHeaderContext() {
     _hideAllCtx();
+    document.body.classList.remove('header-ctx-active');
     var searchBar = document.getElementById('headerSearchBar');
     if (searchBar) searchBar.classList.remove('active');
 }
