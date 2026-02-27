@@ -743,12 +743,64 @@ function deleteFacturaConConfirm(facturaId, numeroFactura) {
 // DOCUMENTOS ADICIONALES PROVEEDOR
 // ============================================
 
+var _provDocFile = null;
+
+function handleProvDocFileSelect(input) {
+    if (input.files && input.files[0]) {
+        _provDocFile = input.files[0];
+        _showProvDocPreview(_provDocFile.name);
+    }
+}
+
+function handleProvDocDrop(event) {
+    var files = event.dataTransfer ? event.dataTransfer.files : null;
+    if (files && files.length > 0) {
+        _provDocFile = files[0];
+        _showProvDocPreview(_provDocFile.name);
+    }
+}
+
+function _showProvDocPreview(name) {
+    var preview = document.getElementById('provDocFilePreview');
+    if (preview) { preview.style.display = 'block'; preview.innerHTML = '✅ <strong>' + name + '</strong>'; }
+    var fn = document.getElementById('provNuevoDocPDFFileName');
+    if (fn) fn.textContent = name;
+}
+
+function _resetProvDocFile() {
+    _provDocFile = null;
+    var preview = document.getElementById('provDocFilePreview');
+    if (preview) preview.style.display = 'none';
+    var fn = document.getElementById('provNuevoDocPDFFileName');
+    if (fn) fn.textContent = '';
+    var input = document.getElementById('provNuevoDocPDF');
+    if (input) input.value = '';
+}
+
+function _initProvDocPaste() {
+    var z = document.getElementById('provDocPasteZone');
+    if (!z || z._pasteInit) return;
+    z._pasteInit = true;
+    z.addEventListener('paste', function(e) {
+        e.preventDefault();
+        var items = e.clipboardData ? e.clipboardData.items : [];
+        for (var i = 0; i < items.length; i++) {
+            if (items[i].kind === 'file') {
+                _provDocFile = items[i].getAsFile();
+                _showProvDocPreview(_provDocFile.name || 'documento_pegado.' + (_provDocFile.type.split('/')[1] || 'pdf'));
+                return;
+            }
+        }
+        alert('No se detectó archivo.');
+    });
+}
+
 function showAgregarDocumentoProveedorModal() {
     document.getElementById('provNuevoDocNombre').value = '';
     document.getElementById('provNuevoDocPDF').value = '';
-    const fileName = document.getElementById('provNuevoDocPDFFileName');
-    if (fileName) fileName.textContent = '';
+    _resetProvDocFile();
     document.getElementById('agregarDocumentoProveedorModal').classList.add('active');
+    setTimeout(function() { _initProvDocPaste(); }, 100);
 }
 
 async function saveDocumentoProveedor(event) {
@@ -757,10 +809,10 @@ async function saveDocumentoProveedor(event) {
     
     try {
         const nombre = document.getElementById('provNuevoDocNombre').value;
-        const file = document.getElementById('provNuevoDocPDF').files[0];
+        const file = _provDocFile || document.getElementById('provNuevoDocPDF').files[0] || null;
         
         if (!file) {
-            throw new Error('Seleccione un archivo PDF');
+            throw new Error('Seleccione un archivo');
         }
         
         var docData = {
@@ -800,6 +852,7 @@ async function saveDocumentoProveedor(event) {
         if (error) throw error;
         
         await loadProveedores();
+        _resetProvDocFile();
         closeModal('agregarDocumentoProveedorModal');
         showProveedorDetail(currentProveedorId);
         setTimeout(() => switchTab('proveedor', 'docs'), 100);
