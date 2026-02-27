@@ -85,7 +85,7 @@ function toggleTerminarContratoFecha() {
     var fechaInput = document.getElementById('terminarContratoFecha');
     if (val === 'si') {
         fechaInput.classList.remove('hidden');
-        fechaInput.value = new Date().toISOString().split('T')[0];
+        fechaInput.value = todayLocal();
     } else {
         fechaInput.classList.add('hidden');
         fechaInput.value = '';
@@ -313,7 +313,7 @@ async function saveDocumentoAdicional(event) {
         var docData = {
             inquilino_id: currentInquilinoId,
             nombre_documento: nombre,
-            fecha_guardado: new Date().toISOString().split('T')[0],
+            fecha_guardado: todayLocal(),
             usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
         };
         
