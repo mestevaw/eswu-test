@@ -22,11 +22,7 @@
             var el = document.getElementById(id);
             if (el) el.classList.remove('active');
         }
-        /* Local date string (YYYY-MM-DD) — avoids UTC timezone bug */
-        function todayLocal() {
-            var d = new Date();
-            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-        }
+        /* todayLocal() movida a js/database/db-core.js — V1 2026-02-27 */
     </script>
     <style>
         .file-drop-zone {
