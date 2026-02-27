@@ -562,67 +562,42 @@ function formatFileSize(bytes) {
 
 // ============================================
 // INQUILINOS - Drive folder management
+// Inside: Inmobilaris ESWU > Inmobiliaris ESWU > Inquilinos > [nombre]
 // ============================================
 
 async function getOrCreateInquilinoFolder(inquilinoNombre) {
-    var q = "name = 'Inquilinos' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data = await resp.json();
+    var rootId = await findEswuRootWithYears();
+    console.log('📁 Inquilino folder — ESWU root:', rootId);
     
-    if (!data.files || data.files.length === 0) {
-        throw new Error('No se encontró la carpeta "Inquilinos" en Google Drive');
-    }
+    // Find or create "Inquilinos" inside ESWU root
+    var inquilinosId = await findOrCreateSubfolder('Inquilinos', rootId);
+    console.log('📁 Inquilinos parent folder:', inquilinosId);
     
-    var inquilinosParentId = data.files[0].id;
+    // Find or create the specific inquilino folder
+    var inqFolderId = await findOrCreateSubfolder(inquilinoNombre, inquilinosId);
+    console.log('📁 Inquilino folder "' + inquilinoNombre + '":', inqFolderId);
     
-    var safeName = inquilinoNombre.replace(/'/g, "\\'");
-    var q2 = "'" + inquilinosParentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp2 = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q2) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data2 = await resp2.json();
-    
-    if (data2.files && data2.files.length > 0) {
-        return data2.files[0].id;
-    }
-    
-    var newFolder = await createDriveFolder(inquilinoNombre, inquilinosParentId);
-    return newFolder.id;
+    return inqFolderId;
 }
 
 // ============================================
 // PROVEEDORES - Drive folder management
+// Inside: Inmobilaris ESWU > Inmobiliaris ESWU > Proveedores > [nombre]
 // ============================================
 
 async function getOrCreateProveedorFolder(proveedorNombre) {
-    // LEGACY — kept as fallback, but main flow uses getFacturasProveedoresFolderId
-    var q = "name = 'Proveedores' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data = await resp.json();
+    var rootId = await findEswuRootWithYears();
+    console.log('📁 Proveedor folder — ESWU root:', rootId);
     
-    if (!data.files || data.files.length === 0) {
-        throw new Error('No se encontró la carpeta "Proveedores" en Google Drive');
-    }
+    // Find or create "Proveedores" inside ESWU root (case-insensitive search)
+    var proveedoresId = await findOrCreateSubfolder('Proveedores', rootId);
+    console.log('📁 Proveedores parent folder:', proveedoresId);
     
-    var proveedoresParentId = data.files[0].id;
+    // Find or create the specific proveedor folder
+    var provFolderId = await findOrCreateSubfolder(proveedorNombre, proveedoresId);
+    console.log('📁 Proveedor folder "' + proveedorNombre + '":', provFolderId);
     
-    var safeName = proveedorNombre.replace(/'/g, "\\'");
-    var q2 = "'" + proveedoresParentId + "' in parents and name = '" + safeName + "' and mimeType = 'application/vnd.google-apps.folder' and trashed = false";
-    var resp2 = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q2) + '&fields=files(id,name)&key=' + GOOGLE_API_KEY, {
-        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
-    });
-    var data2 = await resp2.json();
-    
-    if (data2.files && data2.files.length > 0) {
-        return data2.files[0].id;
-    }
-    
-    var newFolder = await createDriveFolder(proveedorNombre, proveedoresParentId);
-    return newFolder.id;
+    return provFolderId;
 }
 
 // ============================================
