@@ -5,17 +5,29 @@
 .header {
     background: white;
     color: var(--primary);
-    padding: 1rem 1rem 1rem 0;
+    padding: 0.5rem 1rem 0.5rem 0;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     border-bottom: 2px solid var(--border);
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 999;
+}
+
+.header-row1 {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.header-row2 {
+    display: flex;
+    align-items: center;
 }
 
 .header-title {
@@ -184,6 +196,12 @@
 
 .content-area.with-submenu {
     margin-left: 450px;
+}
+
+/* Submenu sidebar hidden for sections with toolbar hamburger navigation */
+#inquilinosSubMenu,
+#proveedoresSubMenu {
+    display: none !important;
 }
 
 .content-area.fullwidth {
