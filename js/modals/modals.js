@@ -735,8 +735,35 @@
         font-size: 0.85rem;
         padding: 0.1rem 0.2rem;
     }
-    /* Hide header context items on mobile — mobile uses section-toolbars */
-    .hdr-ctx-el, #headerNavMenu, #headerSubtitle {
+    /* When header context is active on mobile, hide section-toolbars */
+    .header-ctx-active .section-toolbar.desktop-hidden {
+        display: none !important;
+    }
+    /* Header context elements on mobile — smaller */
+    .hdr-ctx-el.visible {
+        display: inline-block !important;
+    }
+    .hdr-ctx-btn {
+        font-size: 0.9rem;
+        padding: 0.1rem 0.2rem;
+    }
+    .hdr-ctx-add {
+        font-size: 1.1rem;
+    }
+    .hdr-ctx-filter {
+        font-size: 0.72rem;
+        padding: 0.15rem 0.2rem;
+    }
+    .hdr-inline-search.open {
+        width: 80px !important;
+        font-size: 0.78rem;
+        padding: 0.2rem 0.4rem !important;
+    }
+    #headerSubtitle {
+        font-size: 0.85rem !important;
+    }
+    /* Hide nav menu on mobile — mobile section-toolbars have their own */
+    #headerNavMenu {
         display: none !important;
     }
 }
