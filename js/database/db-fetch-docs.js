@@ -107,7 +107,13 @@ async function fetchAndViewDoc(table, column, id) {
         if (error) throw error;
         
         if (data && data[column]) {
-            openPDFViewer(data[column]);
+            // Safety check: if data looks like a UUID or short string, it's not a valid document
+            var val = data[column];
+            if (val.length < 200 && !val.startsWith('data:')) {
+                alert('Este documento necesita ser vinculado desde Google Drive (📎)');
+                return;
+            }
+            openPDFViewer(val);
         } else {
             alert('No hay documento adjunto');
         }
