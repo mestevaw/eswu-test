@@ -103,14 +103,16 @@ function toggleMontoInput() {
 function showAgregarDocumentoModal() {
     document.getElementById('nuevoDocNombre').value = '';
     document.getElementById('nuevoDocPDF').value = '';
-    const fn = document.getElementById('nuevoDocPDFFileName');
-    if (fn) fn.textContent = '';
+    if (typeof _resetInqDocFile === 'function') _resetInqDocFile();
     
     // Pregunta de contrato original eliminada — se usa el botón dedicado
     var pregunta = document.getElementById('nuevoDocContratoQuestion');
     pregunta.classList.add('hidden');
     
     document.getElementById('agregarDocumentoModal').classList.add('active');
+    setTimeout(function() {
+        if (typeof _initInqDocPaste === 'function') _initInqDocPaste();
+    }, 100);
 }
 
 console.log('✅ INQUILINO-MODALS.JS cargado');
