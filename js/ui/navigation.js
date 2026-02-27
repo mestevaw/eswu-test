@@ -1146,6 +1146,7 @@ function _hideAllCtx() {
     if (sub) sub.textContent = '';
     var header = document.querySelector('.header');
     if (header) header.classList.remove('header-search-open');
+    document.body.classList.remove('header-search-open');
     _headerLiveSearchFn = null;
     _headerExcelFn = null;
     _headerAddFn = null;
@@ -1267,12 +1268,14 @@ function toggleHeaderInlineSearch() {
         input.classList.remove('open', 'visible');
         input.value = '';
         if (header) header.classList.remove('header-search-open');
+        document.body.classList.remove('header-search-open');
         if (_headerLiveSearchFn && typeof window[_headerLiveSearchFn] === 'function') {
             window[_headerLiveSearchFn]();
         }
     } else {
         input.classList.add('open', 'visible');
         if (header) header.classList.add('header-search-open');
+        document.body.classList.add('header-search-open');
         setTimeout(function() { input.focus(); }, 50);
     }
 }
