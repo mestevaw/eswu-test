@@ -1,10 +1,9 @@
 /* ========================================
-   MODALS.JS v1
+   js/modals/modals.js — V1
+   Fecha: 2026-02-27
+   Descripción: Funciones para abrir modals de agregar
+   Nota: closeModal() vive en index.html (inline, con null-check)
    ======================================== */
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
 
 function showAddInquilinoModal() {
     isEditMode = false;
@@ -15,6 +14,10 @@ function showAddInquilinoModal() {
     document.getElementById('inquilinoForm').reset();
     document.getElementById('inquilinoContactosList').innerHTML = '<p style="color:var(--text-light);font-size:0.875rem">No hay contactos agregados</p>';
     document.getElementById('contratoFileName').textContent = '';
+    
+    // Ocultar sección "Terminar Contrato" (solo aplica en edición)
+    var termSection = document.getElementById('terminarContratoSection');
+    if (termSection) termSection.classList.add('hidden');
     
     document.getElementById('addInquilinoModal').classList.add('active');
 }
@@ -85,4 +88,4 @@ function populateProveedoresDropdown() {
     });
 }
 
-console.log('✅ MODALS.JS cargado');
+console.log('✅ MODALS.JS V1 cargado (2026-02-27)');
