@@ -1,5 +1,8 @@
 /* ========================================
-   DB-CORE.JS - Funciones básicas compartidas
+   js/database/db-core.js — V1
+   Fecha: 2026-02-27
+   Descripción: Funciones básicas compartidas
+   (loading, fileToBase64, todayLocal, uploadFileOrBase64)
    ======================================== */
 
 function showLoading() {
@@ -32,4 +35,24 @@ function fileToBase64(file) {
     });
 }
 
-console.log('✅ DB-CORE.JS cargado');
+/* Local date string (YYYY-MM-DD) — evita bug de timezone UTC */
+function todayLocal() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+/* Helper: sube archivo a Drive si está conectado, o devuelve base64 como fallback */
+async function uploadFileOrBase64(file, folderId) {
+    if (typeof isGoogleConnected === 'function' && isGoogleConnected() && folderId) {
+        try {
+            var result = await uploadFileToDrive(file, folderId);
+            return { driveFileId: result.id, base64: null };
+        } catch (e) {
+            console.error('⚠️ Drive upload failed, using base64:', e);
+        }
+    }
+    var base64 = await fileToBase64(file);
+    return { driveFileId: null, base64: base64 };
+}
+
+console.log('✅ DB-CORE.JS V1 cargado (2026-02-27)');
