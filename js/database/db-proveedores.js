@@ -16,13 +16,15 @@ async function loadProveedores() {
         const { data: conDocumento } = await supabaseClient
             .from('facturas')
             .select('id')
-            .not('documento_file', 'is', null);
+            .not('documento_file', 'is', null)
+            .neq('documento_file', '');
         const docSet = new Set((conDocumento || []).map(f => f.id));
         
         const { data: conPago } = await supabaseClient
             .from('facturas')
             .select('id')
-            .not('pago_file', 'is', null);
+            .not('pago_file', 'is', null)
+            .neq('pago_file', '');
         const pagoSet = new Set((conPago || []).map(f => f.id));
         
         proveedores = data.map(prov => ({
