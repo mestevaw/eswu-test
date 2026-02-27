@@ -1,6 +1,7 @@
 /* ========================================
-   DB-ADMIN.JS
-   Carga y guardado de: activos, estacionamiento,
+   js/database/db-admin.js — V1
+   Fecha: 2026-02-27
+   Descripción: Carga y guardado de: activos, estacionamiento,
    bitácora, usuarios, bancos, year selects
    ======================================== */
 
@@ -151,60 +152,6 @@ async function loadBancosDocumentos() {
     } catch (error) {
         console.error('Error loading bancos:', error);
         bancosDocumentos = [];
-    }
-}
-
-// ============================================
-// CARGA BÁSICA (RÁPIDA) - para lazy loading
-// ============================================
-
-async function loadInquilinosBasico() {
-    try {
-        const { data, error } = await supabaseClient
-            .from('inquilinos')
-            .select('id, nombre, renta, fecha_vencimiento, contrato_activo')
-            .order('nombre');
-        
-        if (error) throw error;
-        
-        inquilinos = data.map(inq => ({
-            id: inq.id,
-            nombre: inq.nombre,
-            renta: parseFloat(inq.renta || 0),
-            fecha_vencimiento: inq.fecha_vencimiento,
-            contrato_activo: inq.contrato_activo,
-            contactos: [],
-            pagos: [],
-            documentos: []
-        }));
-        
-    } catch (error) {
-        console.error('Error loading inquilinos básico:', error);
-        throw error;
-    }
-}
-
-async function loadProveedoresBasico() {
-    try {
-        const { data, error } = await supabaseClient
-            .from('proveedores')
-            .select('id, nombre, servicio')
-            .order('nombre');
-        
-        if (error) throw error;
-        
-        proveedores = data.map(prov => ({
-            id: prov.id,
-            nombre: prov.nombre,
-            servicio: prov.servicio,
-            contactos: [],
-            facturas: [],
-            documentos: []
-        }));
-        
-    } catch (error) {
-        console.error('Error loading proveedores básico:', error);
-        throw error;
     }
 }
 
@@ -417,36 +364,16 @@ async function saveBancoDoc(event) {
 }
 
 // ============================================
-// POPULATE YEAR SELECTS
+// POPULATE YEAR SELECTS (genérico)
 // ============================================
 
-function populateYearSelect() {
-    const currentYear = new Date().getFullYear();
-    const yearSelect = document.getElementById('homeYear');
-    
-    if (!yearSelect) return;
-    
-    yearSelect.innerHTML = '';
-    
-    for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-        const option = document.createElement('option');
-        option.value = year;
-        option.textContent = year;
-        if (year === currentYear) option.selected = true;
-        yearSelect.appendChild(option);
-    }
-}
-
-function populateInquilinosYearSelects() {
-    const currentYear = new Date().getFullYear();
-    const select = document.getElementById('inquilinosRentasYear');
-    
+function _populateYearSelectById(selectId) {
+    var currentYear = new Date().getFullYear();
+    var select = document.getElementById(selectId);
     if (!select) return;
-    
     select.innerHTML = '';
-    
-    for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-        const option = document.createElement('option');
+    for (var year = currentYear - 5; year <= currentYear + 1; year++) {
+        var option = document.createElement('option');
         option.value = year;
         option.textContent = year;
         if (year === currentYear) option.selected = true;
@@ -454,20 +381,17 @@ function populateInquilinosYearSelects() {
     }
 }
 
+function populateYearSelect() {
+    _populateYearSelectById('homeYear');
+}
+
+function populateInquilinosYearSelects() {
+    _populateYearSelectById('inquilinosRentasYear');
+}
+
 function populateProveedoresYearSelects() {
-    const currentYear = new Date().getFullYear();
-    ['provFactPagYear', 'provFactPorPagYear'].forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (select) {
-            select.innerHTML = '';
-            for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-                const option = document.createElement('option');
-                option.value = year;
-                option.textContent = year;
-                if (year === currentYear) option.selected = true;
-                select.appendChild(option);
-            }
-        }
+    ['provFactPagYear', 'provFactPorPagYear'].forEach(function(id) {
+        _populateYearSelectById(id);
     });
 }
 
@@ -517,4 +441,4 @@ async function eliminarProveedoresMigrados() {
     }
 }
 
-console.log('✅ DB-ADMIN.JS cargado');
+console.log('✅ DB-ADMIN.JS V1 cargado (2026-02-27)');
