@@ -8,9 +8,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESWU - Sistema de Administración</title>
     <link rel="stylesheet" href="css/base.css?v=22">
-    <link rel="stylesheet" href="css/layout.css?v=14">
+    <link rel="stylesheet" href="css/layout.css?v=15">
     <link rel="stylesheet" href="css/components.css?v=23">
-    <link rel="stylesheet" href="css/modals.css?v=37">
+    <link rel="stylesheet" href="css/modals.css?v=38">
     <link rel="stylesheet" href="css/tables.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a365d">
@@ -105,7 +105,7 @@
     <div id="appContainer" class="app-container">
         <header class="header">
             <div class="header-row1">
-                <div style="display:flex;align-items:center;gap:0.4rem;padding-left:0.75rem;min-width:0;">
+                <div style="display:flex;align-items:center;gap:0.4rem;padding-left:0.75rem;min-width:0;flex:1;">
                     <div id="headerNavMenu" class="nav-menu" style="display:none;">
                         <button onclick="toggleNavMenu(this)" class="toolbar-hamburger" style="font-size:1rem;padding:0.2rem 0.45rem;">☰</button>
                         <div class="nav-dropdown" id="headerNavDropdown"></div>
@@ -117,19 +117,19 @@
                     <button class="btn-icon search" onclick="executeSearch()" title="Buscar">🔍</button>
                     <button class="btn-icon clear" onclick="clearSearch()" title="Limpiar">🧹</button>
                 </div>
-            </div>
-            <div class="header-row2">
                 <div class="header-actions">
-                    <input id="headerInlineSearch" type="text" class="hdr-ctx-el hdr-inline-search" placeholder="Buscar..." oninput="headerSearchLive()">
                     <span id="headerCtxSearchBtn" class="hdr-ctx-el hdr-ctx-btn" onclick="toggleHeaderInlineSearch()" title="Buscar">🔍</span>
-                    <select id="headerFilterYear" class="hdr-ctx-el hdr-ctx-filter"></select>
-                    <select id="headerFilterMonth" class="hdr-ctx-el hdr-ctx-filter"></select>
                     <span id="headerCtxExcel" class="hdr-ctx-el hdr-ctx-btn" title="Exportar">📊</span>
                     <span id="headerCtxAdd" class="hdr-ctx-el hdr-ctx-btn hdr-ctx-add" title="Agregar">+</span>
                     <button id="btnNotif" class="btn-notif" onclick="toggleNotifPanel()" title="Notificaciones" style="position:relative; background:none; border:none; font-size:1.3rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🔔<span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px;">0</span></button>
                     <button id="btnSearch" class="btn-search hidden" onclick="toggleSearch()">🔍</button>
                     <button id="btnRegresa" class="btn-regresa-simple hidden" onclick="handleRegresa()" style="color:var(--danger);">✖</button>
                 </div>
+            </div>
+            <div class="header-row2">
+                <input id="headerInlineSearch" type="text" class="hdr-ctx-el hdr-inline-search" placeholder="Buscar..." oninput="headerSearchLive()">
+                <select id="headerFilterYear" class="hdr-ctx-el hdr-ctx-filter"></select>
+                <select id="headerFilterMonth" class="hdr-ctx-el hdr-ctx-filter"></select>
             </div>
         </header>
 
@@ -1977,7 +1977,7 @@
     <script src="js/database/db-fetch-docs.js?v=7"></script>
     <script src="js/database/db-admin.js?v=15"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
-    <script src="js/ui/navigation.js?v=50"></script>
+    <script src="js/ui/navigation.js?v=51"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=36"></script>
     <script src="js/ui/proveedores-ui.js?v=44"></script>
