@@ -445,7 +445,7 @@ async function vincularGuardarMes(anio, mes, fileIdsStr) {
                 nombre_archivo: fileData.name || '',
                 anio: anio,
                 mes: mes,
-                fecha_subida: new Date().toISOString().split('T')[0],
+                fecha_subida: todayLocal(),
                 archivo_pdf: '',
                 usuario_subio: (currentUser ? currentUser.nombre : '') || 'Sistema'
             };
@@ -653,7 +653,7 @@ async function saveActivo(event) {
         if (activoPendingFotoFiles.length > 0 && activoId && isGoogleConnected()) {
             var provNombre = (proveedor || 'General').replace(/[\/\\]/g, '-');
             var activoNombreSafe = nombre.replace(/[\/\\]/g, '-');
-            var fechaHoy = new Date().toISOString().split('T')[0];
+            var fechaHoy = todayLocal();
             
             // Folder: Activos/{NombreActivo}/
             var activosFolder = await findOrCreateSubfolder('Activos', null);
