@@ -1,5 +1,9 @@
 /* ========================================
-   MODALS.CSS - ESTILOS COMPLETOS DE MODALES
+   css/modals.css — V1
+   Fecha: 2026-02-27
+   Descripción: Estilos de modales + header context mobile
+   Cambio: Filtros ocultos por defecto en mobile,
+   título no desaparece al buscar, ✕ siempre roja.
    ======================================== */
 
 /* ============================================
@@ -777,19 +781,20 @@
         font-weight: 700;
     }
     
-    /* Filters + search input: HIDDEN on mobile by default */
-    .hdr-ctx-filter.visible {
+    /* Filters + search input: HIDDEN on mobile by default.
+       .header-actions prefix gives higher specificity (0,3,0)
+       to beat the generic .hdr-ctx-el.visible (0,2,0) rule
+       that lives outside this media query. */
+    .header-actions .hdr-ctx-filter.visible {
         display: none !important;
     }
-    .hdr-inline-search.visible {
+    .header-actions .hdr-inline-search.visible {
         display: none !important;
     }
     
-    /* When 🔍 tapped: title hides, search+filters appear in its place */
-    .header-search-open .header-title-area {
-        display: none !important;
-    }
-    .header-search-open .hdr-inline-search.visible {
+    /* When 🔍 tapped: search + filters appear to the left of the lupa.
+       Title area STAYS (just shrinks), so icons don't jump. */
+    .header-search-open .header-actions .hdr-inline-search.visible {
         display: inline-block !important;
         width: 80px !important;
         font-size: 0.78rem;
@@ -797,10 +802,11 @@
         border: 1px solid var(--border) !important;
         flex-shrink: 1;
     }
-    .header-search-open .hdr-ctx-filter.visible {
+    .header-search-open .header-actions .hdr-ctx-filter.visible {
         display: inline-block !important;
         font-size: 0.75rem;
         padding: 0.18rem 0.25rem;
+        max-width: 55px;
     }
     
     /* Notification bell smaller */
@@ -808,8 +814,9 @@
         font-size: 1rem !important;
         padding: 0.1rem 0.2rem !important;
     }
-    /* X button red */
-    .btn-regresa-simple {
+    /* X button always red on mobile */
+    .btn-regresa-simple,
+    #btnRegresa {
         font-size: 1.2rem !important;
         color: var(--danger) !important;
     }
