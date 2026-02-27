@@ -243,7 +243,7 @@ function showNuevoTrabajoModal() {
     
     // Defaults
     document.getElementById('trabajoDescripcion').value = '';
-    document.getElementById('trabajoFechaSolicitud').value = new Date().toISOString().split('T')[0];
+    document.getElementById('trabajoFechaSolicitud').value = todayLocal();
     document.getElementById('trabajoFechaEntrega').value = '';
     document.getElementById('trabajoEsRecurrente').checked = false;
     document.getElementById('trabajoRecurrenciaFields').style.display = 'none';
@@ -423,7 +423,7 @@ async function cambiarEstadoTrabajo(nuevoEstado) {
     var updates = { estado: nuevoEstado, updated_at: new Date().toISOString() };
     
     if (nuevoEstado === 'completado') {
-        updates.fecha_completado = new Date().toISOString().split('T')[0];
+        updates.fecha_completado = todayLocal();
         
         // If recurrent, ask about generating next
         if (t.es_recurrente && t.frecuencia) {
@@ -642,7 +642,7 @@ async function uploadTrabajoFotos(files) {
     var activo = activos.find(function(a) { return a.id === t.activo_id; });
     var provNombre = prov ? prov.nombre.replace(/[\/\\]/g, '-') : 'Proveedor';
     var activoNombre = activo ? activo.nombre.replace(/[\/\\]/g, '-') : 'Activo';
-    var fechaHoy = new Date().toISOString().split('T')[0];
+    var fechaHoy = todayLocal();
     
     showLoading();
     try {
