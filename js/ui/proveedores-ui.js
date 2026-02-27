@@ -7,13 +7,14 @@
 // ============================================
 
 function viewFacturaDoc(facturaId, tipo) {
+    var uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     // Check if factura has Drive file ID in memory
     for (var p = 0; p < proveedores.length; p++) {
         var facs = proveedores[p].facturas || [];
         for (var i = 0; i < facs.length; i++) {
             if (facs[i].id === facturaId) {
                 var driveId = (tipo === 'pago') ? facs[i].pago_drive_file_id : facs[i].documento_drive_file_id;
-                if (driveId) {
+                if (driveId && !uuidRx.test(driveId)) {
                     viewDriveFileInline(driveId, (tipo === 'pago' ? 'Comprobante Pago' : 'Factura'));
                     return;
                 }
@@ -25,12 +26,13 @@ function viewFacturaDoc(facturaId, tipo) {
 }
 
 function viewDocumento(docId) {
+    var uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     // Check if doc has Drive file ID in memory
     for (var p = 0; p < proveedores.length; p++) {
         var docs = proveedores[p].documentos || [];
         for (var i = 0; i < docs.length; i++) {
             if (docs[i].id === docId) {
-                if (docs[i].google_drive_file_id) {
+                if (docs[i].google_drive_file_id && !uuidRx.test(docs[i].google_drive_file_id)) {
                     var safeName = (docs[i].nombre || 'Documento').replace(/'/g, "\\'");
                     viewDriveFileInline(docs[i].google_drive_file_id, safeName);
                     return;
