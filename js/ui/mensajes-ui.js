@@ -690,7 +690,7 @@ async function submitNuevoMensaje(event) {
                     await supabaseClient.from('inquilinos_documentos').insert([{
                         inquilino_id: parseInt(refId),
                         nombre_documento: file.name,
-                        fecha_guardado: new Date().toISOString().split('T')[0],
+                        fecha_guardado: todayLocal(),
                         usuario_guardo: currentUser.nombre,
                         google_drive_file_id: result.id,
                         archivo_pdf: ''
@@ -699,7 +699,7 @@ async function submitNuevoMensaje(event) {
                     await supabaseClient.from('proveedores_documentos').insert([{
                         proveedor_id: parseInt(refId),
                         nombre_documento: file.name,
-                        fecha_guardado: new Date().toISOString().split('T')[0],
+                        fecha_guardado: todayLocal(),
                         usuario_guardo: currentUser.nombre,
                         google_drive_file_id: result.id,
                         archivo_pdf: ''
