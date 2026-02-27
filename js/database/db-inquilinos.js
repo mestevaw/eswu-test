@@ -1,6 +1,7 @@
 /* ========================================
-   DB-INQUILINOS.JS
-   Carga, guardado, edición y eliminación de inquilinos
+   js/database/db-inquilinos.js — V1
+   Fecha: 2026-02-27
+   Descripción: Carga, guardado, edición y eliminación de inquilinos
    ======================================== */
 
 // ============================================
@@ -503,52 +504,4 @@ async function deleteInquilino() {
     }
 }
 
-// ============================================
-// TERMINAR CONTRATO
-// ============================================
-
-async function terminarContratoInquilino() {
-    const fechaTerminacion = prompt('Ingresa la fecha de terminación del contrato (YYYY-MM-DD):');
-    
-    if (!fechaTerminacion) return;
-    
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(fechaTerminacion)) {
-        alert('Formato de fecha inválido. Usa YYYY-MM-DD (ejemplo: 2026-02-15)');
-        return;
-    }
-    
-    if (!confirm('¿Está seguro de terminar el contrato de este inquilino?')) {
-        return;
-    }
-    
-    showLoading();
-    
-    try {
-        const { error } = await supabaseClient
-            .from('inquilinos')
-            .update({
-                contrato_activo: false,
-                fecha_terminacion: fechaTerminacion
-            })
-            .eq('id', currentInquilinoId);
-        
-        if (error) throw error;
-        
-        await loadInquilinos();
-        closeModal('inquilinoDetailModal');
-        
-        if (currentSubContext === 'inquilinos-list') {
-            renderInquilinosTable();
-        }
-        
-        alert('✅ Contrato terminado correctamente');
-        
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error al terminar contrato: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-console.log('✅ DB-INQUILINOS.JS cargado');
+console.log('✅ DB-INQUILINOS.JS V1 cargado (2026-02-27)');
