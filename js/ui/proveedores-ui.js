@@ -700,17 +700,18 @@ function showProveedorDetail(id) {
             const escapedNombre = (d.nombre || '').replace(/'/g, "\\'");
             return `
                 <tr class="doc-item">
-                    <td onclick="fetchAndViewDocProveedor(${d.id})" title="Ver PDF" style="cursor:pointer; word-wrap:break-word">${d.nombre}</td>
-                    <td onclick="fetchAndViewDocProveedor(${d.id})" title="Ver PDF" style="cursor:pointer;">${formatDate(d.fecha)}</td>
-                    <td onclick="fetchAndViewDocProveedor(${d.id})" title="Ver PDF" style="cursor:pointer;">${d.usuario}</td>
-                    <td style="width:60px; text-align:center; white-space:nowrap;">
+                    <td onclick="fetchAndViewDocProveedor(${d.id})" title="Ver PDF" style="cursor:pointer; word-wrap:break-word;">
+                        <div style="font-weight:500;">${d.nombre}</div>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.15rem;">${formatDate(d.fecha)} · ${d.usuario}</div>
+                    </td>
+                    <td style="width:60px; text-align:center; white-space:nowrap; vertical-align:middle;">
                         <span onclick="event.stopPropagation(); replaceProveedorDoc(${d.id})" title="Cambiar PDF" style="cursor:pointer; font-size:1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
                         <span onclick="event.stopPropagation(); deleteProveedorDocConConfirm(${d.id}, '${escapedNombre}')" title="Eliminar documento" style="cursor:pointer; color:var(--danger); font-weight:700; font-size:1.1rem; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">✕</span>
                     </td>
                 </tr>
             `;
         }).join('');
-        docsDiv.innerHTML = '<table id="provDocsTable" style="width:100%;table-layout:fixed"><thead><tr><th style="width:38%; cursor:pointer;" onclick="toggleDocSort(\'provDocsTable\', 0)">Nombre ▲</th><th style="width:20%">Fecha</th><th style="width:20%">Usuario</th><th style="width:60px"></th></tr></thead><tbody>' + escapedDocs + '</tbody></table>';
+        docsDiv.innerHTML = '<table id="provDocsTable" style="width:100%;"><thead><tr><th style="cursor:pointer;" onclick="toggleDocSort(\'provDocsTable\', 0)">Nombre ▲</th><th style="width:60px"></th></tr></thead><tbody>' + escapedDocs + '</tbody></table>';
     } else {
         docsDiv.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem">No hay documentos</p>';
     }
