@@ -41,7 +41,14 @@ async function loadProveedores() {
                 telefono: c.telefono,
                 email: c.email
             })) : [],
-            facturas: prov.facturas ? prov.facturas.map(f => ({
+            facturas: prov.facturas ? prov.facturas.map(f => {
+                // Validate Drive IDs — reject Supabase UUIDs (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+                var uuidRx = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                var docDriveId = f.documento_drive_file_id || '';
+                var pagoDriveId = f.pago_drive_file_id || '';
+                if (uuidRx.test(docDriveId)) { console.warn('⚠️ Factura', f.id, 'tiene UUID en documento_drive_file_id:', docDriveId); docDriveId = ''; }
+                if (uuidRx.test(pagoDriveId)) { console.warn('⚠️ Factura', f.id, 'tiene UUID en pago_drive_file_id:', pagoDriveId); pagoDriveId = ''; }
+                return {
                 id: f.id,
                 numero: f.numero,
                 fecha: f.fecha,
@@ -49,11 +56,12 @@ async function loadProveedores() {
                 monto: parseFloat(f.monto),
                 iva: parseFloat(f.iva || 0),
                 fecha_pago: f.fecha_pago,
-                documento_drive_file_id: f.documento_drive_file_id || '',
-                pago_drive_file_id: f.pago_drive_file_id || '',
-                has_documento: docSet.has(f.id) || !!(f.documento_drive_file_id),
-                has_pago: pagoSet.has(f.id) || !!(f.pago_drive_file_id)
-            })).sort((a, b) => new Date(b.fecha) - new Date(a.fecha)) : [],
+                documento_drive_file_id: docDriveId,
+                pago_drive_file_id: pagoDriveId,
+                has_documento: docSet.has(f.id) || !!(docDriveId),
+                has_pago: pagoSet.has(f.id) || !!(pagoDriveId)
+                };
+            }).sort((a, b) => new Date(b.fecha) - new Date(a.fecha)) : [],
             documentos: prov.proveedores_documentos ? prov.proveedores_documentos.map(d => ({
                 id: d.id,
                 nombre: d.nombre_documento,
