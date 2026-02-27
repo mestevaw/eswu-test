@@ -740,42 +740,68 @@
         display: none !important;
     }
     
-    /* ── MOBILE HEADER: compact everything ── */
+    /* ── MOBILE HEADER: 2 lines ── */
     .header {
-        padding: 0.5rem 0.4rem 0.5rem 0;
+        padding: 0.4rem 0.5rem 0.3rem 0;
+        flex-wrap: wrap;
+    }
+    .header-row1 {
+        width: 100%;
+        flex: none;
+    }
+    .header-row2 {
+        width: 100%;
+        flex: none;
+        justify-content: flex-end;
+        padding-right: 0.2rem;
+        padding-top: 0.15rem;
     }
     .header-title {
         font-size: 1.05rem !important;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     #headerSubtitle {
         font-size: 0.9rem !important;
         font-weight: 500;
     }
     .header-actions {
-        gap: 0.3rem !important;
-        padding-right: 0.4rem !important;
+        gap: 0.4rem !important;
+        padding-right: 0.2rem !important;
         flex-shrink: 0;
     }
     
-    /* Header context elements on mobile — smaller */
+    /* Header context elements on mobile — compact */
     .hdr-ctx-el.visible {
         display: inline-block !important;
     }
     .hdr-ctx-btn {
-        font-size: 0.8rem !important;
-        padding: 0.1rem 0.15rem !important;
+        font-size: 0.85rem !important;
+        padding: 0.1rem 0.2rem !important;
     }
     .hdr-ctx-add {
-        font-size: 0.95rem !important;
+        font-size: 1rem !important;
+        font-weight: 700;
+    }
+    
+    /* Filters hidden by default on mobile — shown when search is open */
+    .hdr-ctx-filter.visible {
+        display: none !important;
+    }
+    .header-search-open .hdr-ctx-filter.visible {
+        display: inline-block !important;
     }
     .hdr-ctx-filter {
-        font-size: 0.68rem;
-        padding: 0.1rem 0.15rem;
-        max-width: 60px;
+        font-size: 0.72rem;
+        padding: 0.12rem 0.2rem;
+        max-width: 65px;
+    }
+    .hdr-inline-search {
+        /* hidden until toggled */
     }
     .hdr-inline-search.open {
-        width: 70px !important;
+        width: 75px !important;
         font-size: 0.75rem;
         padding: 0.15rem 0.3rem !important;
     }
@@ -785,14 +811,19 @@
         font-size: 1rem !important;
         padding: 0.1rem 0.2rem !important;
     }
-    /* X button smaller but red */
+    /* X button red */
     .btn-regresa-simple {
-        font-size: 1.3rem !important;
+        font-size: 1.4rem !important;
+        color: var(--danger) !important;
     }
     
-    /* Hide nav menu on mobile — mobile section-toolbars have their own */
+    /* Hide nav menu on mobile */
     #headerNavMenu {
         display: none !important;
+    }
+    /* Taller header on mobile = more body padding */
+    body.logged-in {
+        padding-top: 85px !important;
     }
 }
 
