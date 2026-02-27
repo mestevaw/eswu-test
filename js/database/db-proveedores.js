@@ -162,7 +162,7 @@ async function saveProveedor(event) {
             var docData = {
                 proveedor_id: proveedorId,
                 nombre_documento: docNombre,
-                fecha_guardado: new Date().toISOString().split('T')[0],
+                fecha_guardado: todayLocal(),
                 usuario_guardo: currentUser ? currentUser.nombre : 'Sistema'
             };
             
