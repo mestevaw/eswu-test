@@ -1,830 +1,1996 @@
-/* ========================================
-   MODALS.CSS - ESTILOS COMPLETOS DE MODALES
-   ======================================== */
-
-/* ============================================
-   BASE MODAL - REGLAS FUNDAMENTALES
-   ============================================ */
-
-.modal {
-    display: none !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
-    overflow-y: auto;
-    pointer-events: none;
-}
-
-.modal.active {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    pointer-events: auto;
-}
-
-.modal-content {
-    background: white !important;
-    border-radius: 8px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-    max-width: 900px;
-    width: 95%;
-    max-height: 90vh;
-    overflow-y: auto;
-    position: relative;
-    z-index: 2001;
-}
-
-.modal-header {
-    padding: 1.5rem;
-    border-bottom: 2px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--bg);
-}
-
-.modal-header-sticky {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: white !important;
-}
-
-.modal-header-sticky + div {
-    padding-top: 1rem !important;
-}
-
-.modal-header-left {
-    display: flex;
-    align-items: center;
-}
-
-.modal-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin: 0;
-}
-
-.close-modal {
-    background: none;
-    border: none;
-    font-size: 2rem;
-    color: var(--danger);
-    cursor: pointer;
-    padding: 0;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-}
-
-.close-modal:hover {
-    color: #c53030;
-    transform: scale(1.1);
-}
-
-.modal-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--border);
-}
-
-.modal-actions-top {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-}
-
-/* ============================================
-   TABS DENTRO DE MODALES
-   ============================================ */
-
-.tabs-container {
-    margin-top: 1.5rem;
-}
-
-/* Mobile dropdown - hidden on desktop */
-.tabs-mobile-select {
-    display: none;
-    flex: 1;
-    min-width: 0;
-    padding: 0.6rem 0.8rem;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--primary);
-    border: 2px solid var(--primary);
-    border-radius: 8px;
-    background: white;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    -webkit-appearance: none;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%231a365d' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.8rem center;
-}
-
-.tabs-mobile-row {
-    display: none;
-    margin-bottom: 1rem;
-}
-
-.tabs-mobile-row .tabs-mobile-select {
-    margin-bottom: 0;
-}
-
-.balance-inline-filter {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .tabs-mobile-select {
-        display: block;
-    }
-    .tabs-mobile-row {
-        display: flex;
-    }
-    .tabs-desktop-only {
-        display: none !important;
-    }
-}
-
-.tabs {
-    display: block;
-    white-space: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 1.5rem;
-    position: sticky;
-    top: 80px;
-    background: white;
-    z-index: 50;
-    padding-top: 0.5rem;
-    max-width: 100%;
-}
-.tabs::-webkit-scrollbar { display: none; }
-
-.tab {
-    display: inline-block;
-    background: #f1f5f9;
-    border: 1px solid var(--border);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 0.65rem 1.2rem;
-    font-size: 0.88rem;
-    font-weight: 500;
-    color: var(--text-light);
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    margin-bottom: -2px;
-    vertical-align: bottom;
-}
-
-.tab:hover {
-    color: var(--primary);
-    background: #e2e8f0;
-}
-
-.tab.active {
-    color: var(--primary);
-    background: white;
-    border-color: var(--border);
-    border-bottom: 2px solid white;
-    font-weight: 600;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* ============================================
-   INFO BOXES DENTRO DE MODALES
-   ============================================ */
-
-.info-box {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.info-box-title {
-    font-weight: 600;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-}
-
-.info-box-content {
-    color: var(--text);
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-}
-
-.info-item {
-    background: white;
-    padding: 1rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-}
-
-.info-label {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    margin-bottom: 0.25rem;
-    font-weight: 500;
-}
-
-.info-value {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text);
-}
-
-/* ============================================
-   PAYMENT ITEMS
-   ============================================ */
-
-.payment-item {
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.payment-item-content {
-    flex: 1;
-}
-
-.payment-item-actions {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-/* ============================================
-   PDF LINKS
-   ============================================ */
-
-.pdf-link {
-    background: #e6f2ff;
-    color: var(--primary);
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    text-decoration: none;
-    border: 1px solid #b3d9ff;
-    display: inline-block;
-    font-size: 0.875rem;
-}
-
-.pdf-link:hover {
-    background: #cce5ff;
-}
-
-/* ============================================
-   PHOTO GALLERY
-   ============================================ */
-
-.photo-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.photo-item img {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    cursor: pointer;
-}
-
-.photo-item img:hover {
-    opacity: 0.8;
-}
-
-/* ============================================
-   BOTÓN LÁPIZ - MÁS CERCA DE LA X
-   ============================================ */
-
-.btn-icon-edit {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: var(--primary);
-    font-size: 1.5rem;
-    padding: 0.25rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-right: 0.25rem !important;
-    margin-left: auto;
-}
-
-.btn-icon-edit:hover {
-    transform: scale(1.2);
-    color: var(--primary-dark);
-}
-
-/* ============================================
-   FICHA PROVEEDOR - NOMBRE AUTO-SIZE
-   ============================================ */
-
-.prov-nombre-auto {
-    font-size: 1.35rem;
-    line-height: 1.25;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-}
-
-/* Si el nombre es muy largo (más de ~30 chars), reducir fuente */
-.prov-nombre-auto.nombre-largo {
-    font-size: 1.05rem;
-}
-
-/* ============================================
-   FICHA PROVEEDOR - RECUADROS SOMBREADOS
-   ============================================ */
-
-.prov-info-box {
-    flex: 1;
-    min-width: 120px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.prov-info-box a {
-    color: var(--primary);
-    text-decoration: none;
-}
-
-.prov-info-box a:hover {
-    text-decoration: underline;
-}
-
-/* ============================================
-   FICHA PROVEEDOR - DROPDOWN CONTACTOS
-   ============================================ */
-
-.prov-contacts-toggle {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    cursor: pointer;
-    font-size: 0.85rem;
-    color: var(--text-light);
-    transition: background 0.2s;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.prov-contacts-toggle:hover {
-    background: #e2e8f0;
-}
-
-.prov-contacts-toggle .chevron {
-    transition: transform 0.2s;
-    font-size: 0.75rem;
-}
-
-.prov-contacts-toggle.open .chevron {
-    transform: rotate(180deg);
-}
-
-.prov-contacts-list {
-    display: none;
-    margin-bottom: 0.5rem;
-}
-
-.prov-contacts-list.open {
-    display: block;
-}
-
-.prov-contacts-list .contact-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.35rem;
-    font-size: 0.85rem;
-}
-
-/* ============================================
-   HOVER EN ICONOS DE ACCIÓN
-   ============================================ */
-
-.btn-icon-action:hover {
-    transform: scale(1.4) !important;
-}
-
-/* ============================================
-   BOTÓN + INLINE EN PESTAÑAS - SIN CÍRCULO
-   ============================================ */
-
-.btn-add-inline {
-    background: transparent !important;
-    color: var(--success) !important;
-    border: none !important;
-    border-radius: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    display: inline !important;
-    font-size: 1.25rem !important;
-    font-weight: bold !important;
-    cursor: pointer !important;
-    margin-left: 0.5rem !important;
-    transition: all 0.2s !important;
-    vertical-align: middle !important;
-    padding: 0 !important;
-}
-
-.btn-add-inline:hover {
-    color: var(--primary) !important;
-    background: transparent !important;
-    transform: scale(1.2) !important;
-}
-
-/* Mostrar botón + solo en pestaña activa */
-.tab .btn-add-inline {
-    display: none !important;
-}
-
-.tab.active .btn-add-inline {
-    display: inline !important;
-}
-
-/* ============================================
-   BOTÓN DISKETTE EN MODAL HEADER
-   ============================================ */
-
-.btn-save-header {
-    background: transparent !important;
-    border: none !important;
-    color: var(--success) !important;
-    font-size: 1.5rem !important;
-    padding: 0.25rem !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    margin-left: auto !important;
-    margin-right: 0.25rem !important;
-}
-
-.btn-save-header:hover {
-    transform: scale(1.2) !important;
-    color: var(--primary) !important;
-}
-
-/* ============================================
-   SOMBRAS EN RECUADROS SUPERIORES
-   ============================================ */
-
-.contacto-item,
-[style*="background:var(--bg)"],
-[style*="background:white;padding:0.75rem"] {
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
-}
-
-/* ============================================
-   RESPONSIVE - MODALES EN MÓVIL
-   ============================================ */
-
-@media (max-width: 768px) {
-    .modal.active {
-        padding: 0.1rem;
-    }
+<!DOCTYPE html>
+<!-- ============================================
+     ESWU v22 — Cambiar el número ↓ al desplegar nueva versión
+     ============================================ -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESWU - Sistema de Administración</title>
+    <link rel="stylesheet" href="css/base.css?v=22">
+    <link rel="stylesheet" href="css/layout.css?v=23">
+    <link rel="stylesheet" href="css/components.css?v=23">
+    <link rel="stylesheet" href="css/modals.css?v=35">
+    <link rel="stylesheet" href="css/tables.css?v=23">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a365d">
+    <link rel="stylesheet" href="css/pages.css?v=18">
+    <link rel="stylesheet" href="css/utilities.css?v=23">
+    <script>
+        /* Global helpers — defined early to guarantee availability */
+        function closeModal(id) {
+            var el = document.getElementById(id);
+            if (el) el.classList.remove('active');
+        }
+        /* Local date string (YYYY-MM-DD) — avoids UTC timezone bug */
+        function todayLocal() {
+            var d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+        }
+    </script>
+    <style>
+        .file-drop-zone {
+            margin-top: 0.5rem;
+            padding: 0.8rem;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.82rem;
+            color: #94a3b8;
+            transition: all 0.2s;
+            cursor: default;
+        }
+        .file-drop-zone.drag-over {
+            border-color: var(--primary);
+            background: rgba(59,130,246,0.06);
+            color: var(--primary);
+        }
+        @media (max-width: 600px) {
+            .hide-mobile { display: none !important; }
+            .show-mobile-only { display: block !important; }
+            #proveedoresFacturasPorPagarTable,
+            #proveedoresFacturasPagadasTable,
+            #proveedoresTable,
+            #inquilinosTable,
+            #inquilinosRentasRecibidasTable,
+            #inquilinosVencimientoContratosTable,
+            #usuariosTable,
+            #activosTable,
+            #estacionamientoTable,
+            #eswuBalanceTable,
+            #bitacoraTable { display: none !important; }
+            .filter-section { flex-wrap: wrap; gap: 0.3rem; }
+            .filter-section label { font-size: 0.85rem; }
+            .filter-section select { font-size: 0.85rem; min-width: 0; }
+            .card { padding: 0; overflow: hidden; }
+            .card-header { padding: 0.6rem 0.6rem; }
+            .card .table-container { padding: 0; }
+            .card > div[style*="padding: 1.5rem"] { padding: 0.3rem !important; }
+            /* Prevent iOS text auto-sizing */
+            .show-mobile-only, .show-mobile-only * {
+                -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
+        }
+        @media (min-width: 601px) {
+            .show-mobile-only { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div id="loginContainer" class="login-container">
+        <div class="login-box">
+            <h1>ESWU</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" id="username" required autocomplete="username" placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width:100%">Iniciar Sesión</button>
+                <div style="text-align:center; margin-top:0.75rem;">
+                    <a href="#" onclick="event.preventDefault(); showForgotPasswordDialog()" style="font-size:0.85rem; color:var(--primary); text-decoration:none;">Olvidé mi password</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="appContainer" class="app-container">
+        <header class="header">
+            <div style="display:flex;align-items:center;gap:0.4rem;padding-left:0.75rem;">
+                <div id="headerNavMenu" class="nav-menu" style="display:none;">
+                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger" style="font-size:1rem;padding:0.2rem 0.45rem;">☰</button>
+                    <div class="nav-dropdown" id="headerNavDropdown"></div>
+                </div>
+                <h1 class="header-title" onclick="if(!isMobile()) showDashboard(); else showMobileMenu();" style="cursor:pointer;padding-left:0;">ESWU<span id="headerSubtitle" style="font-weight:500;font-size:1.1rem;"></span></h1>
+            </div>
+            <div id="headerSearchBar" class="header-search-bar">
+                <input type="text" id="searchInput" placeholder="Buscar..." onkeypress="if(event.key==='Enter') executeSearch()" oninput="headerSearchLive()">
+                <button class="btn-icon search" onclick="executeSearch()" title="Buscar">🔍</button>
+                <button class="btn-icon clear" onclick="clearSearch()" title="Limpiar">🧹</button>
+            </div>
+            <div class="header-actions">
+                <input id="headerInlineSearch" type="text" class="hdr-ctx-el hdr-inline-search" placeholder="Buscar..." oninput="headerSearchLive()">
+                <span id="headerCtxSearchBtn" class="hdr-ctx-el hdr-ctx-btn" onclick="toggleHeaderInlineSearch()" title="Buscar">🔍</span>
+                <select id="headerFilterYear" class="hdr-ctx-el hdr-ctx-filter"></select>
+                <select id="headerFilterMonth" class="hdr-ctx-el hdr-ctx-filter"></select>
+                <span id="headerCtxExcel" class="hdr-ctx-el hdr-ctx-btn" title="Exportar">📊</span>
+                <span id="headerCtxAdd" class="hdr-ctx-el hdr-ctx-btn hdr-ctx-add" title="Agregar">+</span>
+                <button id="btnNotif" class="btn-notif" onclick="toggleNotifPanel()" title="Notificaciones" style="position:relative; background:none; border:none; font-size:1.3rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">🔔<span id="notifBadge" style="display:none; position:absolute; top:-2px; right:-2px; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px;">0</span></button>
+                <button id="btnSearch" class="btn-search hidden" onclick="toggleSearch()">🔍</button>
+                <button id="btnRegresa" class="btn-regresa-simple hidden" onclick="handleRegresa()" style="color:var(--danger);">✖</button>
+            </div>
+        </header>
+
+        <div id="loadingBanner" class="loading-banner hidden">
+            <span class="loading-text">⏳ Cargando datos...</span>
+            <div class="loading-progress"></div>
+        </div>
+        
+        <div class="main-content">
+            <div class="menu-sidebar" id="menuSidebar">
+                <button id="menuAdmin" class="menu-btn" onclick="showSubMenu('admin')">Admin</button>
+                <button id="menuEswu" class="menu-btn" onclick="showEswuFicha()">ESWU</button>
+                <button id="menuInquilinos" class="menu-btn" onclick="showSubMenu('inquilinos')">Inquilinos</button>
+                <button id="menuProveedores" class="menu-btn" onclick="showSubMenu('proveedores')">Proveedores</button>
+                <button class="menu-btn menu-btn-secondary" onclick="logout()">Salir</button>
+            </div>
+
+            <!-- MOBILE MENU (solo visible en celular) -->
+            <div id="mobileMenu" class="mobile-menu">
+                <div id="mobileMenuMain" class="mm-main">
+                    <div class="mm-buttons">
+                        <button class="mm-btn" onclick="mobileMenuSelect('admin')"><span class="mm-icon">⚙️</span> Admin</button>
+                        <button class="mm-btn" id="mmBtnEswu" onclick="mobileMenuSelect('eswu')"><span class="mm-icon">🏢</span> ESWU</button>
+                        <button class="mm-btn" id="mmBtnInquilinos" onclick="mobileMenuSelect('inquilinos')"><span class="mm-icon">👥</span> Inquilinos</button>
+                        <button class="mm-btn" id="mmBtnProveedores" onclick="mobileMenuSelect('proveedores')"><span class="mm-icon">🔧</span> Proveedores</button>
+                    </div>
+                    <div class="mm-footer"><span onclick="logout()" style="cursor:pointer; color:var(--text-light); font-size:0.82rem;">Cerrar sesión</span></div>
+                </div>
+                <div id="mobileMenuSub" class="mm-sub" style="display:none;">
+                    <div id="mmSubTitle" class="mm-sub-title"></div>
+                    <div id="mmSubButtons" class="mm-sub-buttons"></div>
+                    <button class="mm-back" onclick="mobileMenuBack()">← Menú principal</button>
+                </div>
+            </div>
+
+            <div id="eswuSubMenu" class="submenu-container" style="display:none;"></div>
+
+            <div id="inquilinosSubMenu" class="submenu-container">
+                <button class="submenu-btn" onclick="showInquilinosView('list')">Listado</button>
+                <button class="submenu-btn" onclick="showInquilinosView('rentasRecibidas')">Rentas</button>
+                <button class="submenu-btn" onclick="showInquilinosView('vencimientoContratos')">Contratos</button>
+            </div>
+
+            <div id="proveedoresSubMenu" class="submenu-container">
+                <button class="submenu-btn" onclick="showProveedoresView('list')">Listado</button>
+                <button class="submenu-btn" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</button>
+                <button class="submenu-btn" onclick="showProveedoresView('facturasPorPagar')">Facturas X Pagar</button>
+                <button class="submenu-btn" onclick="showProveedoresView('mantenimiento')">Mantenimiento</button>
+            </div>
+
+            <div id="adminSubMenu" class="submenu-container">
+                <button class="submenu-btn" onclick="showActivosPage()">Activos</button>
+                <button class="submenu-btn" onclick="showPageFromMenu('bitacora')">Bitácora</button>
+                <button class="submenu-btn" onclick="showContabilidadPage()">Contabilidad</button>
+                <button class="submenu-btn" onclick="showPageFromMenu('estacionamiento')">Estacionamiento</button>
+                <button class="submenu-btn" onclick="showNumerosPage()">Números</button>
+            </div>
+
+            <div id="contentArea" class="content-area">
+
+                <!-- DASHBOARD -->
+                <div id="dashboardPage" class="page">
+                    <div class="dash-grid">
+                        <!-- Inquilinos tile -->
+                        <div class="dash-tile dash-inquilinos">
+                            <div class="dash-tile-header">
+                                <span class="dash-tile-icon">👥</span>
+                                <span class="dash-tile-title" onclick="showInquilinosView('list')" style="cursor:pointer;">Inquilinos</span>
+                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()">
+                            </div>
+                            <div class="dash-tile-links dash-tile-links-top">
+                                <span class="active" onclick="switchDashInqView('list')">Listado</span>
+                                <span onclick="switchDashInqView('rentas')">Rentas</span>
+                                <span onclick="switchDashInqView('contratos')">Contratos</span>
+                            </div>
+                            <div id="dashInquilinosList" class="dash-tile-body"></div>
+                        </div>
+
+                        <!-- ESWU central -->
+                        <div class="dash-tile dash-eswu" onclick="showEswuFicha()">
+                            <div class="dash-eswu-text">ESWU</div>
+                        </div>
+
+                        <!-- Proveedores tile -->
+                        <div class="dash-tile dash-proveedores">
+                            <div class="dash-tile-header">
+                                <span class="dash-tile-icon">🔧</span>
+                                <span class="dash-tile-title" onclick="showProveedoresView('list')" style="cursor:pointer;">Proveedores</span>
+                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()">
+                            </div>
+                            <div class="dash-tile-links dash-tile-links-top" style="position:relative;">
+                                <span class="active" onclick="switchDashProvView('list')">Listado</span>
+                                <span onclick="switchDashProvView('pagadas')">Fact. Pagadas</span>
+                                <span onclick="switchDashProvView('porpagar')">Fact. x Pagar</span>
+                                <span id="dashProvAddFactura" onclick="event.stopPropagation(); showRegistrarFacturaFromDash();" title="Registrar Factura" style="flex:0;border:none;padding:0.3rem 0.4rem;color:#22c55e;font-size:1.1rem;font-weight:700;cursor:pointer;min-width:auto;display:none;">+</span>
+                            </div>
+                            <div id="dashProveedoresList" class="dash-tile-body"></div>
+                        </div>
+
+                        <!-- Admin bar -->
+                        <div class="dash-tile dash-admin">
+                            <div class="dash-admin-bar">
+                                <span class="dash-admin-label">⚙️ Admin</span>
+                                <div class="dash-admin-buttons">
+                                    <span onclick="showActivosPage()">📦 Activos</span>
+                                    <span onclick="showPageFromMenu('bitacora')">📋 Bitácora</span>
+                                    <span onclick="showContabilidadPage()">📊 Contabilidad</span>
+                                    <span onclick="showPageFromMenu('estacionamiento')">🅿️ Estacionamiento</span>
+                                    <span onclick="showNumerosPage()">📈 Números</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mensajes tile -->
+                        <div class="dash-tile dash-mensajes">
+                            <div class="dash-tile-header dash-msg-header">
+                                <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes</span>
+                                <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas <span id="dashAlertasBadge" class="dash-badge" style="display:none;">0</span></span>
+                                <span onclick="switchDashMsgView('avisos')" class="dash-msg-tab">📢 Avisos</span>
+                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
+                            </div>
+                            <div id="dashMensajesList" class="dash-tile-body dash-msg-body"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="numerosPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Resumen Financiero</h2>
+                        </div>
+                        <div style="padding: 1.5rem;">
+                            <div class="filter-section">
+                                <label>Año:</label>
+                                <select id="homeYear" onchange="updateHomeView()"></select>
+                                <label>Mes:</label>
+                                <select id="homeMonth" onchange="updateHomeView()">
+                                    <option value="">Todos</option>
+                                    <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
+                                    <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
+                                    <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
+                                    <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
+                                </select>
+                            </div>
+                            <div class="summary-grid">
+                                <div class="summary-card" onclick="toggleHomeTable('ingresos')">
+                                    <div style="font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--text-light); font-weight: 500;">Ingresos del Periodo</div>
+                                    <div class="summary-value" id="summaryIngresos">$0.00</div>
+                                </div>
+                                <div class="summary-card" onclick="toggleHomeTable('pagos')">
+                                    <div style="font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--text-light); font-weight: 500;">Pagos del Periodo</div>
+                                    <div class="summary-value" id="summaryGastos">$0.00</div>
+                                </div>
+                                <div class="summary-card">
+                                    <div style="font-size: 0.875rem; margin-bottom: 0.5rem; color: var(--text-light); font-weight: 500;">Neto</div>
+                                    <div class="summary-value" id="summaryNeto">$0.00</div>
+                                </div>
+                            </div>
+                            <div id="homeIngresosContainer" class="hidden">
+                                <h3 style="margin: 1.5rem 0 1rem 0;">Detalle de Ingresos</h3>
+                                <div class="table-container">
+                                    <table id="homeIngresosTable">
+                                        <thead><tr><th>Inquilino</th><th>Fecha</th><th>Monto</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div id="homePagosContainer" class="hidden">
+                                <h3 style="margin: 1.5rem 0 1rem 0;">Detalle de Pagos</h3>
+                                <div class="table-container">
+                                    <table id="homePagosTable">
+                                        <thead><tr><th>Proveedor</th><th>Fecha</th><th>Monto</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inquilinosPage" class="page">
+                    <div id="inquilinosListView" class="hidden">
+                        <div class="card">
+                            <div class="card-header section-toolbar desktop-hidden">
+                                <div class="toolbar-left">
+                                    <div class="nav-menu">
+                                        <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                        <div class="nav-dropdown">
+                                            <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                            <div class="nav-dropdown-item active">Inquilinos</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('rentasRecibidas')">Rentas</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('vencimientoContratos')">Contratos</div>
+                                        </div>
+                                    </div>
+                                    <span class="toolbar-title">ESWU — Inquilinos</span>
+                                </div>
+                                <div class="toolbar-right">
+                                    <input type="text" class="toolbar-search" id="inqListSearch" placeholder="Buscar..." oninput="renderInquilinosTable()">
+                                    <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                    <span class="toolbar-btn" onclick="exportarInquilinosExcel()" title="Exportar">📊</span>
+                                    <span class="toolbar-btn" onclick="showAddInquilinoModal()" title="Agregar">+</span>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="inquilinosTable" class="sticky-header-table">
+                                    <thead><tr><th class="sortable" onclick="sortInquilinos('nombre')">Inquilino</th><th>Contacto</th><th class="sortable" onclick="sortInquilinos('vencimiento')">Vencimiento Contrato</th><th style="text-align:right" class="sortable" onclick="sortInquilinos('renta')">Renta Mensual</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="inquilinosRentasRecibidasView" class="hidden">
+                        <div class="card">
+                            <div class="card-header section-toolbar desktop-hidden">
+                                <div class="toolbar-left">
+                                    <div class="nav-menu">
+                                        <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                        <div class="nav-dropdown">
+                                            <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('list')">Inquilinos</div>
+                                            <div class="nav-dropdown-item active">Rentas</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('vencimientoContratos')">Contratos</div>
+                                        </div>
+                                    </div>
+                                    <span class="toolbar-title">ESWU — Rentas</span>
+                                </div>
+                                <div class="toolbar-right">
+                                    <input type="text" class="toolbar-search" id="inqRentasSearch" placeholder="Buscar..." oninput="renderInquilinosRentasRecibidas()">
+                                    <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                    <select id="inquilinosRentasYear" onchange="renderInquilinosRentasRecibidas()" class="toolbar-filter"></select>
+                                    <select id="inquilinosRentasMonth" onchange="renderInquilinosRentasRecibidas()" class="toolbar-filter">
+                                        <option value="">Todos</option>
+                                        <option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>
+                                        <option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>
+                                        <option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>
+                                        <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
+                                    </select>
+                                    <span class="toolbar-btn" onclick="exportarRentasExcel()" title="Exportar">📊</span>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="inquilinosRentasRecibidasTable" class="sticky-header-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="sortable" data-column="inquilino" onclick="sortRentasRecibidas('inquilino')">Inquilino</th>
+                                            <th>Monto</th>
+                                            <th class="sortable" data-column="fecha" onclick="sortRentasRecibidas('fecha')">Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="inquilinosVencimientoContratosView" class="hidden">
+                        <div class="card">
+                            <div class="card-header section-toolbar desktop-hidden">
+                                <div class="toolbar-left">
+                                    <div class="nav-menu">
+                                        <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                        <div class="nav-dropdown">
+                                            <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('list')">Inquilinos</div>
+                                            <div class="nav-dropdown-item" onclick="showInquilinosView('rentasRecibidas')">Rentas</div>
+                                            <div class="nav-dropdown-item active">Contratos</div>
+                                        </div>
+                                    </div>
+                                    <span class="toolbar-title">ESWU — Contratos</span>
+                                </div>
+                                <div class="toolbar-right">
+                                    <span class="toolbar-btn" onclick="exportarContratosExcel()" title="Exportar">📊</span>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table id="inquilinosVencimientoContratosTable" class="sticky-header-table">
+                                    <thead><tr><th>Empresa</th><th>Inicio</th><th>Vencimiento</th><th>Días Restantes</th><th>Estado</th></tr></thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+<!-- Proveedores Page -->
+            <div id="proveedoresPage" class="page">
+                <!-- Listado de Proveedores -->
+                <div id="proveedoresListView" class="hidden">
+                    <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item active">Listado</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('mantenimiento')">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Proveedores</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <input type="text" class="toolbar-search" id="provListSearch" placeholder="Buscar..." oninput="renderProveedoresTable()">
+                                <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                <span class="toolbar-btn" onclick="exportProveedoresToExcel()" title="Exportar">📊</span>
+                                <span class="toolbar-btn" onclick="showAddProveedorModal()" title="Agregar">+</span>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="proveedoresTable" class="sticky-header-table">
+                                <thead><tr><th>Proveedor</th><th>Servicio</th><th>Contacto</th><th>Teléfono</th><th>Email</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturas Pagadas -->
+                <div id="proveedoresFacturasPagadasView" class="hidden">
+                    <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('list')">Listado</div>
+                                        <div class="nav-dropdown-item active">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('mantenimiento')">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Facturas Pagadas</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <input type="text" class="toolbar-search" id="provFactPagSearch" placeholder="Buscar..." oninput="renderProveedoresFacturasPagadas()">
+                                <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                <select id="provFactPagYear" onchange="renderProveedoresFacturasPagadas()" class="toolbar-filter"></select>
+                                <select id="provFactPagMonth" onchange="renderProveedoresFacturasPagadas()" class="toolbar-filter">
+                                    <option value="">Todos</option>
+                                    <option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>
+                                    <option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>
+                                    <option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>
+                                    <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
+                                </select>
+                                <span class="toolbar-btn" onclick="exportFacturasPagadasToExcel()" title="Exportar">📊</span>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="proveedoresFacturasPagadasTable" class="sticky-header-table">
+                                <thead><tr><th>Proveedor</th><th style="text-align:right">No. Factura</th><th>Pagada en</th><th style="text-align:right">Monto</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Facturas Por Pagar -->
+                <div id="proveedoresFacturasPorPagarView" class="hidden">
+                    <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('list')">Listado</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item active">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('mantenimiento')">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Facturas x Pagar</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <input type="text" class="toolbar-search" id="provFactPorPagSearch" placeholder="Buscar..." oninput="renderProveedoresFacturasPorPagar()">
+                                <span class="toolbar-btn" onclick="toggleToolbarSearch(this)" title="Buscar">🔍</span>
+                                <select id="provFactPorPagYear" onchange="renderProveedoresFacturasPorPagar()" class="toolbar-filter"></select>
+                                <select id="provFactPorPagMonth" onchange="renderProveedoresFacturasPorPagar()" class="toolbar-filter">
+                                    <option value="">Todos</option>
+                                    <option value="0">Ene</option><option value="1">Feb</option><option value="2">Mar</option>
+                                    <option value="3">Abr</option><option value="4">May</option><option value="5">Jun</option>
+                                    <option value="6">Jul</option><option value="7">Ago</option><option value="8">Sep</option>
+                                    <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
+                                </select>
+                                <span class="toolbar-btn" onclick="exportFacturasPorPagarToExcel()" title="Exportar">📊</span>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table id="proveedoresFacturasPorPagarTable" class="sticky-header-table">
+                                <thead><tr><th>Proveedor</th><th>Fact. No.</th><th>CLABE</th><th style="text-align:right"><strong>Total</strong></th><th style="text-align:right">IVA</th><th>Vencimiento</th><th style="width:70px">Acciones</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mantenimiento Global -->
+                <div id="proveedoresMantenimientoView" class="hidden">
+                    <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('list')">Listado</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item active">Mantenimiento</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Mantenimiento</span>
+                            </div>
+                        </div>
+                        <div style="padding:1rem;">
+                            <div id="mantenimientoGlobalContent">
+                                <p style="text-align:center; color:var(--text-light); padding:2rem;">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <div id="activosPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Activos</h2>
+                            <span class="btn-add-inline" onclick="showAddActivoModal()" title="Agregar activo" style="font-size:1.5rem; cursor:pointer;">+</span>
+                        </div>
+                        <div class="table-container">
+                            <table id="activosTable" class="sticky-header-table">
+                                <thead><tr><th>Nombre</th><th>Último Mantenimiento</th><th>Próximo Mantenimiento</th><th>Proveedor</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ESWU Ficha Page -->
+                <div id="eswuDocsPage" class="page">
+                    <div class="card eswu-ficha-card" style="max-width:1050px; margin:0 auto;">
+                        <div class="modal-header modal-header-sticky" style="position:sticky;top:0;z-index:10;background:white;border-bottom:1px solid var(--border);padding:0.75rem 1rem;">
+                            <h2 class="modal-title">INMOBILIARIS ESWU</h2>
+                            <div style="display:flex; align-items:center; gap:0.25rem;">
+                                <span onclick="editEswuUsuarios()" title="Administrar usuarios" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                                <button class="close-modal" onclick="handleRegresa()" style="position:static">×</button>
+                            </div>
+                        </div>
+                        <div style="padding:1.25rem;">
+                            <!-- Acta Constitutiva -->
+                            <div id="eswuActaSection" style="margin-bottom:0.5rem;"></div>
+                            <!-- Contactos (usuarios) -->
+                            <div style="margin-bottom:0.5rem;">
+                                <div id="eswuContactsList"></div>
+                            </div>
+                            <!-- Pestañas -->
+                            <div class="tabs-container">
+                                <!-- Mobile: dropdown + balance filters -->
+                                <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:nowrap;" class="tabs-mobile-row">
+                                    <select class="tabs-mobile-select" onchange="switchTab('eswu', this.value); this.blur();" style="margin-bottom:0;">
+                                        <option value="legales" selected>📄 Legales</option>
+                                        <option value="generales">📋 Generales</option>
+                                        <option value="mensajes">💬 Mensajes</option>
+                                        <option value="bancos">🏦 Bancos</option>
+                                        <option value="balance">📊 Balance</option>
+                                    </select>
+                                    <select id="balanceYearSelectM" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;"></select>
+                                    <select id="balanceMonthSelectM" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;">
+                                        <option value="0">Todos</option>
+                                        <option value="1">Ene</option><option value="2">Feb</option><option value="3">Mar</option>
+                                        <option value="4">Abr</option><option value="5">May</option><option value="6">Jun</option>
+                                        <option value="7">Jul</option><option value="8">Ago</option><option value="9">Sep</option>
+                                        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dic</option>
+                                    </select>
+                                </div>
+                                <!-- Desktop: tabs + inline balance filters -->
+                                <div class="tabs tabs-desktop-only" style="display:flex;align-items:center;">
+                                    <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'legales')">Legales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('legales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'generales')">Generales<span class="btn-add-inline" onclick="event.stopPropagation(); uploadToEswuFolder('generales');" title="Subir documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                    <span id="balanceInlineFilters" style="display:none;margin-left:auto;white-space:nowrap;">
+                                        <select id="balanceYearSelect" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;"></select>
+                                        <select id="balanceMonthSelect" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;">
+                                            <option value="0">Todos</option>
+                                            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                                            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                                            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                                            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                                        </select>
+                                    </span>
+                                </div>
+                                <div id="eswuLegalesTab" class="tab-content active">
+                                    <div style="margin-bottom:0.5rem;">
+                                        <input type="text" id="eswuLegalesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('legales')" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
+                                    </div>
+                                    <div id="eswuLegalesBreadcrumb" style="margin-bottom:0.3rem;"></div>
+                                    <div id="eswuLegalesContent"></div>
+                                    <div id="dropZoneLegales" class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleEswuDrop('legales', event.dataTransfer.files);">
+                                        📁 Arrastra archivos aquí para subir
+                                    </div>
+                                </div>
+                                <div id="eswuGeneralesTab" class="tab-content">
+                                    <div style="margin-bottom:0.5rem;">
+                                        <input type="text" id="eswuGeneralesSearch" placeholder="🔍 Buscar documento..." onkeyup="filterEswuDocs('generales')" style="width:100%;padding:0.35rem 0.6rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;">
+                                    </div>
+                                    <div id="eswuGeneralesBreadcrumb" style="margin-bottom:0.3rem;"></div>
+                                    <div id="eswuGeneralesContent"></div>
+                                    <div id="dropZoneGenerales" class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleEswuDrop('generales', event.dataTransfer.files);">
+                                        📁 Arrastra archivos aquí para subir
+                                    </div>
+                                </div>
+                                <div id="eswuMensajesTab" class="tab-content">
+                                    <div id="eswuMensajesFicha"></div>
+                                </div>
+                                <div id="eswuBancosTab" class="tab-content">
+                                    <div class="table-container">
+                                        <table id="eswuBancosTable" class="sticky-header-table">
+                                            <thead><tr><th style="cursor:pointer;" onclick="toggleDocSort('eswuBancosTable', 0)">Archivo ▲</th><th>Año</th><th>Mes</th><th>Tipo</th></tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="file-drop-zone" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleBancoDrop(event.dataTransfer.files);">
+                                        📁 Arrastra documentos bancarios aquí
+                                    </div>
+                                </div>
+                                <div id="eswuBalanceTab" class="tab-content">
+                                    <div class="table-container">
+                                        <table id="eswuBalanceTable" class="sticky-header-table">
+                                            <thead><tr>
+                                                <th style="cursor:pointer;" onclick="toggleBalanceSort('fecha')">Fecha <span id="balSortFecha">▲</span></th>
+                                                <th style="cursor:pointer;" onclick="toggleBalanceSort('concepto')">Concepto <span id="balSortConcepto"></span></th>
+                                                <th style="text-align:right;">Ingresos</th>
+                                                <th style="text-align:right;">Egresos</th>
+                                            </tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contabilidad Page -->
+                <div id="contabilidadPage" class="page">
+                    <div class="card">
+                        <div class="card-header" style="flex-wrap:wrap; gap:0.5rem;">
+                            <div style="display:flex; align-items:center; gap:0.5rem; flex:1; min-width:0;">
+                                <span id="contabilidadHomeBtn" onclick="contabilidadGoHome()" title="Inicio Contabilidad" style="display:none; font-size:1.1rem; cursor:pointer; padding:0.15rem 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">←</span>
+                                <h2 id="contabilidadTitle" class="card-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Contabilidad</h2>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:0.4rem;">
+                                <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                            </div>
+                        </div>
+                        <div style="padding:1rem; position:relative;">
+                            <!-- Google Drive Connection -->
+                            <div id="gdriveConnectBar" style="display:none; align-items:center; gap:0.75rem; margin-bottom:0.75rem; padding:0.4rem 0.8rem; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px;"></div>
+                            <!-- Search bar (hidden until connected) -->
+                            <div id="contabilidadSearchBar" style="display:none; margin-bottom:1rem;">
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="contabilidadSearchInput" placeholder="Buscar documento por nombre..." style="flex:1; padding:0.4rem 0.6rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;" onkeypress="if(event.key==='Enter') searchContabilidadDocs()">
+                                    <button onclick="searchContabilidadDocs()" style="padding:0.4rem 0.6rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.9rem;">🔍</button>
+                                </div>
+                            </div>
+                            <!-- Años -->
+                            <div id="contabilidadAnios" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
+                            <!-- Content area (months, subfolders, files) -->
+                            <div id="contabilidadContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div id="estacionamientoPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Estacionamiento</h2>
+                        </div>
+                        <div class="table-container">
+                            <table id="estacionamientoTable" class="sticky-header-table">
+                                <thead>
+                                    <tr>
+                                        <th style="cursor:pointer" onclick="sortEstacionamiento('espacio')">Espacio ▼</th>
+                                        <th style="cursor:pointer" onclick="sortEstacionamiento('inquilino')">Inquilino ▼</th>
+                                        <th>No. Despacho</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bitacoraPage" class="page">
+                    <div class="card">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 class="card-title" style="margin: 0;">Bitácora Semanal</h2>
+                            <span class="btn-add-inline" onclick="agregarNuevaSemana()" title="Agregar semana" style="font-size:1.5rem; cursor:pointer;">+</span>
+                        </div>
+                        <div class="table-container">
+                            <table id="bitacoraTable" class="sticky-header-table">
+                                <thead><tr><th style="width:200px" class="sortable" onclick="sortBitacora()">Semana</th><th>Notas</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensajes / Notificaciones Page -->
+                <div id="mensajesPage" class="page">
+                    <div class="card">
+                        <div class="card-header">
+                            <h2 class="card-title">Notificaciones</h2>
+                        </div>
+                        <div style="padding:0 1rem;">
+                            <div style="display:flex; gap:0; border-bottom:2px solid var(--border); margin-bottom:1rem;">
+                                <button class="tab active" data-tab="alertas" onclick="switchMensajesTab('alertas')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">⚠️ Alertas <span id="tabBadgeAlertas" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                                <button class="tab" data-tab="recibidos" onclick="switchMensajesTab('recibidos')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">✉️ Mensajes <span id="tabBadgeMensajes" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                                <button class="tab" data-tab="avisos" onclick="switchMensajesTab('avisos')" style="position:relative; padding:0.6rem 1rem; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.9rem; font-weight:500;">📢 Avisos <span id="tabBadgeAvisos" style="display:none; background:#ef4444; color:white; font-size:0.65rem; font-weight:700; min-width:16px; height:16px; border-radius:8px; justify-content:center; align-items:center; padding:0 3px; margin-left:0.3rem; vertical-align:middle;">0</span></button>
+                            </div>
+                            <div id="mensajesContent" style="min-height:200px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- Cierre de contentArea -->
+        </div> <!-- Cierre de main-content -->
+
+        <!-- Google Drive status indicator -->
+        <div id="gdriveStatusIndicator" style="position:fixed;bottom:12px;left:12px;z-index:900;display:none;background:white;border:1px solid var(--border);border-radius:6px;padding:0.25rem 0.6rem;font-size:0.7rem;color:var(--text-light);box-shadow:0 1px 4px rgba(0,0,0,0.1);cursor:default;">
+            <span id="gdriveStatusDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ccc;margin-right:0.3rem;vertical-align:middle;"></span>
+            <span id="gdriveStatusText" style="vertical-align:middle;">Google Drive</span>
+        </div>
+
+    </div> <!-- Cierre de appContainer -->
+
+    <!-- ============================================
+         MODALS
+         ============================================ -->
+
+    <!-- Modal Inquilino Detail -->
+    <div id="inquilinoDetailModal" class="modal">
+        <div class="modal-content" style="max-width:1050px;">
+            <div class="modal-header modal-header-sticky" style="z-index:200;">
+                <h2 class="modal-title" id="inquilinoDetailNombre"></h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span onclick="editInquilino()" title="Modificar datos inquilino" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                    <button class="close-modal" onclick="closeModal('inquilinoDetailModal')" style="min-width:44px;min-height:44px;font-size:2.2rem;">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem; padding-top: 5rem;">
+                <!-- Fila 1: Renta, M², Despacho -->
+                <div style="display:flex; gap:0.4rem; margin-bottom:0.4rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:90px; background:var(--bg); border-radius:6px; padding:0.4rem 0.6rem;">
+                        <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">Renta</div>
+                        <div style="font-size:0.95rem; font-weight:700; color:var(--primary);" id="detailRenta"></div>
+                    </div>
+                    <div style="flex:0.4; min-width:55px; background:var(--bg); border-radius:6px; padding:0.4rem 0.6rem;">
+                        <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">M²</div>
+                        <div style="font-size:0.95rem; font-weight:700;" id="detailM2"></div>
+                    </div>
+                    <div style="flex:0.4; min-width:55px; background:var(--bg); border-radius:6px; padding:0.4rem 0.6rem;">
+                        <div style="font-size:0.65rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">Despacho</div>
+                        <div style="font-size:0.95rem; font-weight:700;" id="detailDespacho"></div>
+                    </div>
+                </div>
+                <!-- Fila 2: Renta Inicio, Vence en, Contrato Renta -->
+                <div id="filaFechasContrato" style="display:flex; gap:0.4rem; margin-bottom:0.4rem; flex-wrap:wrap;">
+                    <div style="flex:0.8; min-width:85px; background:var(--bg); border-radius:6px; padding:0.4rem 0.5rem;">
+                        <div style="font-size:0.6rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">Renta Inicio</div>
+                        <div style="font-size:0.85rem; font-weight:600;" id="detailFechaInicio"></div>
+                    </div>
+                    <div style="flex:0.8; min-width:85px; background:var(--bg); border-radius:6px; padding:0.4rem 0.5rem;">
+                        <div style="font-size:0.6rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">Vence en</div>
+                        <div style="font-size:0.85rem; font-weight:600;" id="detailFechaVenc"></div>
+                    </div>
+                    <div id="contratoOriginalSection" style="flex:1; min-width:110px;"></div>
+                </div>
+                <!-- Contactos -->
+                <div style="margin-bottom:0.4rem;">
+                    <div id="detailContactosList"></div>
+                </div>
+                <!-- Fila RFC, CLABE (hidden on mobile) -->
+                <div id="filaRfcClabe" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:120px; background:var(--bg); border-radius:6px; padding:0.5rem 0.75rem;">
+                        <div style="font-size:0.7rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">RFC</div>
+                        <div style="font-size:0.9rem; font-weight:600;" id="detailRFC"></div>
+                    </div>
+                    <div style="flex:1; min-width:120px; background:var(--bg); border-radius:6px; padding:0.5rem 0.75rem;">
+                        <div style="font-size:0.7rem; color:var(--text-light); text-transform:uppercase; font-weight:600;">CLABE</div>
+                        <div style="font-size:0.9rem; font-weight:600;" id="detailClabe"></div>
+                    </div>
+                </div>
+                <!-- Pestañas -->
+                <div class="tabs-container">
+                    <!-- Mobile: dropdown -->
+                    <select class="tabs-mobile-select" onchange="switchTab('inquilino', this.value); this.blur();">
+                        <option value="pagos" selected>💰 Pagos</option>
+                        <option value="docs">📄 Documentos</option>
+                        <option value="notas">💬 Mensajes</option>
+                    </select>
+                    <!-- Desktop: tabs -->
+                    <div class="tabs tabs-desktop-only">
+                        <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'pagos')">Pagos<span class="btn-add-inline" onclick="event.stopPropagation(); exportHistorialPagosExcel();" title="Exportar a Excel" style="font-size:0.85rem; margin-left:0.3rem;">📊</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoModal();" title="Agregar Documentos" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('inquilino', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('inquilino');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    </div>
+                    <div id="inquilinoPagosTab" class="tab-content active">
+                        <div id="historialPagos"></div>
+                    </div>
+                    <div id="inquilinoDocsTab" class="tab-content">
+                        <div id="documentosAdicionales"></div>
+                    </div>
+                    <div id="inquilinoNotasTab" class="tab-content">
+                        <div id="inquilinoMensajesFicha"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Inquilino -->
+    <div id="addInquilinoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title" id="addInquilinoTitle">Agregar Inquilino</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="inquilinoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeAddInquilinoModal()">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <form id="inquilinoForm" onsubmit="saveInquilino(event)">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:90px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Inquilino *</label>
+                        <input type="text" id="inquilinoNombre" required autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:90px; font-weight:500; white-space:nowrap; font-size:0.9rem;">CLABE</label>
+                        <input type="text" id="inquilinoClabe" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:90px; font-weight:500; white-space:nowrap; font-size:0.9rem;">RFC</label>
+                        <input type="text" id="inquilinoRFC" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+                        <label style="font-weight:500; white-space:nowrap; font-size:0.9rem;">M²</label>
+                        <input type="text" id="inquilinoM2" autocomplete="off" maxlength="5" style="width:5ch; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; text-align:center;">
+                        <label style="font-weight:500; white-space:nowrap; font-size:0.9rem; margin-left:0.5rem;">Despacho</label>
+                        <input type="text" id="inquilinoDespacho" autocomplete="off" maxlength="5" style="width:5ch; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; text-align:center;">
+                        <label style="font-weight:500; white-space:nowrap; font-size:0.9rem; margin-left:0.5rem;">Renta *</label>
+                        <input type="number" id="inquilinoRenta" step="0.01" required autocomplete="off" style="width:10ch; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+                        <label style="font-weight:500; white-space:nowrap; font-size:0.9rem;">Inicio *</label>
+                        <input type="date" id="inquilinoFechaInicio" required style="flex:1; min-width:130px; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        <label style="font-weight:500; white-space:nowrap; font-size:0.9rem; margin-left:0.5rem;">Vencimiento *</label>
+                        <input type="date" id="inquilinoFechaVenc" required style="flex:1; min-width:130px; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:flex-start; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:90px; font-weight:500; white-space:nowrap; font-size:0.9rem; padding-top:0.4rem;">Notas</label>
+                        <textarea id="inquilinoNotas" rows="2" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+                    </div>
+                    <div style="border-top:1px solid var(--border); margin:0.75rem 0 0.5rem 0; padding-top:0.75rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                            <strong style="font-size:0.9rem;">📞 Contactos</strong>
+                            <span onclick="showAddContactoInquilinoModal()" title="Agregar contacto" style="color:var(--success); font-size:1.4rem; font-weight:700; cursor:pointer; padding:0 0.3rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
+                        </div>
+                        <div id="inquilinoContactosList"></div>
+                    </div>
+                    <div id="terminarContratoSection" class="hidden" style="border-top:1px solid var(--border); margin:0.75rem 0 0.5rem 0; padding-top:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                            <strong style="font-size:0.9rem; color:var(--danger);">⚠️ Terminar Contrato</strong>
+                            <select id="terminarContratoSelect" onchange="toggleTerminarContratoFecha()" style="padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
+                                <option value="no">No</option>
+                                <option value="si">Sí, terminar</option>
+                            </select>
+                            <input type="date" id="terminarContratoFecha" class="hidden" style="padding:0.3rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add Contacto Inquilino -->
+    <div id="addContactoInquilinoModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="contactoModalTitle">Agregar Contacto</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="contactoInquilinoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addContactoInquilinoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="contactoInquilinoForm" onsubmit="saveContactoInquilino(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Nombre *</label>
+                        <input type="text" id="contactoInquilinoNombre" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Teléfono</label>
+                        <input type="tel" id="contactoInquilinoTelefono" autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Email</label>
+                        <input type="email" id="contactoInquilinoEmail" autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Pago -->
+    <div id="registrarPagoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Registrar Pago de Renta</h2>
+                <button class="close-modal" onclick="closeModal('registrarPagoModal')">×</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <form onsubmit="savePagoRenta(event)">
+                    <div class="form-group"><label>Fecha de Pago *</label><input type="date" id="pagoFecha" required></div>
+                    <div class="form-group">
+                        <label>¿Pago completo?</label>
+                        <select id="pagoCompleto" onchange="toggleMontoInput()">
+                            <option value="si">Sí</option>
+                            <option value="no">No (pago parcial)</option>
+                        </select>
+                    </div>
+                    <div id="pagoMontoGroup" class="form-group hidden"><label>Monto del Pago *</label><input type="number" id="pagoMonto" step="0.01" autocomplete="off"></div>
+                    <div class="form-group">
+                        <label>Comprobante de Pago</label>
+                        <div class="file-upload" onclick="document.getElementById('pagoPDF').click()">
+                            <input type="file" id="pagoPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic">
+                            <p>Click para seleccionar documento</p>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('registrarPagoModal')">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Documento -->
+    <div id="agregarDocumentoModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Agregar Documento</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="docAgregarForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('agregarDocumentoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="docAgregarForm" onsubmit="saveDocumentoAdicional(event)">
+                    <div style="margin-bottom:0.75rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Nombre del Documento *</label>
+                        <input type="text" id="nuevoDocNombre" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div id="nuevoDocContratoQuestion" class="hidden" style="margin-bottom:0.75rem; padding:0.75rem; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
+                        <p style="font-size:0.9rem; margin-bottom:0.5rem; font-weight:500;">¿Es este el Contrato Original?</p>
+                        <div style="display:flex; gap:0.75rem;">
+                            <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer; font-size:0.9rem;">
+                                <input type="radio" name="esContratoNuevoDoc" value="si"> Sí
+                            </label>
+                            <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer; font-size:0.9rem;">
+                                <input type="radio" name="esContratoNuevoDoc" value="no" checked> No
+                            </label>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Documento *</label>
+                        <!-- Click -->
+                        <div id="inqDocClickZone" onclick="document.getElementById('nuevoDocPDF').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <input type="file" id="nuevoDocPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleInqDocFileSelect(this)">
+                            📎 Click para seleccionar documento
+                            <span id="nuevoDocPDFFileName" style="color:var(--success); display:block; margin-top:0.25rem; font-weight:500;"></span>
+                        </div>
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.4rem 0;">— o —</div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <div id="inqDocPasteZone" tabindex="0" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
+                            <div id="inqDocDragZone" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleInqDocDrop(event);">
+                                📁 Arrastra aquí
+                            </div>
+                        </div>
+                        <div id="inqDocFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534;"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Proveedor Detail (REDISEÑADO) -->
+    <div id="proveedorDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header modal-header-sticky" style="z-index:200;">
+                <div style="flex:1; min-width:0; overflow:hidden;">
+                    <h2 class="modal-title prov-nombre-auto" id="proveedorDetailNombre" style="text-align:left; padding:0; margin:0;"></h2>
+                    <div id="proveedorDetailServicio" style="font-size:0.85rem; color:var(--text-light); font-weight:normal; margin-top:0.15rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"></div>
+                </div>
+                <button class="btn-icon-edit" onclick="editProveedor()" title="Modificar datos">✏️</button>
+                <button class="close-modal" onclick="closeModal('proveedorDetailModal')" style="position:static;min-width:44px;min-height:44px;font-size:2.2rem;">×</button>
+            </div>
+            <div style="padding: 1.25rem;">
+                <!-- Teléfono y Email -->
+                <div id="provDetailContactPrimary" style="display:flex; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;"></div>
+                <!-- RFC y CLABE -->
+                <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem; flex-wrap:wrap;">
+                    <div class="prov-info-box"><strong>RFC:</strong> <span id="detailProvRFC">-</span></div>
+                    <div class="prov-info-box"><strong>CLABE:</strong> <span id="detailProvClabe">-</span></div>
+                </div>
+                <!-- Contactos adicionales (dropdown) -->
+                <div id="provDetailAdditionalContacts"></div>
+                <!-- Pestañas -->
+                <div class="tabs-container">
+                    <!-- Mobile: dropdown -->
+                    <select class="tabs-mobile-select" onchange="switchTab('proveedor', this.value); this.blur();">
+                        <option value="pagadas" selected>✅ F. Pagadas</option>
+                        <option value="porpagar">⏳ F. x Pagar</option>
+                        <option value="docs">📄 Documentos</option>
+                        <option value="mantenimiento">🔧 Mntto</option>
+                        <option value="notas">💬 Mensajes</option>
+                    </select>
+                    <!-- Desktop: tabs -->
+                    <div class="tabs tabs-desktop-only" id="proveedorTabs">
+                        <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); window.facturaActionContext=null; showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
+                    </div>
+                    <div id="proveedorPagadasTab" class="tab-content active">
+                        <div id="facturasPagadas"></div>
+                    </div>
+                    <div id="proveedorPorPagarTab" class="tab-content">
+                        <div id="facturasPorPagar"></div>
+                    </div>
+                    <div id="proveedorDocsTab" class="tab-content">
+                        <div id="proveedorDocumentosAdicionales"></div>
+                    </div>
+                    <div id="proveedorMantenimientoTab" class="tab-content">
+                        <div id="proveedorMantenimientoContent"></div>
+                    </div>
+                    <div id="proveedorNotasTab" class="tab-content">
+                        <div id="proveedorMensajesFicha"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Documento Proveedor -->
+    <div id="agregarDocumentoProveedorModal" class="modal">
+        <div class="modal-content" style="max-width:500px">
+            <div class="modal-header">
+                <h2 class="modal-title">Agregar Documento</h2>
+                <button class="close-modal" onclick="closeModal('agregarDocumentoProveedorModal')" style="position:static">×</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <form onsubmit="saveDocumentoProveedor(event)">
+                    <div class="form-group"><label>Nombre del Documento *</label><input type="text" id="provNuevoDocNombre" required autocomplete="off"></div>
+                    <div class="form-group">
+                        <label>Documento *</label>
+                        <!-- Click -->
+                        <div id="provDocClickZone" onclick="document.getElementById('provNuevoDocPDF').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <input type="file" id="provNuevoDocPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleProvDocFileSelect(this)">
+                            📎 Click para seleccionar documento
+                            <div id="provNuevoDocPDFFileName" style="color:var(--success); margin-top:0.25rem; font-weight:500;"></div>
+                        </div>
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.4rem 0;">— o —</div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <div id="provDocPasteZone" tabindex="0" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
+                            <div id="provDocDragZone" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleProvDocDrop(event);">
+                                📁 Arrastra aquí
+                            </div>
+                        </div>
+                        <div id="provDocFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534;"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('agregarDocumentoProveedorModal')">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Notas Proveedor -->
+    <div id="editNotasProveedorModal" class="modal">
+        <div class="modal-content" style="max-width:600px">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Notas del Proveedor</h2>
+                <button class="close-modal" onclick="closeModal('editNotasProveedorModal')" style="position:static">×</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <div class="form-group">
+                    <textarea id="proveedorNotasEdit" style="min-height: 200px"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editNotasProveedorModal')">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="saveNotasProveedor()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Proveedor -->
+    <div id="addProveedorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title" id="addProveedorTitle">Agregar Proveedor</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="proveedorForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addProveedorModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <form id="proveedorForm" onsubmit="saveProveedor(event)">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Nombre/Empresa *</label>
+                        <input type="text" id="proveedorNombre" required autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Servicio *</label>
+                        <input type="text" id="proveedorServicio" required autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">CLABE</label>
+                        <input type="text" id="proveedorClabe" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">RFC</label>
+                        <input type="text" id="proveedorRFC" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Notas</label>
+                        <textarea id="proveedorNotas" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; min-height:50px;"></textarea>
+                    </div>
+                    <div style="border-top:1px solid var(--border); margin:0.75rem 0 0.5rem 0; padding-top:0.75rem;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                            <strong style="font-size:0.9rem;">📞 Contacto</strong>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                            <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Nombre</label>
+                            <input type="text" id="proveedorContactoNombreInline" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                            <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Teléfono</label>
+                            <input type="tel" id="proveedorContactoTelInline" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                            <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Email</label>
+                            <input type="email" id="proveedorContactoEmailInline" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                    </div>
+                    <div id="proveedorContactosList" style="margin-bottom:0.5rem;"></div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="showAddContactoProveedorModal()" style="font-size:0.8rem; padding:0.25rem 0.5rem;">+ Más Contactos</button>
+                    <div style="border-top:1px solid var(--border); margin:0.75rem 0 0.5rem 0; padding-top:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Doc. Adicional</label>
+                            <div onclick="document.getElementById('proveedorDocAdicional').click()" style="flex:1; padding:0.35rem 0.5rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; font-size:0.85rem; color:var(--text-light); text-align:center;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                                <input type="file" id="proveedorDocAdicional" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="var fn=document.getElementById('provDocAdicionalFileName'); fn.textContent=this.files[0]?this.files[0].name:''; document.getElementById('nombreProvDocGroup').classList.toggle('hidden',!this.files[0]);">
+                                <span>Click para seleccionar documento</span>
+                                <span id="provDocAdicionalFileName" style="color:var(--success); margin-left:0.5rem;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="nombreProvDocGroup" class="hidden" style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Nombre Doc. *</label>
+                        <input type="text" id="proveedorNombreDoc" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add Contacto Proveedor -->
+    <div id="addContactoProveedorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Agregar Contacto</h2>
+                <button class="close-modal" onclick="closeModal('addContactoProveedorModal')">×</button>
+            </div>
+            <div style="padding: 1.5rem;">
+                <form id="contactoProveedorForm" onsubmit="saveContactoProveedor(event)">
+                    <div class="form-group"><label>Nombre *</label><input type="text" id="contactoProveedorNombre" required autocomplete="off"></div>
+                    <div class="form-group"><label>Teléfono</label><input type="tel" id="contactoProveedorTelefono" autocomplete="off"></div>
+                    <div class="form-group"><label>Email</label><input type="email" id="contactoProveedorEmail" autocomplete="off"></div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('addContactoProveedorModal')">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Agregar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Registrar Factura -->
+    <div id="registrarFacturaModal" class="modal">
+        <div class="modal-content" style="max-width:550px;">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title">Registrar Factura</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="facturaForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('registrarFacturaModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <form id="facturaForm" onsubmit="saveFactura(event)">
+                    <!-- Proveedor row: only visible when registering from dashboard -->
+                    <div id="facturaProveedorRow" style="display:none; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);">
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Proveedor *</label>
+                            <div style="flex:1; position:relative;">
+                                <input type="text" id="facturaProveedorSearch" placeholder="Escribe para buscar..." autocomplete="off" oninput="filterFacturaProveedorList()" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                                <input type="hidden" id="facturaProveedorId" value="">
+                                <div id="facturaProveedorResults" style="display:none; position:absolute; left:0; right:0; top:100%; max-height:180px; overflow-y:auto; background:white; border:1px solid var(--border); border-top:none; border-radius:0 0 6px 6px; box-shadow:0 4px 12px rgba(0,0,0,0.1); z-index:20;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">No. Factura</label>
+                        <input type="text" id="facturaNumero" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Fecha Factura *</label>
+                        <input type="date" id="facturaFecha" required style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Vencimiento *</label>
+                        <input type="date" id="facturaVencimiento" required style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.82rem;">Total (con IVA) *</label>
+                        <input type="number" id="facturaMonto" step="0.01" required autocomplete="off" onchange="calculateIVA()" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">IVA</label>
+                        <input type="number" id="facturaIVA" step="0.01" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-top:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Factura</label>
+                        <!-- Option 1: Click to select -->
+                        <div id="facturaClickZone" onclick="document.getElementById('facturaDocumento').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <input type="file" id="facturaDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleFacturaFileSelect(this)">
+                            📎 Click para seleccionar documento
+                            <div id="facturaDocumentoFileName" style="color:var(--success); margin-top:0.25rem; font-weight:500;"></div>
+                        </div>
+                        <!-- Separator -->
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.4rem 0;">— o —</div>
+                        <!-- Options 2 & 3 side by side -->
+                        <div style="display:flex; gap:0.5rem;">
+                            <div id="facturaPasteZone" tabindex="0" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
+                            <div id="facturaDragZone" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handleFacturaDrop(event);">
+                                📁 Arrastra aquí
+                            </div>
+                        </div>
+                        <!-- Feedback: file accepted -->
+                        <div id="facturaFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534; display:none;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pagar Factura -->
+    <div id="pagarFacturaModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title">Dar Factura X Pagada</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="pagarFacturaForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('pagarFacturaModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <form id="pagarFacturaForm" onsubmit="savePagoFactura(event)">
+                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.5rem;">
+                        <label style="min-width:120px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Fecha de Pago *</label>
+                        <input type="date" id="fechaPagoFactura" required style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-top:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Comprobante</label>
+                        <!-- Option 1: Click to select -->
+                        <div id="pagoClickZone" onclick="document.getElementById('pagoPDFFactura').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                            <input type="file" id="pagoPDFFactura" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handlePagoFileSelect(this)">
+                            📎 Click para seleccionar documento
+                            <div id="pagoPDFFacturaFileName" style="color:var(--success); margin-top:0.25rem; font-weight:500;"></div>
+                        </div>
+                        <!-- Separator -->
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.4rem 0;">— o —</div>
+                        <!-- Options 2 & 3 side by side -->
+                        <div style="display:flex; gap:0.5rem;">
+                            <div id="pagoPasteZone" tabindex="0" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
+                            <div id="pagoDragZone" style="flex:1; padding:0.5rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.82rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="event.preventDefault();this.style.borderColor='var(--border)';this.style.background='';handlePagoDrop(event);">
+                                📁 Arrastra aquí
+                            </div>
+                        </div>
+                        <!-- Feedback: file accepted -->
+                        <div id="pagoFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add Activo -->
+    <div id="addActivoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="addActivoTitle">Agregar Activo</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="activoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addActivoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.5rem;">
+                <form id="activoForm" onsubmit="saveActivo(event)">
+                    <div class="form-group"><label>Nombre *</label><input type="text" id="activoNombre" required autocomplete="off"></div>
+                    <div class="form-group"><label>Último Mantenimiento</label><input type="date" id="activoUltimoMant"></div>
+                    <div class="form-group"><label>Próximo Mantenimiento</label><input type="date" id="activoProximoMant"></div>
+                    <div class="form-group">
+                        <label>Proveedor</label>
+                        <select id="activoProveedor">
+                            <option value="">-- Seleccione un proveedor --</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Notas</label><textarea id="activoNotas"></textarea></div>
+                    <div class="form-group">
+                        <label>Fotos</label>
+                        <div id="activoDropZone" class="file-drop-zone" style="cursor:pointer; min-height:60px; display:flex; align-items:center; justify-content:center;" onclick="activoSelectFotos()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); addActivoFotos(event.dataTransfer.files);">
+                            📷 Arrastra fotos aquí o haz clic para seleccionar
+                        </div>
+                        <div id="activoPendingFotos" style="margin-top:0.3rem;"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Activo Detail -->
+    <div id="activoDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="activoDetailNombre"></h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span onclick="editActivo()" title="Editar" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
+                    <span onclick="deleteActivo()" title="Eliminar" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">🗑️</span>
+                    <button class="close-modal" onclick="closeModal('activoDetailModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.5rem;">
+                <div class="info-grid">
+                    <div class="info-item"><div class="info-label">Último Mantenimiento</div><div class="info-value" id="detailUltimoMant"></div></div>
+                    <div class="info-item"><div class="info-label">Próximo Mantenimiento</div><div class="info-value" id="detailProximoMant"></div></div>
+                    <div class="info-item"><div class="info-label">Proveedor</div><div class="info-value" id="detailActivoProveedor"></div></div>
+                </div>
+                <div class="info-item" style="margin-top: 1rem;"><div class="info-label">Notas</div><div class="info-value" id="detailActivoNotas"></div></div>
+                <h3 style="margin: 1.5rem 0 1rem 0;">Fotos</h3>
+                <div id="photoGallery" class="photo-gallery"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add/Edit Usuario -->
+    <div id="addUsuarioModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="addUsuarioTitle">Agregar Usuario</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="usuarioForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addUsuarioModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="usuarioForm" onsubmit="saveUsuario(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Nombre *</label>
+                        <input type="text" id="usuarioNombre" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Email (Google)</label>
+                        <input type="email" id="usuarioEmail" autocomplete="off" placeholder="correo@gmail.com" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Password *</label>
+                        <div style="position:relative;">
+                            <input type="password" id="usuarioPassword" required autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; padding-right:2.2rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <span onclick="togglePasswordVisibility('usuarioPassword', this)" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1rem;user-select:none;" title="Mostrar/ocultar">👁️</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Nivel *</label>
+                        <select id="usuarioNivel" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="1">1 — Admin (todo)</option>
+                            <option value="2">2 — Edita (no elimina)</option>
+                            <option value="3">3 — Solo consulta</option>
+                            <option value="4" selected>4 — Contabilidad</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem;">Activo</label>
+                        <input type="checkbox" id="usuarioActivo" checked style="width:18px; height:18px; cursor:pointer;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Add Banco -->
+    <!-- Modal Subir Documento Contabilidad -->
+    <div id="contabilidadUploadModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="contabilidadUploadTitle">Subir Documento</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span id="btnSaveContabilidadUpload" onclick="saveContabilidadUpload()" title="Guardar" style="font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s; opacity:0.4; pointer-events:none;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</span>
+                    <button class="close-modal" onclick="cancelContabilidadUpload()">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <div id="contabilidadUploadPath" style="margin-bottom:0.75rem; padding:0.4rem 0.6rem; background:#f0f9ff; border:1px solid #bfdbfe; border-radius:6px; font-size:0.82rem; color:var(--primary); font-weight:500;"></div>
+                <div id="contabilidadDropArea" class="file-drop-zone" style="cursor:pointer; min-height:80px; display:flex; align-items:center; justify-content:center;" onclick="contabilidadSelectFiles()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); addContabilidadFiles(event.dataTransfer.files);">
+                    📁 Arrastra archivos aquí o haz clic para seleccionar
+                </div>
+                <div id="contabilidadPendingList" style="margin-top:0.5rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo Trabajo Mantenimiento -->
+    <div id="nuevoTrabajoModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Trabajo</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoTrabajoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('nuevoTrabajoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <form id="nuevoTrabajoForm" onsubmit="saveNuevoTrabajo(event)">
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Activo</label>
+                        <select id="trabajoActivo" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="">-- Sin activo específico --</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Descripción *</label>
+                        <input type="text" id="trabajoDescripcion" required placeholder="Ej: Mantenimiento elevador" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.6rem;">
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Fecha solicitud</label>
+                            <input type="date" id="trabajoFechaSolicitud" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Entrega estimada</label>
+                            <input type="date" id="trabajoFechaEntrega" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.6rem;">
+                        <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.9rem; cursor:pointer;">
+                            <input type="checkbox" id="trabajoEsRecurrente" onchange="toggleRecurrenciaFields()">
+                            <span style="font-weight:500;">Es recurrente</span>
+                        </label>
+                    </div>
+                    <div id="trabajoRecurrenciaFields" style="display:none; margin-bottom:0.6rem; padding:0.5rem; background:#f8fafc; border:1px solid var(--border); border-radius:4px;">
+                        <label style="font-weight:500; font-size:0.85rem; display:block; margin-bottom:0.2rem;">Frecuencia</label>
+                        <select id="trabajoFrecuencia" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="">-- Seleccione --</option>
+                            <option value="mensual">Mensual</option>
+                            <option value="semestral">Semestral</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.4rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.2rem;">Notas</label>
+                        <textarea id="trabajoNotas" rows="2" placeholder="Notas adicionales..." style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalle Trabajo Mantenimiento -->
+    <div id="trabajoDetailModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="trabajoDetailTitle">Detalle Trabajo</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span id="btnDeleteTrabajo" onclick="deleteTrabajo()" title="Eliminar trabajo" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#fed7d7'" onmouseout="this.style.background='transparent'">🗑️</span>
+                    <button class="close-modal" onclick="closeModal('trabajoDetailModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1.25rem;">
+                <!-- Estado -->
+                <div id="trabajoEstadoBar" style="display:flex; gap:0.3rem; margin-bottom:1rem; flex-wrap:wrap;"></div>
+                <!-- Info -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Activo</span><div id="trabajoDetailActivo" style="font-size:0.88rem; font-weight:500;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Proveedor</span><div id="trabajoDetailProveedor" style="font-size:0.88rem; font-weight:500;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Solicitud</span><div id="trabajoDetailFechaSolicitud" style="font-size:0.88rem;">—</div></div>
+                    <div><span style="font-size:0.75rem; color:var(--text-light);">Entrega estimada</span><div id="trabajoDetailFechaEntrega" style="font-size:0.88rem;">—</div></div>
+                </div>
+                <div id="trabajoDetailRecurrencia" style="display:none; margin-bottom:0.75rem; padding:0.3rem 0.5rem; background:#f0f9ff; border-radius:4px; font-size:0.82rem; color:var(--primary);">🔄 Recurrente</div>
+                <!-- Notas del trabajo -->
+                <div id="trabajoDetailNotas" style="margin-bottom:1rem;"></div>
+                <!-- Bitácora -->
+                <div style="margin-bottom:0.75rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Bitácora</div>
+                    <div id="trabajoDetailBitacora" style="max-height:150px; overflow-y:auto; margin-bottom:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.4rem;"></div>
+                    <div style="display:flex; gap:0.3rem;">
+                        <input type="text" id="trabajoBitacoraInput" placeholder="Agregar nota..." style="flex:1; padding:0.35rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.85rem;" onkeypress="if(event.key==='Enter') addBitacoraNota()">
+                        <button onclick="addBitacoraNota()" style="padding:0.35rem 0.6rem; background:var(--primary); color:white; border:none; border-radius:4px; cursor:pointer; font-size:0.85rem;">+</button>
+                    </div>
+                </div>
+                <!-- Fotos placeholder -->
+                <div style="margin-bottom:0.75rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Fotos</div>
+                    <div id="trabajoDetailFotos" style="min-height:40px;"></div>
+                    <div class="file-drop-zone" style="margin-top:0.3rem; cursor:pointer; font-size:0.82rem;" onclick="selectTrabajoFotos()" ondragover="event.preventDefault(); this.classList.add('drag-over');" ondragleave="this.classList.remove('drag-over');" ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleTrabajoFotosDrop(event.dataTransfer.files);">
+                        📷 Arrastra fotos aquí o haz clic
+                    </div>
+                </div>
+                <!-- Factura -->
+                <div style="margin-bottom:0.5rem;">
+                    <div style="font-size:0.85rem; font-weight:600; margin-bottom:0.4rem; color:var(--text);">Factura / Pago</div>
+                    <div id="trabajoDetailFactura"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="addBancoModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Subir Documento Banco</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="bancoForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addBancoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="bancoForm" onsubmit="saveBancoDoc(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Tipo de Documento *</label>
+                        <select id="bancoTipo" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                            <option value="">-- Seleccione --</option>
+                            <option value="Estado de Cuenta">Estado de Cuenta</option>
+                            <option value="Consulta de Movimientos">Consulta de Movimientos</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Año *</label>
+                            <input type="number" id="bancoAnio" required min="2018" max="2030" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Mes *</label>
+                            <select id="bancoMes" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                                <option value="">--</option>
+                                <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+                                <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+                                <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+                                <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Documento *</label>
+                        <div class="file-upload" onclick="document.getElementById('bancoDocumento').click()">
+                            <input type="file" id="bancoDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" required>
+                            <p>Click para seleccionar documento</p>
+                            <p id="bancoDocumentoFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Estacionamiento -->
+    <div id="editEstacionamientoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Espacio <span id="editEspacioNumero"></span></h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveEstacionamiento()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('editEstacionamientoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.5rem;">
+                <div class="form-group">
+                    <label>Inquilino</label>
+                    <select id="editEspacioInquilino"></select>
+                </div>
+                <div class="form-group">
+                    <label>Número de Despacho</label>
+                    <input type="text" id="editEspacioDespacho" disabled style="background: var(--bg)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Edit Bitácora -->
+    <div id="editBitacoraModal" class="modal">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title">Editar Bitácora</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveBitacora()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('editBitacoraModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
+                    <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">Semana del</label>
+                    <input type="date" id="editBitacoraFecha" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                </div>
+                <div>
+                    <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Notas</label>
+                    <textarea id="editBitacoraNotas" style="width:100%; min-height:200px; padding:0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cargar Contrato Renta -->
+    <div id="cargarContratoModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Cargar Contrato Renta</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveContratoRenta()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('cargarContratoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <div onclick="document.getElementById('contratoUploadPDF').click()" style="padding:0.75rem; border:1px dashed var(--border); border-radius:4px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-light);" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    <input type="file" id="contratoUploadPDF" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="document.getElementById('contratoUploadFileName').textContent = this.files[0] ? this.files[0].name : ''">
+                    <span>Click para seleccionar documento</span>
+                    <span id="contratoUploadFileName" style="color:var(--success); display:block; margin-top:0.35rem;"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Carpeta Contabilidad -->
+    <div id="addCarpetaModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="addCarpetaTitle">Agregar Carpeta</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="carpetaForm" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('addCarpetaModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <form id="carpetaForm" onsubmit="saveCarpetaContabilidad(event)">
+                    <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Año *</label>
+                            <input type="number" id="carpetaAnio" required min="2018" max="2050" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Mes *</label>
+                            <select id="carpetaMes" required style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                                <option value="">--</option>
+                                <option value="1">01 - Enero</option>
+                                <option value="2">02 - Febrero</option>
+                                <option value="3">03 - Marzo</option>
+                                <option value="4">04 - Abril</option>
+                                <option value="5">05 - Mayo</option>
+                                <option value="6">06 - Junio</option>
+                                <option value="7">07 - Julio</option>
+                                <option value="8">08 - Agosto</option>
+                                <option value="9">09 - Septiembre</option>
+                                <option value="10">10 - Octubre</option>
+                                <option value="11">11 - Noviembre</option>
+                                <option value="12">12 - Diciembre</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Link de Google Drive *</label>
+                        <input type="url" id="carpetaURL" required placeholder="https://drive.google.com/drive/folders/..." autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Agregar Nota -->
+    <div id="agregarNotaModal" class="modal">
+        <div class="modal-content" style="max-width:450px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Agregar Nota</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button onclick="saveNotaInquilino()" title="Guardar" style="background:none; border:none; font-size:1.5rem; cursor:pointer; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</button>
+                    <button class="close-modal" onclick="closeModal('agregarNotaModal')">×</button>
+                </div>
+            </div>
+            <div style="padding: 1.25rem;">
+                <textarea id="nuevaNotaTexto" rows="5" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem; resize:vertical;" placeholder="Escribe tu nota aquí..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Contacto Detail (mobile) -->
+    <div id="contactDetailModal" class="modal">
+        <div class="modal-content" style="max-width:350px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="contactDetailNombre"></h2>
+                <button class="close-modal" onclick="closeModal('contactDetailModal')">×</button>
+            </div>
+            <div style="padding: 1.25rem;">
+                <div id="contactDetailBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Documento Inquilino -->
+    <div id="editDocInquilinoModal" class="modal">
+        <div class="modal-content" style="max-width:420px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Modificar Documento</h2>
+                <button class="close-modal" onclick="closeModal('editDocInquilinoModal')">×</button>
+            </div>
+            <div style="padding: 1.25rem;">
+                <div style="margin-bottom:1rem;">
+                    <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.35rem;">Nombre del documento</label>
+                    <input type="text" id="editDocNombreInput" autocomplete="off" style="width:100%; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
+                </div>
+                <div id="editDocContratoQuestion" class="hidden" style="margin-bottom:1rem; padding:0.75rem; background:var(--bg); border-radius:6px; border:1px solid var(--border);">
+                    <p style="font-size:0.9rem; margin-bottom:0.75rem; font-weight:500;">¿Es este el Contrato Original?</p>
+                    <div style="display:flex; gap:0.75rem;">
+                        <button type="button" class="btn btn-success" onclick="processEditDocAsContrato()" style="flex:1;">Sí</button>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('editDocContratoQuestion').classList.add('hidden'); document.getElementById('editDocSaveSection').classList.remove('hidden');" style="flex:1;">No</button>
+                    </div>
+                </div>
+                <div id="editDocSaveSection" class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editDocInquilinoModal')">Cancelar</button>
+                    <button type="button" class="btn btn-success" onclick="saveEditDocNombre()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Viewer Overlay (mobile-compatible) -->
+    <!-- Modal: Navegar Drive para vincular PDF -->
+    <div id="linkFacturaFileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
+        <div style="background:white; border-radius:8px; max-width:500px; width:95%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:0.8rem 1.2rem; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+                <h3 id="linkFacturaFileTitle" style="margin:0; font-size:1rem; font-weight:700;">Vincular PDF</h3>
+                <span onclick="closeLinkModal()" title="Cerrar" style="cursor:pointer; font-size:1.4rem; color:#e53e3e; font-weight:700;">✕</span>
+            </div>
+            <div id="linkDriveBreadcrumb" style="padding:0.4rem 1rem; font-size:0.8rem; color:var(--text-light); border-bottom:1px solid #f0f0f0; flex-shrink:0;"></div>
+            <div id="linkDriveContent" style="padding:0.5rem; overflow-y:auto; flex:1;"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Detalle Mensaje -->
+    <div id="detalleMensajeModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="detalleMensajeAsunto"></h2>
+                <button class="close-modal" onclick="closeModal('detalleMensajeModal')">×</button>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <div style="display:flex; gap:1rem; margin-bottom:0.75rem; font-size:0.85rem; color:var(--text-light);">
+                    <div><strong>De:</strong> <span id="detalleMensajeDe"></span></div>
+                    <div><strong>Para:</strong> <span id="detalleMensajePara"></span></div>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-light); margin-bottom:1rem;" id="detalleMensajeFecha"></div>
+                <div style="white-space:pre-wrap; font-size:0.9rem; line-height:1.5; padding:0.75rem; background:var(--bg); border-radius:6px;" id="detalleMensajeContenido"></div>
+                <div style="display:flex; gap:0.5rem; margin-top:1rem; justify-content:flex-end;">
+                    <button id="btnResponderMensaje" style="background:var(--primary);color:white;border:none;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">↩️ Responder</button>
+                    <button id="btnEliminarMensaje" style="background:var(--danger);color:white;border:none;padding:0.45rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.85rem;">🗑️ Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Mensaje -->
+    <div id="nuevoMensajeModal" class="modal">
+        <div class="modal-content" style="max-width:540px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Mensaje</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoMensajeForm" title="Enviar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0.25rem 0.4rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</button>
+                    <button class="close-modal" onclick="closeModal('nuevoMensajeModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="nuevoMensajeForm" onsubmit="submitNuevoMensaje(event)">
+                    <input type="hidden" id="mensajeRefTipo" value="">
+                    <input type="hidden" id="mensajeRefId" value="">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Para:</label>
+                        <select id="mensajeDestinatario" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;"></select>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Asunto: *</label>
+                        <input type="text" id="mensajeAsunto" required autocomplete="off" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Mensaje: *</label>
+                        <textarea id="mensajeContenido" required rows="6" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom:0.25rem;">
+                        <input type="file" id="mensajeAdjuntoInput" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png" style="display:none;">
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+                            <span id="btnAdjuntarDocs" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📎 Adjuntar archivo</span>
+                            <span onclick="pegarImagenClipboard()" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.35rem 0.7rem;border:1px dashed var(--border);border-radius:6px;font-size:0.85rem;color:var(--text-light);cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--warning)';this.style.color='var(--warning)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-light)'">📋 Pegar imagen</span>
+                        </div>
+                        <div id="mensajeAdjuntosList" style="margin-top:0.4rem;"></div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Aviso -->
+    <div id="nuevoAvisoModal" class="modal">
+        <div class="modal-content" style="max-width:500px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Nuevo Aviso</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button type="submit" form="nuevoAvisoForm" title="Publicar" style="background:none;border:none;font-size:1.5rem;cursor:pointer;padding:0.25rem 0.4rem;border-radius:4px;transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">📤</button>
+                    <button class="close-modal" onclick="closeModal('nuevoAvisoModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="nuevoAvisoForm" onsubmit="submitNuevoAviso(event)">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Título: *</label>
+                        <input type="text" id="avisoTitulo" required autocomplete="off" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Contenido: *</label>
+                        <textarea id="avisoContenido" required rows="4" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;resize:vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.9rem;display:block;margin-bottom:0.25rem;">Fecha de expiración (opcional):</label>
+                        <input type="date" id="avisoExpiracion" style="width:100%;padding:0.4rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdfViewerOverlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:10001;">
+        <div style="position:absolute; top:0; right:0; padding:0.75rem; z-index:10002;">
+            <button onclick="closePDFViewer()" style="background:var(--danger); color:white; border:none; border-radius:50%; width:44px; height:44px; font-size:1.5rem; font-weight:700; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.4);">✕</button>
+        </div>
+        <iframe id="pdfViewerIframe" style="width:100%; height:100%; border:none;"></iframe>
+        <img id="pdfViewerImg" style="display:none; max-width:100%; max-height:100%; width:auto; height:auto; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); object-fit:contain; border-radius:4px;">
+    </div>
+
+  <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    .modal-content {
-        width: 100%;
-        max-height: 97vh;
-        margin: 0;
-        border-radius: 4px;
-    }
+    <!-- SheetJS para exportar Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    .modal-header {
-        padding: 1rem;
-    }
-    
-    .modal-title {
-        font-size: 1.2rem;
-    }
-    
-    .tabs {
-        padding-top: 0.3rem;
-    }
-    .tab {
-        padding: 0.45rem 0.65rem;
-        font-size: 0.75rem;
-        border-radius: 6px 6px 0 0;
-    }
-    
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .payment-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .payment-item-actions {
-        width: 100%;
-        justify-content: flex-end;
-    }
-}
+    <!-- JavaScript Files -->
+    <script>console.log('%c ESWU v22 ', 'background:#1a365d;color:white;font-size:14px;padding:4px 8px;border-radius:4px;');</script>
+    <!-- Modal: ESWU Editar Usuario -->
+    <div id="eswuEditUsuarioModal" class="modal">
+        <div class="modal-content" style="max-width:400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="eswuEditUsuarioTitle">Editar Usuario</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <span onclick="document.getElementById('eswuEditUsuarioForm').requestSubmit()" title="Guardar" style="cursor:pointer; font-size:1.2rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">💾</span>
+                    <button class="close-modal" onclick="closeModal('eswuEditUsuarioModal')">×</button>
+                </div>
+            </div>
+            <div style="padding:1rem 1.25rem;">
+                <form id="eswuEditUsuarioForm" onsubmit="saveEswuUsuario(event)">
+                    <input type="hidden" id="eswuUsuarioId" value="">
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Nombre:</label>
+                        <input type="text" id="eswuUsuarioNombre" required style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Email:</label>
+                        <input type="email" id="eswuUsuarioEmail" style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Password:</label>
+                        <div style="position:relative;">
+                            <input type="password" id="eswuUsuarioPassword" required style="width:100%;padding:0.35rem 0.5rem;padding-right:2.2rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                            <span onclick="togglePasswordVisibility('eswuUsuarioPassword', this)" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);cursor:pointer;font-size:1rem;user-select:none;" title="Mostrar/ocultar">👁️</span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="font-weight:500;font-size:0.85rem;display:block;margin-bottom:0.2rem;">Nivel:</label>
+                        <select id="eswuUsuarioNivel" style="width:100%;padding:0.35rem 0.5rem;border:1px solid var(--border);border-radius:4px;font-size:0.9rem;">
+                            <option value="1">1 - Admin</option>
+                            <option value="2">2 - Edita</option>
+                            <option value="3">3 - Consulta</option>
+                            <option value="4">4 - Contabilidad</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:0.5rem;">
+                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;">
+                            <input type="checkbox" id="eswuUsuarioActivo" checked> Activo
+                        </label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-/* ============================================
-   SECTION TOOLBAR - Compact header bar
-   ============================================ */
-
-.section-toolbar {
-    padding: 0.5rem 0.75rem !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 0.5rem;
-    min-height: 42px;
-    flex-wrap: nowrap !important;
-}
-
-.toolbar-left {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-width: 0;
-    flex-shrink: 1;
-}
-
-.toolbar-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.toolbar-hamburger {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 0.15rem 0.4rem;
-    font-size: 0.95rem;
-    cursor: pointer;
-    color: var(--text-light);
-    line-height: 1;
-    flex-shrink: 0;
-}
-.toolbar-hamburger:hover {
-    background: #f1f5f9;
-}
-
-.toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-shrink: 0;
-}
-
-.toolbar-btn {
-    font-size: 0.95rem;
-    cursor: pointer;
-    padding: 0.15rem 0.3rem;
-    border-radius: 4px;
-    transition: background 0.15s;
-    user-select: none;
-    line-height: 1;
-}
-.toolbar-btn:hover {
-    background: #e2e8f0;
-}
-
-.toolbar-search {
-    width: 0;
-    padding: 0;
-    border: none;
-    font-size: 0.82rem;
-    transition: width 0.25s ease, padding 0.25s ease, border 0.25s ease;
-    outline: none;
-    border-radius: 4px;
-    background: #f8fafc;
-}
-.toolbar-search.open {
-    width: 140px;
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--border);
-}
-
-.toolbar-filter {
-    padding: 0.2rem 0.3rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-size: 0.78rem;
-    background: white;
-    cursor: pointer;
-}
-
-/* Nav dropdown shared (proveedores + inquilinos) */
-.nav-menu {
-    position: relative;
-    display: inline-block;
-    flex-shrink: 0;
-}
-.nav-dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 100;
-    min-width: 180px;
-    margin-top: 4px;
-}
-.nav-dropdown-item {
-    padding: 0.45rem 0.8rem;
-    cursor: pointer;
-    font-size: 0.88rem;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.15s;
-}
-.nav-dropdown-item:last-child {
-    border-bottom: none;
-    border-radius: 0 0 6px 6px;
-}
-.nav-dropdown-item:first-child {
-    border-radius: 6px 6px 0 0;
-}
-.nav-dropdown-item:hover {
-    background: #f1f5f9;
-}
-.nav-dropdown-item.active {
-    background: var(--primary);
-    color: white;
-    font-weight: 700;
-}
-.nav-dropdown-item.active:hover {
-    background: var(--primary);
-}
-.nav-dropdown-item.nav-home {
-    color: var(--text-light);
-    font-size: 0.82rem;
-}
-.nav-dropdown-item.nav-home:hover {
-    background: #e2e8f0;
-}
-
-@media (max-width: 600px) {
-    .section-toolbar {
-        padding: 0.4rem 0.5rem !important;
-    }
-    .toolbar-title {
-        font-size: 0.88rem;
-    }
-    .toolbar-search.open {
-        width: 80px;
-        font-size: 0.78rem;
-        padding: 0.2rem 0.4rem;
-    }
-    .toolbar-btn {
-        font-size: 0.85rem;
-        padding: 0.1rem 0.2rem;
-    }
-    /* Hide header context items on mobile — mobile uses section-toolbars */
-    .hdr-ctx-el, #headerNavMenu, #headerSubtitle {
-        display: none !important;
-    }
-}
-
-/* ============================================
-   HEADER CONTEXT BUTTONS — Desktop only
-   ============================================ */
-
-/* All context elements hidden by default */
-.hdr-ctx-el {
-    display: none;
-}
-
-/* When activated via JS class */
-.hdr-ctx-el.visible {
-    display: inline-block !important;
-}
-
-.hdr-ctx-btn {
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 0.15rem 0.35rem;
-    border-radius: 4px;
-    transition: background 0.15s;
-    user-select: none;
-}
-.hdr-ctx-btn:hover {
-    background: #e2e8f0;
-}
-
-.hdr-ctx-add {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #22c55e;
-    line-height: 1;
-}
-
-.hdr-ctx-filter {
-    font-size: 0.8rem;
-    padding: 0.2rem 0.3rem;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-}
-
-.hdr-inline-search {
-    width: 0;
-    padding: 0;
-    border: none;
-    font-size: 0.85rem;
-    border-radius: 4px;
-    background: #f8fafc;
-    outline: none;
-    transition: width 0.25s ease, padding 0.25s ease, border-color 0.25s ease;
-}
-.hdr-inline-search.visible {
-    display: inline-block !important;
-}
-.hdr-inline-search.open {
-    display: inline-block !important;
-    width: 130px !important;
-    padding: 0.3rem 0.5rem !important;
-    border: 1px solid var(--border) !important;
-}
-
-@media (min-width: 601px) {
-    /* Hide section-toolbars on desktop — header takes over */
-    .section-toolbar.desktop-hidden {
-        display: none !important;
-    }
-    /* ESWU Ficha — sticky header + tabs on desktop */
-    .eswu-ficha-card {
-        overflow: visible !important;
-    }
-    .eswu-ficha-card > .modal-header-sticky {
-        position: sticky !important;
-        top: 56px;
-        z-index: 12;
-        background: white;
-    }
-    .eswu-ficha-card .tabs-container .tabs-desktop-only {
-        position: sticky;
-        top: 101px;
-        z-index: 11;
-        background: white;
-        padding-top: 0.25rem;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid var(--border);
-    }
-}
+    <script src="js/config.js?v=23"></script>
+    <script src="js/google-drive.js?v=9"></script>
+    <script src="js/database/db-core.js?v=22"></script>
+    <script src="js/database/db-inquilinos.js?v=17"></script>
+    <script src="js/database/db-proveedores.js?v=23"></script>
+    <script src="js/database/db-facturas.js?v=32"></script>
+    <script src="js/database/db-fetch-docs.js?v=24"></script>
+    <script src="js/database/db-admin.js?v=15"></script>
+    <script src="js/database/db-mensajes.js?v=23"></script>
+    <script src="js/ui/navigation.js?v=48"></script>
+    <script src="js/ui/tables.js?v=22"></script>
+    <script src="js/ui/inquilinos-ui.js?v=36"></script>
+    <script src="js/ui/proveedores-ui.js?v=42"></script>
+    <script src="js/ui/mantenimiento-ui.js?v=16"></script>
+    <script src="js/ui/contabilidad-ui.js?v=27"></script>
+    <script src="js/ui/eswu-ui.js?v=40"></script>
+    <script src="js/ui/admin-ui.js?v=21"></script>
+    <script src="js/ui/numeros-ui.js?v=24"></script>
+    <script src="js/ui/mensajes-ui.js?v=24"></script>
+    <script src="js/modals/modals.js?v=24"></script>
+    <script src="js/modals/inquilino-modals.js?v=13"></script>
+    <script src="js/modals/proveedor-modals.js?v=27"></script>
+    <script src="js/main.js?v=29"></script>
+    <script>
+        // Prevent browser from opening files dropped outside drop zones
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('drop', function(e) { e.preventDefault(); });
+    </script>
+</body>
+</html>
