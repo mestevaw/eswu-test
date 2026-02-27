@@ -740,28 +740,13 @@
         display: none !important;
     }
     
-    /* ── MOBILE HEADER: 1 line default, row2 slides down on 🔍 ── */
+    /* ── MOBILE HEADER: single line ── */
     .header {
         padding: 0.35rem 0.3rem 0.35rem 0;
-        flex-wrap: wrap;
     }
-    .header-row1 {
-        display: flex;
-        align-items: center;
+    .header-title-area {
         flex: 1;
         min-width: 0;
-    }
-    /* Row2: search + filters — hidden until 🔍 is tapped */
-    .header-row2 {
-        width: 100%;
-        flex: none;
-        display: none;
-        justify-content: center;
-        gap: 0.4rem;
-        padding: 0.3rem 0.5rem 0.1rem;
-    }
-    .header-search-open .header-row2 {
-        display: flex !important;
     }
     .header-title {
         font-size: 1rem !important;
@@ -774,7 +759,7 @@
         font-weight: 500;
     }
     .header-actions {
-        gap: 0.35rem !important;
+        gap: 0.3rem !important;
         padding-right: 0.2rem !important;
         flex-shrink: 0;
     }
@@ -792,18 +777,30 @@
         font-weight: 700;
     }
     
-    /* Row2 elements: search + filters (now directly in row2, not in header-actions) */
-    .header-row2 .hdr-inline-search.visible {
+    /* Filters + search input: HIDDEN on mobile by default */
+    .hdr-ctx-filter.visible {
+        display: none !important;
+    }
+    .hdr-inline-search.visible {
+        display: none !important;
+    }
+    
+    /* When 🔍 tapped: title hides, search+filters appear in its place */
+    .header-search-open .header-title-area {
+        display: none !important;
+    }
+    .header-search-open .hdr-inline-search.visible {
         display: inline-block !important;
-        width: 90px !important;
-        font-size: 0.8rem;
+        width: 80px !important;
+        font-size: 0.78rem;
         padding: 0.2rem 0.4rem !important;
         border: 1px solid var(--border) !important;
+        flex-shrink: 1;
     }
-    .header-row2 .hdr-ctx-filter.visible {
+    .header-search-open .hdr-ctx-filter.visible {
         display: inline-block !important;
-        font-size: 0.78rem;
-        padding: 0.2rem 0.3rem;
+        font-size: 0.75rem;
+        padding: 0.18rem 0.25rem;
     }
     
     /* Notification bell smaller */
@@ -821,13 +818,9 @@
     #headerNavMenu {
         display: none !important;
     }
-    /* Single-line header = standard body padding */
+    /* Standard body padding */
     body.logged-in {
         padding-top: 50px !important;
-    }
-    /* When search row is open, more padding */
-    body.logged-in.header-search-open {
-        padding-top: 82px !important;
     }
 }
 
