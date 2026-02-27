@@ -369,7 +369,7 @@ async function saveBancoDoc(event) {
             anio: anio,
             mes: mes,
             nombre_archivo: file.name,
-            fecha_subida: new Date().toISOString().split('T')[0],
+            fecha_subida: todayLocal(),
             usuario_subio: currentUser ? currentUser.nombre : 'Sistema'
         };
         
