@@ -1,7 +1,10 @@
 /* ========================================
-   TABLES.JS - Excel Export Functions
-   populateYearSelects → en main.js
+   js/ui/tables.js — V1
+   Fecha: 2026-02-27
+   Descripción: Excel Export Functions
+   populateYearSelects → en db-admin.js
    exportProveedores/FacturasPagadas/PorPagar → en proveedores-ui.js
+   exportarInquilinosExcel → en inquilinos-ui.js
    ======================================== */
 
 // ============================================
@@ -16,30 +19,8 @@ function exportToExcel(data, filename, sheetName) {
 }
 
 // ============================================
-// EXCEL EXPORT - INQUILINOS
+// EXCEL EXPORT - RENTAS RECIBIDAS
 // ============================================
-
-function exportInquilinosToExcel() {
-    const data = [
-        ['Empresa', 'Renta Mensual', 'Vencimiento Contrato', 'RFC', 'CLABE', 'M²', 'No. Despacho', 'Fecha Inicio', 'Notas']
-    ];
-    
-    inquilinos.forEach(inq => {
-        data.push([
-            inq.nombre,
-            inq.renta,
-            inq.fecha_vencimiento,
-            inq.rfc || '',
-            inq.clabe || '',
-            inq.m2 || '',
-            inq.numero_despacho || '',
-            inq.fecha_inicio,
-            inq.notas || ''
-        ]);
-    });
-    
-    exportToExcel(data, 'Inquilinos.xlsx', 'Inquilinos');
-}
 
 function exportRentasRecibidasToExcel() {
     const year = parseInt(document.getElementById('inquilinosRentasYear').value);
@@ -70,6 +51,10 @@ function exportRentasRecibidasToExcel() {
     
     exportToExcel(data, filename, 'Rentas Recibidas');
 }
+
+// ============================================
+// EXCEL EXPORT - VENCIMIENTO CONTRATOS
+// ============================================
 
 function exportVencimientoContratosToExcel() {
     const data = [['Empresa', 'Inicio', 'Vencimiento', 'Días Restantes', 'Estado']];
@@ -128,16 +113,7 @@ function exportBitacoraToExcel() {
 function exportarRentasExcel() { exportRentasRecibidasToExcel(); }
 function exportarContratosExcel() { exportVencimientoContratosToExcel(); }
 
-// ============================================
-// DROPDOWN CLOSE ON OUTSIDE CLICK
-// ============================================
+/* Nota: El listener para cerrar dropdowns al click fuera
+   vive únicamente en navigation.js (línea ~1061) */
 
-window.addEventListener('click', function(e) {
-    if (!e.target.matches('.dropdown-toggle')) {
-        document.querySelectorAll('.dropdown-content').forEach(dropdown => {
-            dropdown.classList.remove('show');
-        });
-    }
-});
-
-console.log('✅ TABLES.JS cargado');
+console.log('✅ TABLES.JS V1 cargado (2026-02-27)');
