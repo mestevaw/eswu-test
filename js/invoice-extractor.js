@@ -115,15 +115,46 @@ async function _processInvoicePdf(file) {
         // Try pdf.js text extraction first
         var textContent = await _extractPdfText(arrayBuffer.slice(0));
 
-        // If no text found, fallback to OCR
-        if (!textContent || textContent.trim().length < 20) {
+        // Parse the extracted text
+        var parsed = _parseInvoiceText(textContent);
+        
+        // Count how many fields were found
+        var fieldCount = [parsed.rfc_emisor, parsed.numero_factura, parsed.fecha_factura, 
+                          parsed.total, parsed.iva, parsed.fecha_vencimiento].filter(Boolean).length;
+
+        // If text was found but parsing got poor results (≤2 fields), try OCR and merge
+        var usedOcr = false;
+        if (fieldCount <= 2 && typeof Tesseract !== 'undefined') {
+            console.log('⚠️ Solo ' + fieldCount + ' campos del texto PDF, intentando OCR para mejorar...');
+            if (processingMsg) processingMsg.textContent = 'Mejorando extracción con OCR...';
+            try {
+                var ocrText = await _extractPdfWithOCR(arrayBuffer.slice(0));
+                var ocrParsed = _parseInvoiceText(ocrText);
+                usedOcr = true;
+                
+                // Merge: use OCR values for fields that pdf.js didn't find
+                if (!parsed.rfc_emisor && ocrParsed.rfc_emisor) parsed.rfc_emisor = ocrParsed.rfc_emisor;
+                if (!parsed.nombre_emisor && ocrParsed.nombre_emisor) parsed.nombre_emisor = ocrParsed.nombre_emisor;
+                if (!parsed.numero_factura && ocrParsed.numero_factura) parsed.numero_factura = ocrParsed.numero_factura;
+                if (!parsed.fecha_factura && ocrParsed.fecha_factura) parsed.fecha_factura = ocrParsed.fecha_factura;
+                if (!parsed.total && ocrParsed.total) parsed.total = ocrParsed.total;
+                if (!parsed.iva && ocrParsed.iva) parsed.iva = ocrParsed.iva;
+                if (!parsed.fecha_vencimiento && ocrParsed.fecha_vencimiento) parsed.fecha_vencimiento = ocrParsed.fecha_vencimiento;
+                
+                console.log('📋 Datos mejorados con OCR:', JSON.stringify(parsed, null, 2));
+            } catch (ocrErr) {
+                console.warn('⚠️ OCR fallback falló:', ocrErr);
+            }
+        }
+        
+        // If no text at all, use pure OCR
+        if ((!textContent || textContent.trim().length < 20) && !usedOcr) {
             console.log('⚠️ PDF sin texto extraíble, intentando OCR...');
             if (processingMsg) processingMsg.textContent = 'PDF sin texto... aplicando OCR (puede tardar unos segundos)...';
             textContent = await _extractPdfWithOCR(arrayBuffer.slice(0));
+            parsed = _parseInvoiceText(textContent);
         }
 
-        // Parse the extracted text
-        var parsed = _parseInvoiceText(textContent);
         _extractedInvoiceData = parsed;
 
         console.log('📄 Texto extraído del PDF:', textContent.substring(0, 500));
@@ -395,7 +426,9 @@ function _parseInvoiceText(text) {
         /(?:folio\s*(?:fiscal)?)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
         /(?:no\.?\s*(?:de\s*)?factura)\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
         /(?:serie\s*y\s*folio|folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
-        /(?:N[uú]mero\s*de\s*documento|Documento\s*No\.?)\s*[:;]?\s*([A-Z0-9\-]{1,30})/i
+        /(?:N[uú]mero\s*de\s*documento|Documento\s*No\.?)\s*[:;]?\s*([A-Z0-9\-]{1,30})/i,
+        // CFE: "NO. DE SERVICIO:" as fallback
+        /no\.?\s*de\s*servicio\s*[:;]?\s*(\d{6,20})/i
     ];
     for (var i = 0; i < folioPatterns.length; i++) {
         var fm = folioPatterns[i].exec(t);
@@ -441,7 +474,11 @@ function _parseInvoiceText(text) {
         // Any YYYY MM DD (spaces) near "fecha"
         { rx: /fecha[^0-9]{0,20}(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
         // "Mes de Facturación: Enero" + year from nearby context
-        { rx: /mes\s*de\s*facturaci[oó]n\s*[:;]?\s*(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i, type: 'month_only' }
+        { rx: /mes\s*de\s*facturaci[oó]n\s*[:;]?\s*(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i, type: 'month_only' },
+        // CFE: "PERIODO FACTURADO:20 ENE 26-19 FEB 26" — use end date
+        { rx: /periodo\s*facturado\s*[:;]?\s*\d{1,2}\s*(?:ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*\d{2,4}\s*[-–]\s*(\d{1,2})\s*(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*(\d{2,4})/i, type: 'dmy_abrev' },
+        // "Fecha de impresion:25/02/2026"
+        { rx: /fecha[^0-9]{0,30}impresi[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' }
     ];
     
     for (var i = 0; i < fechaPatterns.length; i++) {
@@ -454,7 +491,8 @@ function _parseInvoiceText(text) {
         } else if (fp.type === 'dmy_abrev' && fd[1] && fd[2] && fd[3]) {
             var mesNum = mesesAbrev[fd[2].toUpperCase()];
             if (mesNum) {
-                result.fecha_factura = fd[3] + '-' + mesNum + '-' + fd[1].padStart(2, '0');
+                var yr = fd[3].length === 2 ? '20' + fd[3] : fd[3];
+                result.fecha_factura = yr + '-' + mesNum + '-' + fd[1].padStart(2, '0');
             }
         } else if (fp.type === 'standard' && fd[1]) {
             result.fecha_factura = _normalizeDateString(fd[1].trim());
@@ -473,9 +511,16 @@ function _parseInvoiceText(text) {
 
     // --- TOTAL ---
     var totalPatterns = [
+        // "TOTAL A PAGAR: $490" or "Total a Pagar: $ 1,234.56"
+        /(?:total\s*a\s*pagar)\s*[:;]?\s*\$\s*([\d,]+\.?\d{0,2})/i,
+        // "Total 490.28" (right side of table in CFE)
+        /\bTotal\s+([\d,]+\.\d{2})\b/,
+        // Generic total patterns
         /(?:total\s*(?:a\s*pagar|con\s*letra|cfdi|factura)?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
         /(?:importe\s*total|monto\s*total|gran\s*total)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        /(?:saldo\s*(?:al\s*corte|total))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
+        /(?:saldo\s*(?:al\s*corte|total))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+        // "$490" standalone with dollar sign (CFE big display)
+        /\$\s*([\d,]{3,}\.?\d{0,2})/
     ];
     var totalCandidates = [];
     for (var i = 0; i < totalPatterns.length; i++) {
@@ -514,6 +559,9 @@ function _parseInvoiceText(text) {
 
     // --- FECHA DE VENCIMIENTO ---
     var vencPatterns = [
+        // CFE: "FECHA LÍMITE DE PAGO:07 MAR 2026" (possibly no space after colon)
+        { rx: /fecha\s*l[ií]mite\s*(?:de\s*)?pago\s*[:;]?\s*(\d{1,2})\s*(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*(\d{4})/i, type: 'dmy_abrev' },
+        { rx: /fecha\s*l[ií]mite\s*(?:de\s*)?pago\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
         // "Pagar antes de:" DD-MES-AAAA
         { rx: /pagar\s*antes\s*(?:de|del?)?\s*[:;]?\s*[\-_]?\s*(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
         // "Pagar antes de:" DD/MM/YYYY
@@ -523,7 +571,9 @@ function _parseInvoiceText(text) {
         { rx: /(?:fecha\s*(?:de\s*)?(?:vencimiento|pago|l[ií]mite\s*(?:de\s*)?pago))\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
         // "Vencimiento:" with full month names
         { rx: /(?:vence|vencimiento|pagar\s*antes\s*(?:del?)?)\s*[:;]?\s*(\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?\d{2,4})/i, type: 'standard' },
-        { rx: /(?:pago|vencimiento)\s*[:;]?\s*(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i, type: 'standard' }
+        { rx: /(?:pago|vencimiento)\s*[:;]?\s*(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i, type: 'standard' },
+        // "CORTE A PARTIR:" (CFE disconnect date, useful as reference)
+        { rx: /corte\s*a\s*partir\s*[:;]?\s*(\d{1,2})\s*(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*(\d{4})/i, type: 'dmy_abrev' }
     ];
     for (var i = 0; i < vencPatterns.length; i++) {
         var vp = vencPatterns[i];
@@ -533,7 +583,8 @@ function _parseInvoiceText(text) {
         if (vp.type === 'dmy_abrev' && vd[1] && vd[2] && vd[3]) {
             var vMes = mesesAbrev[vd[2].toUpperCase()];
             if (vMes) {
-                result.fecha_vencimiento = vd[3] + '-' + vMes + '-' + vd[1].padStart(2, '0');
+                var vYr = vd[3].length === 2 ? '20' + vd[3] : vd[3];
+                result.fecha_vencimiento = vYr + '-' + vMes + '-' + vd[1].padStart(2, '0');
             }
         } else if (vp.type === 'standard' && vd[1]) {
             result.fecha_vencimiento = _normalizeDateString(vd[1].trim());
@@ -710,9 +761,21 @@ function _checkRfcAgainstProveedores(parsed) {
         // Proveedor encontrado
         _extractedInvoiceData._proveedorId = found.id;
         _extractedInvoiceData._proveedorNombre = found.nombre;
+        _extractedInvoiceData.nombre_emisor = found.nombre;
         matchEl.innerHTML = '<div style="padding:0.5rem;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;font-size:0.85rem;">' +
             '✅ Proveedor encontrado: <strong>' + found.nombre + '</strong></div>';
         matchEl.style.display = '';
+        
+        // Update the Proveedor name in the summary above
+        var summaryEl = document.getElementById('invoiceExtractedSummary');
+        if (summaryEl) {
+            var rows = summaryEl.querySelectorAll('div');
+            if (rows.length > 0) {
+                // First row is Proveedor
+                rows[0].innerHTML = '<span>✅ Proveedor</span>' +
+                    '<span style="font-weight:500;text-align:right;">' + found.nombre + '</span>';
+            }
+        }
     } else {
         // Proveedor NO encontrado
         _extractedInvoiceData._proveedorId = null;
