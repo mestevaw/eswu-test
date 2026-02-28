@@ -423,6 +423,8 @@ function _parseInvoiceText(text) {
     var folioPatterns = [
         // "Factura No.:" or "Factura No.:" followed by numbers (skip OCR artifacts like "0:")
         /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
+        // "Serie/Folio interno: 00005852" or "Folio interno: 123"
+        /(?:serie\s*\/?\s*)?folio\s*(?:interno)?\s*[:;]\s*([A-Z0-9\-]{1,20})/i,
         /(?:folio\s*(?:fiscal)?)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
         /(?:no\.?\s*(?:de\s*)?factura)\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
         /(?:serie\s*y\s*folio|folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
@@ -459,6 +461,9 @@ function _parseInvoiceText(text) {
     };
 
     var fechaPatterns = [
+        // "Fecha/Hora expedición: 04/02/2026 11:43:03" or "Fecha expedición: 2026-02-04"
+        { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
+        { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
         // CFDI: "Fecha" seguido de AAAA MM DD (con espacios)
         { rx: /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
         // DD-MES-AAAA (abbreviated month): 21-ENE-2026, 22-FEB-2026
@@ -605,6 +610,11 @@ function _parseInvoiceText(text) {
         }
         
         if (result.fecha_vencimiento) break;
+    }
+
+    // Si no se encontró vencimiento, calcular default: 2 días hábiles antes del fin del mes en curso
+    if (!result.fecha_vencimiento) {
+        result.fecha_vencimiento = _calcDefaultVencimiento();
     }
 
     return result;
