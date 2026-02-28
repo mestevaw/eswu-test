@@ -1,6 +1,7 @@
 /* ========================================
-   ESWU-UI.JS v5
-   Ficha ESWU - Select dropdown contacts, subfolder nav
+   js/ui/eswu-ui.js — V1
+   Fecha: 2026-02-27
+   Ficha ESWU - Usuarios en pestaña #6, subfolder nav
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
@@ -39,10 +40,10 @@ function showEswuFicha() {
 
 function renderEswuFicha() {
     renderEswuActa();
-    renderEswuContacts();
     loadEswuDocsTab('legales');
     loadEswuDocsTab('generales');
     renderEswuBancosTable();
+    renderEswuUsuariosTab();
     if (typeof renderMensajesFicha === 'function') {
         renderMensajesFicha('eswu', 0);
     }
@@ -100,46 +101,61 @@ async function selectEswuActa() {
 }
 
 // ============================================
-// CONTACTOS (select dropdown)
+// ============================================
+// USUARIOS TAB (pestaña #6)
 // ============================================
 
-function renderEswuContacts() {
-    var div = document.getElementById('eswuContactsList');
+function renderEswuUsuariosTab() {
+    var div = document.getElementById('eswuUsuariosContent');
+    if (!div) return;
+    
     var allUsers = (typeof usuarios !== 'undefined') ? usuarios : [];
-    var activeUsers = allUsers.filter(function(u) { return u.activo; });
-    
-    // Sort alphabetically
-    activeUsers.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
-    
-    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">';
-    html += '<span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Usuarios</span>';
-    
-    // Select dropdown — first user is default
-    html += '<select id="eswuUsuarioSelect" onchange="onEswuUsuarioSelect(this.value)" style="flex:1;min-width:140px;padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;cursor:pointer;">';
-    activeUsers.forEach(function(u, i) {
-        var nivel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
-        html += '<option value="' + u.id + '"' + (i === 0 ? ' selected' : '') + '>' + u.nombre + (nivel ? ' (' + nivel + ')' : '') + '</option>';
+    // Activos primero, luego inactivos
+    var sorted = allUsers.slice().sort(function(a, b) {
+        if (a.activo !== b.activo) return a.activo ? -1 : 1;
+        return a.nombre.localeCompare(b.nombre);
     });
-    html += '</select>';
     
-    // Add button
-    html += '<span onclick="showEswuAddUsuario()" title="Agregar usuario" style="color:var(--success);font-size:1.3rem;font-weight:700;cursor:pointer;padding:0 0.3rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'">+</span>';
-    html += '</div>';
+    var nivelLabels = {1:'Admin', 2:'Edita', 3:'Consulta', 4:'Contabilidad'};
     
-    div.innerHTML = html;
-}
-
-function onEswuUsuarioSelect(val) {
-    if (!val) return;
-    showEswuEditUsuario(parseInt(val));
-}
-
-function editEswuUsuarios() {
-    // Pencil icon: open edit for currently selected user
-    var sel = document.getElementById('eswuUsuarioSelect');
-    if (sel && sel.value) {
-        showEswuEditUsuario(parseInt(sel.value));
+    var h = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">';
+    h += '<span style="font-size:0.85rem;color:var(--text-light);">' + allUsers.length + ' usuario' + (allUsers.length !== 1 ? 's' : '') + '</span>';
+    h += '<span onclick="showEswuAddUsuario()" style="color:var(--success);font-size:1.4rem;font-weight:700;cursor:pointer;padding:0 0.4rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'" title="Agregar usuario">+</span>';
+    h += '</div>';
+    
+    if (sorted.length === 0) {
+        h += '<p style="text-align:center;color:var(--text-light);padding:2rem 0;">No hay usuarios</p>';
+        div.innerHTML = h;
+        return;
     }
+    
+    h += '<div class="mc-list"><div class="mc-header">';
+    h += '<div class="mc-header-line"><span>Usuario</span><span>Nivel</span></div>';
+    h += '<div class="mc-header-line"><span>Email</span><span>Estado</span></div>';
+    h += '</div>';
+    
+    sorted.forEach(function(u, idx) {
+        var nivel = nivelLabels[u.nivel] || 'N' + u.nivel;
+        var email = u.email || '—';
+        if (email.length > 28) email = email.substring(0, 26) + '…';
+        var mcBadge = u.activo ? 'mc-badge-success' : 'mc-badge-danger';
+        var estado = u.activo ? 'Activo' : 'Inactivo';
+        
+        h += '<div onclick="showEswuEditUsuario(' + u.id + ')" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '" style="cursor:pointer;">';
+        h += '<div class="mc-line"><div class="mc-title">' + u.nombre + '</div>';
+        h += '<span class="mc-meta-right">' + nivel + '</span></div>';
+        h += '<div class="mc-line"><span class="mc-meta">' + email + '</span>';
+        h += '<span class="mc-badge ' + mcBadge + '">' + estado + '</span></div>';
+        h += '</div>';
+    });
+    
+    h += '</div>';
+    div.innerHTML = h;
+}
+
+// Backward compat — renderEswuContacts ahora apunta a la pestaña
+function renderEswuContacts() {
+    renderEswuUsuariosTab();
 }
 
 // ============================================
@@ -996,4 +1012,4 @@ function fmtMonto(amount) {
     return prefix + Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-console.log('✅ ESWU-UI.JS v10 cargado');
+console.log('✅ ESWU-UI.JS V1 cargado (2026-02-27)');
