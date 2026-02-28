@@ -213,10 +213,11 @@ function _parseInvoiceText(text) {
     while ((m = rfcPattern.exec(t)) !== null) {
         rfcMatches.push(m[1].toUpperCase());
     }
-    // Filter out common non-RFC matches and our own company RFC
+    // Filter out: RFC genéricos y el RFC propio de Inmobiliaris ESWU (receptor)
+    var rfcPropio = 'IES9804035B5';
     rfcMatches = rfcMatches.filter(function(rfc) {
-        // Exclude common false positives
         if (/^(XAXX|XEXX)/.test(rfc)) return false; // RFC genérico
+        if (rfc === rfcPropio) return false; // Nuestro propio RFC (receptor)
         return true;
     });
     if (rfcMatches.length > 0) {
