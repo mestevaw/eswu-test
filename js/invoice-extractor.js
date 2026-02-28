@@ -213,11 +213,13 @@ function _parseInvoiceText(text) {
     while ((m = rfcPattern.exec(t)) !== null) {
         rfcMatches.push(m[1].toUpperCase());
     }
-    // Filter out: RFC genéricos y el RFC propio de Inmobiliaris ESWU (receptor)
+    // Filter out: RFC genéricos, el RFC propio de Inmobiliaris ESWU (receptor), y el del SAT
     var rfcPropio = 'IES9804035B5';
+    var rfcSAT = 'SAT970701NN3';
     rfcMatches = rfcMatches.filter(function(rfc) {
         if (/^(XAXX|XEXX)/.test(rfc)) return false; // RFC genérico
         if (rfc === rfcPropio) return false; // Nuestro propio RFC (receptor)
+        if (rfc === rfcSAT) return false; // RFC del SAT
         return true;
     });
     if (rfcMatches.length > 0) {
@@ -274,6 +276,8 @@ function _parseInvoiceText(text) {
 
     // --- FECHA DE FACTURA ---
     var fechaPatterns = [
+        // CFDI: "Fecha" seguido de AAAA MM DD (con espacios)
+        /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i,
         /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura|comprobante|cfdi))\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i,
         /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura))\s*[:;]?\s*(\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?\d{2,4})/i,
         /(?:fecha)\s*[:;]?\s*(\d{4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,2})/i
@@ -281,15 +285,28 @@ function _parseInvoiceText(text) {
     for (var i = 0; i < fechaPatterns.length; i++) {
         var fd = fechaPatterns[i].exec(t);
         if (fd) {
-            result.fecha_factura = _normalizeDateString(fd[1].trim());
-            break;
+            // First pattern captures year, month, day as separate groups
+            if (i === 0 && fd[1] && fd[2] && fd[3]) {
+                result.fecha_factura = fd[1] + '-' + fd[2].padStart(2, '0') + '-' + fd[3].padStart(2, '0');
+            } else {
+                result.fecha_factura = _normalizeDateString(fd[1].trim());
+            }
+            if (result.fecha_factura) break;
         }
     }
     // Fallback: look for any date-like pattern near "fecha"
     if (!result.fecha_factura) {
+        // Try YYYY-MM-DD or YYYY/MM/DD near "fecha"
         var anyDateNearFecha = /fecha[^0-9]{0,20}(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i.exec(t);
         if (anyDateNearFecha) {
             result.fecha_factura = _normalizeDateString(anyDateNearFecha[1]);
+        }
+    }
+    if (!result.fecha_factura) {
+        // Try YYYY MM DD (space-separated) anywhere near "fecha"
+        var spaceDateNearFecha = /fecha[^0-9]{0,20}(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i.exec(t);
+        if (spaceDateNearFecha) {
+            result.fecha_factura = spaceDateNearFecha[1] + '-' + spaceDateNearFecha[2].padStart(2, '0') + '-' + spaceDateNearFecha[3].padStart(2, '0');
         }
     }
 
