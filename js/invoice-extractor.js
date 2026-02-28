@@ -421,13 +421,16 @@ function _parseInvoiceText(text) {
 
     // --- NÚMERO DE FACTURA ---
     var folioPatterns = [
-        // "Factura No.:" or "Factura No.:" followed by numbers (skip OCR artifacts like "0:")
+        // "Factura No.:" followed by numbers
         /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
-        // "Serie/Folio interno: 00005852" or "Folio interno: 123"
-        /(?:serie\s*\/?\s*)?folio\s*(?:interno)?\s*[:;]\s*([A-Z0-9\-]{1,20})/i,
-        /(?:folio\s*(?:fiscal)?)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
+        // "Folio:" or "Folio interno:" followed by number (must start with digit)
+        /(?:serie\s*\/?\s*)?folio\s*(?:interno)?\s*[:;]\s*(\d[\dA-Z\-]{0,19})/i,
+        // "Folio: 2236" simple
+        /\bfolio\s*[:;]\s*(\d{1,10})\b/i,
+        // "Folio fiscal:" UUID-like (skip in post-check below)
+        /(?:folio\s*fiscal)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
         /(?:no\.?\s*(?:de\s*)?factura)\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
-        /(?:serie\s*y\s*folio|folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
+        /(?:serie\s*y\s*folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
         /(?:N[uú]mero\s*de\s*documento|Documento\s*No\.?)\s*[:;]?\s*([A-Z0-9\-]{1,30})/i,
         // CFE: "NO. DE SERVICIO:" as fallback
         /no\.?\s*de\s*servicio\s*[:;]?\s*(\d{6,20})/i
@@ -464,6 +467,15 @@ function _parseInvoiceText(text) {
         // "Fecha/Hora expedición: 04/02/2026 11:43:03" or "Fecha expedición: 2026-02-04"
         { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
         { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
+        // "Fecha de emisión:" or "Fecha emisión:"
+        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
+        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
+        // Flexible: "expedición" then closest date within 80 chars (handles table column mixing)
+        { rx: /expedici[oó]n[^0-9]{0,80}(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
+        { rx: /expedici[oó]n[^0-9]{0,80}(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
+        // Flexible: "emisión" then closest date within 80 chars
+        { rx: /emisi[oó]n[^0-9]{0,80}(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
+        { rx: /emisi[oó]n[^0-9]{0,80}(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
         // CFDI: "Fecha" seguido de AAAA MM DD (con espacios)
         { rx: /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
         // DD-MES-AAAA (abbreviated month): 21-ENE-2026, 22-FEB-2026
@@ -719,10 +731,10 @@ function _showExtractionResults(parsed, thumbnailUrl) {
         { label: 'Proveedor', value: parsed.nombre_emisor },
         { label: 'RFC', value: parsed.rfc_emisor },
         { label: 'No. Factura', value: parsed.numero_factura },
-        { label: 'Fecha', value: parsed.fecha_factura },
+        { label: 'Fecha', value: _formatDateDisplay(parsed.fecha_factura) },
         { label: 'Total', value: parsed.total ? '$' + _formatNumber(parsed.total) : null },
         { label: 'IVA', value: parsed.iva ? '$' + _formatNumber(parsed.iva) : null },
-        { label: 'Vencimiento', value: parsed.fecha_vencimiento }
+        { label: 'Vencimiento', value: _formatDateDisplay(parsed.fecha_vencimiento) }
     ];
 
     var foundCount = 0;
@@ -755,6 +767,20 @@ function _showExtractionResults(parsed, thumbnailUrl) {
 
 function _formatNumber(n) {
     return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// Format date as "28 Feb 26" for display
+function _formatDateDisplay(dateStr) {
+    if (!dateStr) return null;
+    var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    var parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    var y = parts[0];
+    var m = parseInt(parts[1], 10);
+    var d = parseInt(parts[2], 10);
+    if (isNaN(m) || isNaN(d) || m < 1 || m > 12) return dateStr;
+    var shortYear = y.length === 4 ? y.substring(2) : y;
+    return d + ' ' + meses[m - 1] + ' ' + shortYear;
 }
 
 // ============================================
