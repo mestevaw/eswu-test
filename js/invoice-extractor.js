@@ -306,31 +306,42 @@ function _parseInvoiceText(text) {
     var t = text.replace(/\s+/g, ' ').trim();
     var tUpper = t.toUpperCase();
 
+    // RFCs a ignorar
+    var rfcIgnore = ['IES9804035B5', 'SAT970701NN3'];
+
     // --- RFC EMISOR ---
-    // RFC pattern: 3-4 letters + 6 digits + optional hyphen + 3 alphanumeric
-    // Some invoices format RFC with hyphens like TME840315-KT6
+    // Method 1: Standard RFC pattern (3-4 letters + 6 digits + optional hyphen + 3 alphanum)
     var rfcPattern = /\b([A-ZÑ&]{3,4}\d{6})-?([A-Z0-9]{3})\b/gi;
     var rfcMatches = [];
     var m;
     while ((m = rfcPattern.exec(t)) !== null) {
-        rfcMatches.push((m[1] + m[2]).toUpperCase());
+        var rfc = (m[1] + m[2]).toUpperCase();
+        if (rfcIgnore.indexOf(rfc) === -1 && !/^(XAXX|XEXX)/.test(rfc)) {
+            rfcMatches.push(rfc);
+        }
     }
-    // Filter out: RFC genéricos, el RFC propio de Inmobiliaris ESWU (receptor), y el del SAT
-    var rfcPropio = 'IES9804035B5';
-    var rfcSAT = 'SAT970701NN3';
-    rfcMatches = rfcMatches.filter(function(rfc) {
-        if (/^(XAXX|XEXX)/.test(rfc)) return false; // RFC genérico
-        if (rfc === rfcPropio) return false; // Nuestro propio RFC (receptor)
-        if (rfc === rfcSAT) return false; // RFC del SAT
-        return true;
-    });
+    
+    // Method 2: Look for "RFC:" label and grab whatever follows (handles OCR errors)
+    if (rfcMatches.length === 0) {
+        var rfcLabelPattern = /RFC\s*[:;]\s*([A-Z0-9Ñ&\-]{9,18})/gi;
+        var rm;
+        while ((rm = rfcLabelPattern.exec(t)) !== null) {
+            var rawRfc = rm[1].replace(/[\-\s]/g, '').toUpperCase();
+            // Skip our own RFC and SAT (even with OCR errors - fuzzy match)
+            if (rawRfc.indexOf('IES') === 0 || rawRfc.indexOf('1ES') === 0) continue; // OCR: I→1
+            if (rawRfc.indexOf('SAT') === 0) continue;
+            if (rawRfc.length >= 12 && rawRfc.length <= 14) {
+                rfcMatches.push(rawRfc);
+            }
+        }
+    }
+    
     if (rfcMatches.length > 0) {
-        // First RFC found is usually the emisor
         result.rfc_emisor = rfcMatches[0];
     }
 
     // --- NOMBRE DEL EMISOR ---
-    // Look for common patterns: "Razón Social:", "Emisor:", "Nombre:", near the top
+    // Method 1: Common label patterns
     var nombrePatterns = [
         /(?:raz[oó]n\s*social|nombre\s*(?:del?\s*)?emisor|emisor)\s*[:;]\s*([^\n\r]{3,80})/i,
         /(?:nombre|empresa)\s*[:;]\s*([^\n\r]{3,80})/i
@@ -343,24 +354,46 @@ function _parseInvoiceText(text) {
         }
     }
     
-    // If no name found via patterns, try to find it near the RFC
-    if (!result.nombre_emisor && result.rfc_emisor) {
-        var rfcPos = tUpper.indexOf(result.rfc_emisor);
-        if (rfcPos > 0) {
-            // Look for text before the RFC that looks like a company name
-            var before = t.substring(Math.max(0, rfcPos - 150), rfcPos).trim();
-            // Take the last line-like segment before RFC
-            var segments = before.split(/[.\n\r|]+/);
-            var lastSeg = segments[segments.length - 1].trim();
-            if (lastSeg.length >= 5 && lastSeg.length <= 100) {
-                result.nombre_emisor = lastSeg.replace(/\s+/g, ' ');
+    // Method 2: Find company-like names (S.A., S.A.B., S.C., S. DE R.L., etc.)
+    if (!result.nombre_emisor) {
+        var companyPattern = /([A-ZÁÉÍÓÚÑ\s]{5,60})\s*(?:S\.?\s*A\.?\s*B?\.?\s*(?:DE\s*)?C\.?\s*V\.?|S\.?\s*(?:DE\s*)?R\.?\s*L\.?|S\.?\s*C\.?|A\.?\s*C\.?)/i;
+        var cm = companyPattern.exec(t);
+        if (cm) {
+            var fullMatch = cm[0].trim().replace(/\s+/g, ' ');
+            // Skip our own company name
+            if (!/INMOBILIARIS|ESWU/i.test(fullMatch)) {
+                result.nombre_emisor = fullMatch;
+            }
+        }
+    }
+    
+    // Method 3: Look for text near the first RFC label
+    if (!result.nombre_emisor) {
+        var rfcLabelPos = tUpper.indexOf('RFC:');
+        if (rfcLabelPos > 10) {
+            var before = t.substring(Math.max(0, rfcLabelPos - 120), rfcLabelPos).trim();
+            // Take text that looks like a company/person name
+            var segments = before.split(/[\n\r|]+/);
+            for (var s = segments.length - 1; s >= 0; s--) {
+                var seg = segments[s].trim();
+                // Skip addresses, codes, short fragments
+                if (seg.length >= 8 && seg.length <= 80 && !/^(C\.?P\.|Parque|Ave|Calle|\d)/i.test(seg)) {
+                    // Skip our company
+                    if (!/INMOBILIARIS|ESWU/i.test(seg)) {
+                        result.nombre_emisor = seg.replace(/\s+/g, ' ');
+                        break;
+                    }
+                }
             }
         }
     }
 
     // --- NÚMERO DE FACTURA ---
     var folioPatterns = [
-        /(?:folio\s*(?:fiscal)?|no\.?\s*(?:de\s*)?factura|factura\s*(?:no\.?|número|num\.?))\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
+        // "Factura No.:" or "Factura No.:" followed by numbers (skip OCR artifacts like "0:")
+        /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
+        /(?:folio\s*(?:fiscal)?)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
+        /(?:no\.?\s*(?:de\s*)?factura)\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
         /(?:serie\s*y\s*folio|folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
         /(?:N[uú]mero\s*de\s*documento|Documento\s*No\.?)\s*[:;]?\s*([A-Z0-9\-]{1,30})/i
     ];
@@ -372,54 +405,80 @@ function _parseInvoiceText(text) {
             } else {
                 result.numero_factura = fm[1].trim();
             }
+            // Skip UUID-like folio fiscal (it's not the invoice number users want)
+            if (result.numero_factura && result.numero_factura.indexOf('-') > -1 && result.numero_factura.length > 20) {
+                result.numero_factura = null;
+                continue;
+            }
             break;
         }
     }
 
     // --- FECHA DE FACTURA ---
+    // Meses abreviados y completos para parsing
+    var mesesAbrev = {
+        'ENE': '01', 'FEB': '02', 'MAR': '03', 'ABR': '04', 'MAY': '05', 'JUN': '06',
+        'JUL': '07', 'AGO': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DIC': '12'
+    };
+    var mesesFull = {
+        'ENERO': '01', 'FEBRERO': '02', 'MARZO': '03', 'ABRIL': '04', 'MAYO': '05', 'JUNIO': '06',
+        'JULIO': '07', 'AGOSTO': '08', 'SEPTIEMBRE': '09', 'OCTUBRE': '10', 'NOVIEMBRE': '11', 'DICIEMBRE': '12'
+    };
+
     var fechaPatterns = [
         // CFDI: "Fecha" seguido de AAAA MM DD (con espacios)
-        /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i,
-        /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura|comprobante|cfdi))\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i,
-        /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura))\s*[:;]?\s*(\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?\d{2,4})/i,
-        /(?:fecha)\s*[:;]?\s*(\d{4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,2})/i
+        { rx: /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
+        // DD-MES-AAAA (abbreviated month): 21-ENE-2026, 22-FEB-2026
+        { rx: /(?:fecha|emisi[oó]n|expedici[oó]n|facturaci[oó]n)[^0-9]{0,30}(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
+        // Standalone DD-MES-AAAA near RFC line
+        { rx: /RFC[^0-9]{0,30}[\-_\s]*(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
+        // YYYY-MM-DD standard
+        { rx: /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura|comprobante|cfdi))\s*[:;]?\s*(\d{4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
+        // "Fecha y Hora de Certificación: 2026-01-28T07:12:04"
+        { rx: /(?:certificaci[oó]n)\s*[:;]?\s*(\d{4})-(\d{2})-(\d{2})/i, type: 'ymd_groups' },
+        // Any YYYY-MM-DD near "fecha"
+        { rx: /fecha[^0-9]{0,20}(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i, type: 'standard' },
+        // Any YYYY MM DD (spaces) near "fecha"
+        { rx: /fecha[^0-9]{0,20}(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
+        // "Mes de Facturación: Enero" + year from nearby context
+        { rx: /mes\s*de\s*facturaci[oó]n\s*[:;]?\s*(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/i, type: 'month_only' }
     ];
+    
     for (var i = 0; i < fechaPatterns.length; i++) {
-        var fd = fechaPatterns[i].exec(t);
-        if (fd) {
-            // First pattern captures year, month, day as separate groups
-            if (i === 0 && fd[1] && fd[2] && fd[3]) {
-                result.fecha_factura = fd[1] + '-' + fd[2].padStart(2, '0') + '-' + fd[3].padStart(2, '0');
-            } else {
-                result.fecha_factura = _normalizeDateString(fd[1].trim());
+        var fp = fechaPatterns[i];
+        var fd = fp.rx.exec(t);
+        if (!fd) continue;
+        
+        if (fp.type === 'ymd_groups' && fd[1] && fd[2] && fd[3]) {
+            result.fecha_factura = fd[1] + '-' + fd[2].padStart(2, '0') + '-' + fd[3].padStart(2, '0');
+        } else if (fp.type === 'dmy_abrev' && fd[1] && fd[2] && fd[3]) {
+            var mesNum = mesesAbrev[fd[2].toUpperCase()];
+            if (mesNum) {
+                result.fecha_factura = fd[3] + '-' + mesNum + '-' + fd[1].padStart(2, '0');
             }
-            if (result.fecha_factura) break;
+        } else if (fp.type === 'standard' && fd[1]) {
+            result.fecha_factura = _normalizeDateString(fd[1].trim());
+        } else if (fp.type === 'month_only' && fd[1]) {
+            // Month only — assume first of that month + find year nearby
+            var mesN = mesesFull[fd[1].toUpperCase()];
+            if (mesN) {
+                var yearMatch = /\b(20\d{2})\b/.exec(t);
+                var yr = yearMatch ? yearMatch[1] : new Date().getFullYear().toString();
+                result.fecha_factura = yr + '-' + mesN + '-01';
+            }
         }
-    }
-    // Fallback: look for any date-like pattern near "fecha"
-    if (!result.fecha_factura) {
-        // Try YYYY-MM-DD or YYYY/MM/DD near "fecha"
-        var anyDateNearFecha = /fecha[^0-9]{0,20}(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i.exec(t);
-        if (anyDateNearFecha) {
-            result.fecha_factura = _normalizeDateString(anyDateNearFecha[1]);
-        }
-    }
-    if (!result.fecha_factura) {
-        // Try YYYY MM DD (space-separated) anywhere near "fecha"
-        var spaceDateNearFecha = /fecha[^0-9]{0,20}(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i.exec(t);
-        if (spaceDateNearFecha) {
-            result.fecha_factura = spaceDateNearFecha[1] + '-' + spaceDateNearFecha[2].padStart(2, '0') + '-' + spaceDateNearFecha[3].padStart(2, '0');
-        }
+        
+        if (result.fecha_factura) break;
     }
 
     // --- TOTAL ---
     var totalPatterns = [
         /(?:total\s*(?:a\s*pagar|con\s*letra|cfdi|factura)?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        /(?:importe\s*total|monto\s*total|gran\s*total)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
+        /(?:importe\s*total|monto\s*total|gran\s*total)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+        /(?:saldo\s*(?:al\s*corte|total))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
     ];
     var totalCandidates = [];
     for (var i = 0; i < totalPatterns.length; i++) {
-        // Find ALL matches for total patterns
         var totalRegex = new RegExp(totalPatterns[i].source, 'gi');
         var tm;
         while ((tm = totalRegex.exec(t)) !== null) {
@@ -430,7 +489,6 @@ function _parseInvoiceText(text) {
         }
     }
     if (totalCandidates.length > 0) {
-        // The largest "total" is usually the real total (with IVA)
         result.total = Math.max.apply(null, totalCandidates);
     }
 
@@ -438,7 +496,7 @@ function _parseInvoiceText(text) {
     var ivaPatterns = [
         /(?:i\.?v\.?a\.?\s*(?:\(?\s*16\s*%?\s*\)?)?\s*(?:trasladado)?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
         /(?:impuesto\s*(?:al\s*valor\s*agregado|trasladado))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        /(?:iva\s*16)\s*[:;$%]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
+        /(?:iva\s*16\s*%?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
     ];
     for (var i = 0; i < ivaPatterns.length; i++) {
         var iv = ivaPatterns[i].exec(t);
@@ -450,23 +508,38 @@ function _parseInvoiceText(text) {
             }
         }
     }
-    // If no IVA found but total exists, calculate it
     if (!result.iva && result.total) {
         result.iva = Math.round((result.total * 0.16 / 1.16) * 100) / 100;
     }
 
     // --- FECHA DE VENCIMIENTO ---
     var vencPatterns = [
-        /(?:fecha\s*(?:de\s*)?(?:vencimiento|pago|l[ií]mite\s*(?:de\s*)?pago))\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i,
-        /(?:vence|vencimiento|pagar\s*antes\s*(?:del?)?)\s*[:;]?\s*(\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?\d{2,4})/i,
-        /(?:pago|vencimiento)\s*[:;]?\s*(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i
+        // "Pagar antes de:" DD-MES-AAAA
+        { rx: /pagar\s*antes\s*(?:de|del?)?\s*[:;]?\s*[\-_]?\s*(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
+        // "Pagar antes de:" DD/MM/YYYY
+        { rx: /pagar\s*antes\s*(?:de|del?)?\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
+        // "Fecha de vencimiento:" various formats
+        { rx: /(?:fecha\s*(?:de\s*)?(?:vencimiento|l[ií]mite\s*(?:de\s*)?pago))\s*[:;]?\s*(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
+        { rx: /(?:fecha\s*(?:de\s*)?(?:vencimiento|pago|l[ií]mite\s*(?:de\s*)?pago))\s*[:;]?\s*(\d{1,4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
+        // "Vencimiento:" with full month names
+        { rx: /(?:vence|vencimiento|pagar\s*antes\s*(?:del?)?)\s*[:;]?\s*(\d{1,2}\s+(?:de\s+)?(?:enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)\s+(?:de\s+)?\d{2,4})/i, type: 'standard' },
+        { rx: /(?:pago|vencimiento)\s*[:;]?\s*(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i, type: 'standard' }
     ];
     for (var i = 0; i < vencPatterns.length; i++) {
-        var vd = vencPatterns[i].exec(t);
-        if (vd) {
+        var vp = vencPatterns[i];
+        var vd = vp.rx.exec(t);
+        if (!vd) continue;
+        
+        if (vp.type === 'dmy_abrev' && vd[1] && vd[2] && vd[3]) {
+            var vMes = mesesAbrev[vd[2].toUpperCase()];
+            if (vMes) {
+                result.fecha_vencimiento = vd[3] + '-' + vMes + '-' + vd[1].padStart(2, '0');
+            }
+        } else if (vp.type === 'standard' && vd[1]) {
             result.fecha_vencimiento = _normalizeDateString(vd[1].trim());
-            break;
         }
+        
+        if (result.fecha_vencimiento) break;
     }
 
     return result;
@@ -491,7 +564,21 @@ function _normalizeDateString(dateStr) {
         return dmyMatch[3] + '-' + dmyMatch[2].padStart(2, '0') + '-' + dmyMatch[1].padStart(2, '0');
     }
 
-    // Try "DD de MES de YYYY"
+    // Try DD-MES-YYYY (abbreviated months: ENE, FEB, etc.)
+    var mesesAbr = {
+        'ENE': '01', 'FEB': '02', 'MAR': '03', 'ABR': '04', 'MAY': '05', 'JUN': '06',
+        'JUL': '07', 'AGO': '08', 'SEP': '09', 'OCT': '10', 'NOV': '11', 'DIC': '12'
+    };
+    var abrMatch = /(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{2,4})/i.exec(dateStr);
+    if (abrMatch) {
+        var mesNum = mesesAbr[abrMatch[2].toUpperCase()];
+        if (mesNum) {
+            var yr = abrMatch[3].length === 2 ? '20' + abrMatch[3] : abrMatch[3];
+            return yr + '-' + mesNum + '-' + abrMatch[1].padStart(2, '0');
+        }
+    }
+
+    // Try "DD de MES de YYYY" (full month names)
     var meses = {
         'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
         'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
@@ -499,10 +586,10 @@ function _normalizeDateString(dateStr) {
     };
     var spanishDate = /(\d{1,2})\s+(?:de\s+)?(\w+)\s+(?:de\s+)?(\d{2,4})/i.exec(dateStr);
     if (spanishDate) {
-        var mesNum = meses[spanishDate[2].toLowerCase()];
-        if (mesNum) {
+        var mesN = meses[spanishDate[2].toLowerCase()];
+        if (mesN) {
             var year = spanishDate[3].length === 2 ? '20' + spanishDate[3] : spanishDate[3];
-            return year + '-' + mesNum + '-' + spanishDate[1].padStart(2, '0');
+            return year + '-' + mesN + '-' + spanishDate[1].padStart(2, '0');
         }
     }
 
@@ -510,15 +597,10 @@ function _normalizeDateString(dateStr) {
 }
 
 function _calcDefaultVencimiento(fechaFactura) {
-    // 2 días hábiles antes del fin del mes de la fecha de factura
-    var d;
-    if (fechaFactura) {
-        d = new Date(fechaFactura + 'T12:00:00');
-    } else {
-        d = new Date();
-    }
+    // 2 días hábiles antes del fin del mes EN CURSO (no el de la factura)
+    var d = new Date();
 
-    // Fin del mes
+    // Fin del mes actual
     var endOfMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0);
 
     // Retroceder 2 días hábiles
