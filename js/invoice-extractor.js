@@ -99,20 +99,28 @@ async function _processInvoicePdf(file) {
     // Show processing state
     var dropArea = document.getElementById('invoicePdfDropArea');
     var processing = document.getElementById('invoicePdfProcessing');
+    var processingMsg = document.getElementById('invoicePdfProcessingMsg');
     if (dropArea) dropArea.style.display = 'none';
     if (processing) processing.style.display = '';
+    if (processingMsg) processingMsg.textContent = 'Extrayendo datos de la factura...';
 
     try {
         // Read file as ArrayBuffer
         var arrayBuffer = await file.arrayBuffer();
 
-        // Extract text and generate thumbnail in parallel
-        var [textContent, thumbnailUrl] = await Promise.all([
-            _extractPdfText(arrayBuffer.slice(0)),
-            _generatePdfThumbnail(arrayBuffer.slice(0))
-        ]);
-
+        // Generate thumbnail
+        var thumbnailUrl = await _generatePdfThumbnail(arrayBuffer.slice(0));
         _invoicePdfThumbnailUrl = thumbnailUrl;
+
+        // Try pdf.js text extraction first
+        var textContent = await _extractPdfText(arrayBuffer.slice(0));
+
+        // If no text found, fallback to OCR
+        if (!textContent || textContent.trim().length < 20) {
+            console.log('⚠️ PDF sin texto extraíble, intentando OCR...');
+            if (processingMsg) processingMsg.textContent = 'PDF sin texto... aplicando OCR (puede tardar unos segundos)...';
+            textContent = await _extractPdfWithOCR(arrayBuffer.slice(0));
+        }
 
         // Parse the extracted text
         var parsed = _parseInvoiceText(textContent);
@@ -128,7 +136,7 @@ async function _processInvoicePdf(file) {
         console.error('❌ Error procesando PDF:', err);
         // Fallback: let user continue without extraction
         _extractedInvoiceData = {};
-        _invoicePdfThumbnailUrl = null;
+        _invoicePdfThumbnailUrl = thumbnailUrl || null;
         alert('No se pudieron extraer datos del PDF. Puedes llenar los datos manualmente.');
         _proceedToRegistrarFactura();
     }
@@ -223,6 +231,58 @@ async function _generatePdfThumbnail(arrayBuffer) {
         console.warn('⚠️ No se pudo generar thumbnail:', e);
         return null;
     }
+}
+
+// ============================================
+// 2b. OCR FALLBACK (for image-based PDFs)
+// ============================================
+
+async function _extractPdfWithOCR(arrayBuffer) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js no está cargado');
+    if (typeof Tesseract === 'undefined') throw new Error('Tesseract.js no está cargado');
+
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    var fullText = '';
+    
+    // OCR the first 2 pages (invoices rarely need more)
+    var maxPages = Math.min(pdf.numPages, 2);
+    
+    for (var i = 1; i <= maxPages; i++) {
+        console.log('🔍 OCR página', i, 'de', maxPages, '...');
+        
+        var page = await pdf.getPage(i);
+        // Render at 2x scale for better OCR accuracy
+        var scale = 2.0;
+        var viewport = page.getViewport({ scale: scale });
+
+        var canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        var ctx = canvas.getContext('2d');
+
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        // Run Tesseract OCR on the rendered canvas
+        var result = await Tesseract.recognize(canvas, 'spa', {
+            logger: function(info) {
+                if (info.status === 'recognizing text') {
+                    var pct = Math.round((info.progress || 0) * 100);
+                    var msg = document.getElementById('invoicePdfProcessingMsg');
+                    if (msg) msg.textContent = 'OCR página ' + i + '/' + maxPages + '... ' + pct + '%';
+                }
+            }
+        });
+
+        var pageText = result.data.text || '';
+        console.log('🔍 OCR pág', i, '(' + pageText.length + ' chars):', pageText.substring(0, 200));
+        fullText += pageText + '\n';
+    }
+
+    return fullText;
 }
 
 // ============================================
