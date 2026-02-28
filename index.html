@@ -129,6 +129,13 @@
             <span class="loading-text">⏳ Cargando datos...</span>
             <div class="loading-progress"></div>
         </div>
+
+        <!-- Banner no-bloqueante para conectar Google Drive (V1 2026-02-27) -->
+        <div id="gdriveBannerSlim" style="display:none; background:#fffbeb; border-bottom:1px solid #fde68a; padding:0.5rem 1rem; align-items:center; justify-content:center; gap:0.75rem; flex-wrap:wrap; z-index:900; font-size:0.92rem;">
+            <span style="color:#92400e;">📁 Google Drive no conectado — no podrás ver documentos.</span>
+            <button onclick="connectGdriveFromBanner()" style="background:#1a365d; color:white; border:none; border-radius:6px; padding:0.4rem 1.2rem; font-weight:600; font-size:0.9rem; cursor:pointer;">Conectar</button>
+            <button onclick="dismissGdriveBannerSlim()" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 0.3rem;" title="Cerrar">✕</button>
+        </div>
         
         <div class="main-content">
             <div class="menu-sidebar" id="menuSidebar">
@@ -190,7 +197,7 @@
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">👥</span>
                                 <span class="dash-tile-title" onclick="showInquilinosView('list')" style="cursor:pointer;">Inquilinos</span>
-                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()" onfocus="if(this.value){this.value='';renderDashInquilinos();}">
+                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top">
                                 <span class="active" onclick="switchDashInqView('list')">Listado</span>
@@ -210,7 +217,7 @@
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">🔧</span>
                                 <span class="dash-tile-title" onclick="showProveedoresView('list')" style="cursor:pointer;">Proveedores</span>
-                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()" onfocus="if(this.value){this.value='';renderDashProveedores();}">
+                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top" style="position:relative;">
                                 <span class="active" onclick="switchDashProvView('list')">Listado</span>
@@ -241,7 +248,7 @@
                                 <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes</span>
                                 <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas <span id="dashAlertasBadge" class="dash-badge" style="display:none;">0</span></span>
                                 <span onclick="switchDashMsgView('avisos')" class="dash-msg-tab">📢 Avisos</span>
-                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()" onfocus="if(this.value){this.value='';renderDashMensajes();}">
+                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
                             </div>
                             <div id="dashMensajesList" class="dash-tile-body dash-msg-body"></div>
                         </div>
@@ -569,17 +576,12 @@
                         <div class="modal-header modal-header-sticky" style="position:sticky;top:0;z-index:10;background:white;border-bottom:1px solid var(--border);padding:0.75rem 1rem;">
                             <h2 class="modal-title">INMOBILIARIS ESWU</h2>
                             <div style="display:flex; align-items:center; gap:0.25rem;">
-                                <span onclick="editEswuUsuarios()" title="Administrar usuarios" style="cursor:pointer; font-size:1.1rem; padding:0.25rem 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='transparent'">✏️</span>
                                 <button class="close-modal" onclick="handleRegresa()" style="position:static">×</button>
                             </div>
                         </div>
                         <div style="padding:1.25rem;">
                             <!-- Acta Constitutiva -->
                             <div id="eswuActaSection" style="margin-bottom:0.5rem;"></div>
-                            <!-- Contactos (usuarios) -->
-                            <div style="margin-bottom:0.5rem;">
-                                <div id="eswuContactsList"></div>
-                            </div>
                             <!-- Pestañas -->
                             <div class="tabs-container">
                                 <!-- Mobile: dropdown + balance filters -->
@@ -590,6 +592,7 @@
                                         <option value="mensajes">💬 Mensajes</option>
                                         <option value="bancos">🏦 Bancos</option>
                                         <option value="balance">📊 Balance</option>
+                                        <option value="usuarios">👤 Usuarios</option>
                                     </select>
                                     <select id="balanceYearSelectM" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;"></select>
                                     <select id="balanceMonthSelectM" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;">
@@ -607,6 +610,7 @@
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'usuarios')">Usuarios<span class="btn-add-inline" onclick="event.stopPropagation(); showEswuAddUsuario();" title="Agregar usuario" style="color:var(--success);">+</span></button>
                                     <span id="balanceInlineFilters" style="display:none;margin-left:auto;white-space:nowrap;">
                                         <select id="balanceYearSelect" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;"></select>
                                         <select id="balanceMonthSelect" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;">
@@ -664,6 +668,9 @@
                                             <tbody></tbody>
                                         </table>
                                     </div>
+                                </div>
+                                <div id="eswuUsuariosTab" class="tab-content">
+                                    <div id="eswuUsuariosContent"></div>
                                 </div>
                             </div>
                         </div>
@@ -1234,80 +1241,6 @@
         </div>
     </div>
 
-    <!-- Modal: Subir PDF de Factura (paso previo a registrar) -->
-    <div id="uploadInvoicePdfModal" class="modal">
-        <div class="modal-content" style="max-width:480px;">
-            <div class="modal-header modal-header-sticky">
-                <h2 class="modal-title">📄 Subir Factura PDF</h2>
-                <div style="display:flex; align-items:center; gap:0.25rem;">
-                    <button class="close-modal" onclick="closeUploadInvoicePdfModal()">×</button>
-                </div>
-            </div>
-            <div style="padding: 1rem 1.25rem;">
-                <!-- Drop Area -->
-                <div id="invoicePdfDropArea">
-                    <p style="font-size:0.88rem; color:var(--text); margin-bottom:0.6rem; text-align:center;">
-                        Sube el PDF de la factura para extraer los datos automáticamente
-                    </p>
-                    <!-- Click to select -->
-                    <div onclick="document.getElementById('invoicePdfInput').click()" style="padding:1rem; border:2px dashed var(--primary); border-radius:8px; cursor:pointer; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                        <input type="file" id="invoicePdfInput" accept=".pdf" style="display:none;" onchange="handleInvoicePdfSelect(this)">
-                        <div style="font-size:2.5rem; margin-bottom:0.3rem;">📎</div>
-                        <strong>Click para seleccionar PDF</strong>
-                    </div>
-                    <!-- Separator -->
-                    <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.5rem 0;">— o —</div>
-                    <!-- Paste & Drag side by side -->
-                    <div style="display:flex; gap:0.5rem;">
-                        <div id="invoicePdfPasteZone" tabindex="0" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
-                            📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
-                        </div>
-                        <div id="invoicePdfDragZone" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="handleInvoicePdfDrop(event);">
-                            📁 Arrastra aquí
-                        </div>
-                    </div>
-                    <!-- Skip link -->
-                    <div style="text-align:center; margin-top:0.8rem;">
-                        <a href="#" onclick="event.preventDefault(); _skipExtractionAndRegister();" style="font-size:0.82rem; color:var(--text-light);">Registrar sin PDF →</a>
-                    </div>
-                </div>
-
-                <!-- Processing State -->
-                <div id="invoicePdfProcessing" style="display:none; text-align:center; padding:2rem 1rem;">
-                    <div style="font-size:2rem; margin-bottom:0.5rem;">⏳</div>
-                    <p id="invoicePdfProcessingMsg" style="font-size:0.9rem; color:var(--text);">Extrayendo datos de la factura...</p>
-                    <div style="margin-top:0.5rem; width:60%; height:4px; background:#e2e8f0; border-radius:2px; margin-left:auto; margin-right:auto; overflow:hidden;">
-                        <div style="width:100%; height:100%; background:var(--primary); animation:invoiceProgress 1.5s ease-in-out infinite;"></div>
-                    </div>
-                    <style>@keyframes invoiceProgress { 0%{transform:translateX(-100%)} 50%{transform:translateX(0)} 100%{transform:translateX(100%)} }</style>
-                </div>
-
-                <!-- Results Area -->
-                <div id="invoicePdfResult" style="display:none;">
-                    <div style="display:flex; gap:0.8rem; margin-bottom:0.6rem;">
-                        <!-- PDF Thumbnail -->
-                        <div style="flex:0 0 auto;">
-                            <img id="invoicePdfThumb" src="" alt="PDF" style="display:none; width:80px; height:auto; border:1px solid #e2e8f0; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.1); cursor:pointer;" onclick="_previewInvoicePdf()">
-                        </div>
-                        <!-- Extracted Data Summary -->
-                        <div style="flex:1; min-width:0;">
-                            <div id="invoiceExtractedSummary" style="margin-bottom:0.4rem;"></div>
-                        </div>
-                    </div>
-                    <!-- Status -->
-                    <div id="invoiceExtractStatus" style="font-size:0.85rem; margin-bottom:0.5rem;"></div>
-                    <!-- Proveedor Match -->
-                    <div id="invoiceProveedorMatch" style="display:none; margin-bottom:0.5rem;"></div>
-                    <!-- Action Buttons -->
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.6rem; padding-top:0.6rem; border-top:1px solid var(--border);">
-                        <button onclick="showUploadInvoicePdfModal(window._invoiceUploadContext)" style="padding:0.4rem 0.8rem; background:var(--bg); border:1px solid var(--border); border-radius:4px; font-size:0.85rem; cursor:pointer;">🔄 Otro PDF</button>
-                        <button onclick="_continueToRegistrarFactura()" style="padding:0.4rem 0.8rem; background:#22c55e; color:white; border:none; border-radius:4px; font-size:0.85rem; cursor:pointer; font-weight:500;">Continuar →</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal Registrar Factura -->
     <div id="registrarFacturaModal" class="modal">
         <div class="modal-content" style="max-width:550px;">
@@ -1351,7 +1284,7 @@
                         <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">IVA</label>
                         <input type="number" id="facturaIVA" step="0.01" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
                     </div>
-                    <div id="facturaFileUploadSection" style="margin-top:0.5rem;">
+                    <div style="margin-top:0.5rem;">
                         <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Factura</label>
                         <!-- Option 1: Click to select -->
                         <div id="facturaClickZone" onclick="document.getElementById('facturaDocumento').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -1978,17 +1911,6 @@
         <img id="pdfViewerImg" style="display:none; max-width:100%; max-height:100%; width:auto; height:auto; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); object-fit:contain; border-radius:4px;">
     </div>
 
-  <!-- PDF.js Library for invoice extraction (v3 UMD build) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-        if (window.pdfjsLib) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            console.log('✅ PDF.js v3.11 cargado');
-        }
-    </script>
-    <!-- Tesseract.js OCR (fallback for image-based PDFs) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-
   <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -2067,7 +1989,6 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=1"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
