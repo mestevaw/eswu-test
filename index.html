@@ -190,7 +190,7 @@
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">👥</span>
                                 <span class="dash-tile-title" onclick="showInquilinosView('list')" style="cursor:pointer;">Inquilinos</span>
-                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()">
+                                <input id="dashInqSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashInquilinos()" onfocus="if(this.value){this.value='';renderDashInquilinos();}">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top">
                                 <span class="active" onclick="switchDashInqView('list')">Listado</span>
@@ -210,7 +210,7 @@
                             <div class="dash-tile-header">
                                 <span class="dash-tile-icon">🔧</span>
                                 <span class="dash-tile-title" onclick="showProveedoresView('list')" style="cursor:pointer;">Proveedores</span>
-                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()">
+                                <input id="dashProvSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashProveedores()" onfocus="if(this.value){this.value='';renderDashProveedores();}">
                             </div>
                             <div class="dash-tile-links dash-tile-links-top" style="position:relative;">
                                 <span class="active" onclick="switchDashProvView('list')">Listado</span>
@@ -241,7 +241,7 @@
                                 <span onclick="switchDashMsgView('mensajes')" class="dash-msg-tab active">💬 Mensajes</span>
                                 <span onclick="switchDashMsgView('alertas')" class="dash-msg-tab">⚠️ Alertas <span id="dashAlertasBadge" class="dash-badge" style="display:none;">0</span></span>
                                 <span onclick="switchDashMsgView('avisos')" class="dash-msg-tab">📢 Avisos</span>
-                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()">
+                                <input id="dashMsgSearch" type="text" class="dash-search" placeholder="🔍" oninput="renderDashMensajes()" onfocus="if(this.value){this.value='';renderDashMensajes();}">
                             </div>
                             <div id="dashMensajesList" class="dash-tile-body dash-msg-body"></div>
                         </div>
