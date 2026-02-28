@@ -1234,6 +1234,80 @@
         </div>
     </div>
 
+    <!-- Modal: Subir PDF de Factura (paso previo a registrar) -->
+    <div id="uploadInvoicePdfModal" class="modal">
+        <div class="modal-content" style="max-width:480px;">
+            <div class="modal-header modal-header-sticky">
+                <h2 class="modal-title">📄 Subir Factura PDF</h2>
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <button class="close-modal" onclick="closeUploadInvoicePdfModal()">×</button>
+                </div>
+            </div>
+            <div style="padding: 1rem 1.25rem;">
+                <!-- Drop Area -->
+                <div id="invoicePdfDropArea">
+                    <p style="font-size:0.88rem; color:var(--text); margin-bottom:0.6rem; text-align:center;">
+                        Sube el PDF de la factura para extraer los datos automáticamente
+                    </p>
+                    <!-- Click to select -->
+                    <div onclick="document.getElementById('invoicePdfInput').click()" style="padding:1rem; border:2px dashed var(--primary); border-radius:8px; cursor:pointer; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
+                        <input type="file" id="invoicePdfInput" accept=".pdf" style="display:none;" onchange="handleInvoicePdfSelect(this)">
+                        <div style="font-size:2.5rem; margin-bottom:0.3rem;">📎</div>
+                        <strong>Click para seleccionar PDF</strong>
+                    </div>
+                    <!-- Separator -->
+                    <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.5rem 0;">— o —</div>
+                    <!-- Paste & Drag side by side -->
+                    <div style="display:flex; gap:0.5rem;">
+                        <div id="invoicePdfPasteZone" tabindex="0" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                            📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                        </div>
+                        <div id="invoicePdfDragZone" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="handleInvoicePdfDrop(event);">
+                            📁 Arrastra aquí
+                        </div>
+                    </div>
+                    <!-- Skip link -->
+                    <div style="text-align:center; margin-top:0.8rem;">
+                        <a href="#" onclick="event.preventDefault(); _skipExtractionAndRegister();" style="font-size:0.82rem; color:var(--text-light);">Registrar sin PDF →</a>
+                    </div>
+                </div>
+
+                <!-- Processing State -->
+                <div id="invoicePdfProcessing" style="display:none; text-align:center; padding:2rem 1rem;">
+                    <div style="font-size:2rem; margin-bottom:0.5rem;">⏳</div>
+                    <p style="font-size:0.9rem; color:var(--text);">Extrayendo datos de la factura...</p>
+                    <div style="margin-top:0.5rem; width:60%; height:4px; background:#e2e8f0; border-radius:2px; margin-left:auto; margin-right:auto; overflow:hidden;">
+                        <div style="width:100%; height:100%; background:var(--primary); animation:invoiceProgress 1.5s ease-in-out infinite;"></div>
+                    </div>
+                    <style>@keyframes invoiceProgress { 0%{transform:translateX(-100%)} 50%{transform:translateX(0)} 100%{transform:translateX(100%)} }</style>
+                </div>
+
+                <!-- Results Area -->
+                <div id="invoicePdfResult" style="display:none;">
+                    <div style="display:flex; gap:0.8rem; margin-bottom:0.6rem;">
+                        <!-- PDF Thumbnail -->
+                        <div style="flex:0 0 auto;">
+                            <img id="invoicePdfThumb" src="" alt="PDF" style="display:none; width:80px; height:auto; border:1px solid #e2e8f0; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.1); cursor:pointer;" onclick="_previewInvoicePdf()">
+                        </div>
+                        <!-- Extracted Data Summary -->
+                        <div style="flex:1; min-width:0;">
+                            <div id="invoiceExtractedSummary" style="margin-bottom:0.4rem;"></div>
+                        </div>
+                    </div>
+                    <!-- Status -->
+                    <div id="invoiceExtractStatus" style="font-size:0.85rem; margin-bottom:0.5rem;"></div>
+                    <!-- Proveedor Match -->
+                    <div id="invoiceProveedorMatch" style="display:none; margin-bottom:0.5rem;"></div>
+                    <!-- Action Buttons -->
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:0.6rem; padding-top:0.6rem; border-top:1px solid var(--border);">
+                        <button onclick="showUploadInvoicePdfModal(window._invoiceUploadContext)" style="padding:0.4rem 0.8rem; background:var(--bg); border:1px solid var(--border); border-radius:4px; font-size:0.85rem; cursor:pointer;">🔄 Otro PDF</button>
+                        <button onclick="_continueToRegistrarFactura()" style="padding:0.4rem 0.8rem; background:#22c55e; color:white; border:none; border-radius:4px; font-size:0.85rem; cursor:pointer; font-weight:500;">Continuar →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Registrar Factura -->
     <div id="registrarFacturaModal" class="modal">
         <div class="modal-content" style="max-width:550px;">
@@ -1277,7 +1351,7 @@
                         <label style="min-width:110px; font-weight:500; white-space:nowrap; font-size:0.9rem;">IVA</label>
                         <input type="number" id="facturaIVA" step="0.01" autocomplete="off" style="flex:1; padding:0.4rem 0.5rem; border:1px solid var(--border); border-radius:4px; font-size:0.9rem;">
                     </div>
-                    <div style="margin-top:0.5rem;">
+                    <div id="facturaFileUploadSection" style="margin-top:0.5rem;">
                         <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.4rem;">Factura</label>
                         <!-- Option 1: Click to select -->
                         <div id="facturaClickZone" onclick="document.getElementById('facturaDocumento').click()" style="padding:0.5rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -1904,6 +1978,23 @@
         <img id="pdfViewerImg" style="display:none; max-width:100%; max-height:100%; width:auto; height:auto; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); object-fit:contain; border-radius:4px;">
     </div>
 
+  <!-- PDF.js Library for invoice extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs" type="module"></script>
+    <script>
+        // Load pdf.js as global (non-module fallback)
+        (function() {
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.js';
+            s.onload = function() {
+                if (window.pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.js';
+                    console.log('✅ PDF.js cargado');
+                }
+            };
+            document.head.appendChild(s);
+        })();
+    </script>
+
   <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -1982,6 +2073,7 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
+    <script src="js/invoice-extractor.js?v=1"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
