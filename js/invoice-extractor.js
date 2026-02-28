@@ -8,7 +8,7 @@
 // PDF.js WORKER SETUP
 // ============================================
 if (typeof pdfjsLib !== 'undefined') {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.mjs';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
 // ============================================
@@ -138,6 +138,10 @@ async function _extractPdfText(arrayBuffer) {
     if (typeof pdfjsLib === 'undefined') {
         throw new Error('PDF.js no está cargado');
     }
+    // Ensure worker is set
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
 
     var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
     var fullText = '';
@@ -156,6 +160,10 @@ async function _extractPdfText(arrayBuffer) {
 
 async function _generatePdfThumbnail(arrayBuffer) {
     if (typeof pdfjsLib === 'undefined') return null;
+    // Ensure worker is set
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
 
     try {
         var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
