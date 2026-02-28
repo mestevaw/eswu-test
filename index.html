@@ -1978,21 +1978,13 @@
         <img id="pdfViewerImg" style="display:none; max-width:100%; max-height:100%; width:auto; height:auto; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); object-fit:contain; border-radius:4px;">
     </div>
 
-  <!-- PDF.js Library for invoice extraction -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.mjs" type="module"></script>
+  <!-- PDF.js Library for invoice extraction (v3 UMD build) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
-        // Load pdf.js as global (non-module fallback)
-        (function() {
-            var s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.min.js';
-            s.onload = function() {
-                if (window.pdfjsLib) {
-                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.9.155/pdf.worker.min.js';
-                    console.log('✅ PDF.js cargado');
-                }
-            };
-            document.head.appendChild(s);
-        })();
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            console.log('✅ PDF.js v3.11 cargado');
+        }
     </script>
 
   <!-- Supabase Library -->
