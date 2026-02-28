@@ -539,15 +539,29 @@ function _parseInvoiceText(text) {
 
     // --- IVA ---
     var ivaPatterns = [
-        /(?:i\.?v\.?a\.?\s*(?:\(?\s*16\s*%?\s*\)?)?\s*(?:trasladado)?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        /(?:impuesto\s*(?:al\s*valor\s*agregado|trasladado))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        /(?:iva\s*16\s*%?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i
+        // "Impuestos trasladados IVA 16.00% $ 272.00" — skip the percentage, get the amount
+        /(?:impuestos?\s*trasladados?)\s*(?:IVA)?\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+        // "IVA 16% $ 272.00" or "IVA 16.00% $272.00" — skip percentage, get amount after
+        /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+        // "IVA Traslado ... 272.000000" (CFDI table format with Importe column)
+        /\bIVA\s+Traslad[oa]\w*\s+[\d,]+\.?\d*\s+\w+\s+\d{1,2}[\.,]\d{2}%?\s+([\d,]+\.?\d{0,6})/i,
+        // "I.V.A. $ 55.03" or "IVA: $55.03" (no percentage)
+        /(?:i\.?v\.?a\.?)\s*[:;]?\s*\$\s*([\d,]+\.?\d{0,2})/i,
+        // "IVA trasladado: 272.00" or "Impuesto trasladado $272.00"
+        /(?:i\.?v\.?a\.?\s*trasladado|impuesto\s*trasladado)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+        // "IVA 16% 55.03" (percentage then amount, no $ sign)
+        /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*([\d,]+\.\d{2})\b/i
     ];
     for (var i = 0; i < ivaPatterns.length; i++) {
         var iv = ivaPatterns[i].exec(t);
         if (iv) {
             var ivaVal = parseFloat(iv[1].replace(/,/g, ''));
+            // Sanity check: IVA should not be the percentage itself (16 or less is suspicious unless total is very small)
             if (!isNaN(ivaVal) && ivaVal > 0) {
+                // If IVA looks like a percentage (e.g. 16.00) and we have a total, verify
+                if (ivaVal <= 16.01 && result.total && result.total > 200) {
+                    continue; // Skip, this is probably the rate not the amount
+                }
                 result.iva = ivaVal;
                 break;
             }
