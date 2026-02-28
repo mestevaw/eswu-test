@@ -199,7 +199,11 @@ async function saveProveedor(event) {
         await loadProveedores();
         closeModal('addProveedorModal');
         
-        if (currentSubContext === 'proveedores-list') {
+        // Check if there's a pending invoice to register for this new proveedor
+        if (!isEditMode && typeof checkPendingInvoiceAfterProveedor === 'function' && window._pendingInvoiceAfterProveedor) {
+            checkPendingInvoiceAfterProveedor(proveedorId);
+            // Don't navigate, the invoice flow will handle it
+        } else if (currentSubContext === 'proveedores-list') {
             renderProveedoresTable();
         }
         
