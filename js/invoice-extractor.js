@@ -145,14 +145,55 @@ async function _extractPdfText(arrayBuffer) {
 
     var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
     var fullText = '';
+    
+    console.log('📄 PDF tiene', pdf.numPages, 'páginas');
 
     // Extract text from all pages (most invoices are 1-2 pages)
     var maxPages = Math.min(pdf.numPages, 4);
     for (var i = 1; i <= maxPages; i++) {
         var page = await pdf.getPage(i);
-        var content = await page.getTextContent();
-        var pageText = content.items.map(function(item) { return item.str; }).join(' ');
+        var content = await page.getTextContent({ normalizeWhitespace: true, disableCombineTextItems: false });
+        
+        console.log('📄 Página', i, ':', content.items.length, 'items de texto');
+        
+        // Log first few items for debugging
+        if (i <= 2 && content.items.length > 0) {
+            var sample = content.items.slice(0, 10).map(function(item) {
+                return JSON.stringify({ str: item.str, dir: item.dir, width: item.width ? item.width.toFixed(1) : 0 });
+            });
+            console.log('  📄 Muestra items pág', i, ':', sample.join(', '));
+        }
+        
+        // Build text: join items with space, but use newline when Y position changes significantly
+        var lastY = null;
+        var pageLines = [];
+        var currentLine = '';
+        
+        for (var j = 0; j < content.items.length; j++) {
+            var item = content.items[j];
+            var text = item.str;
+            if (!text && item.chars) {
+                // Some PDFs store text in chars array
+                text = item.chars.map(function(c) { return c.unicode || c.str || ''; }).join('');
+            }
+            if (!text) continue;
+            
+            // Check if Y position changed (new line)
+            var y = item.transform ? item.transform[5] : null;
+            if (lastY !== null && y !== null && Math.abs(y - lastY) > 3) {
+                if (currentLine.trim()) pageLines.push(currentLine.trim());
+                currentLine = '';
+            }
+            
+            currentLine += text + ' ';
+            lastY = y;
+        }
+        if (currentLine.trim()) pageLines.push(currentLine.trim());
+        
+        var pageText = pageLines.join('\n');
         fullText += pageText + '\n';
+        
+        console.log('📄 Texto pág', i, '(' + pageText.length + ' chars):', pageText.substring(0, 200));
     }
 
     return fullText;
@@ -206,12 +247,13 @@ function _parseInvoiceText(text) {
     var tUpper = t.toUpperCase();
 
     // --- RFC EMISOR ---
-    // RFC pattern: 3-4 letters + 6 digits + 3 alphanumeric
-    var rfcPattern = /\b([A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3})\b/gi;
+    // RFC pattern: 3-4 letters + 6 digits + optional hyphen + 3 alphanumeric
+    // Some invoices format RFC with hyphens like TME840315-KT6
+    var rfcPattern = /\b([A-ZÑ&]{3,4}\d{6})-?([A-Z0-9]{3})\b/gi;
     var rfcMatches = [];
     var m;
     while ((m = rfcPattern.exec(t)) !== null) {
-        rfcMatches.push(m[1].toUpperCase());
+        rfcMatches.push((m[1] + m[2]).toUpperCase());
     }
     // Filter out: RFC genéricos, el RFC propio de Inmobiliaris ESWU (receptor), y el del SAT
     var rfcPropio = 'IES9804035B5';
