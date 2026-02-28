@@ -60,6 +60,12 @@ function showRegistrarFacturaModal() {
     document.getElementById('facturaDocumentoFileName').textContent = '';
     if (typeof _resetFacturaFile === 'function') _resetFacturaFile();
     
+    // Restore original file upload section (in case it was replaced by thumbnail)
+    var fileSection = document.getElementById('facturaFileUploadSection');
+    if (fileSection && typeof _getOriginalFileUploadHtml === 'function') {
+        fileSection.innerHTML = _getOriginalFileUploadHtml();
+    }
+    
     // Show/hide proveedor row based on context
     var provRow = document.getElementById('facturaProveedorRow');
     var needsProvSearch = (window.facturaActionContext === 'standalone-porpagar' || window.facturaActionContext === 'dashboard-porpagar');
@@ -118,6 +124,12 @@ function showEditFacturaModal(facturaId) {
     document.getElementById('facturaMonto').value = factura.monto || '';
     document.getElementById('facturaIVA').value = factura.iva || '';
     document.getElementById('facturaDocumento').value = '';
+    
+    // Restore original file upload section (in case it was replaced by thumbnail)
+    var fileSection = document.getElementById('facturaFileUploadSection');
+    if (fileSection && typeof _getOriginalFileUploadHtml === 'function') {
+        fileSection.innerHTML = _getOriginalFileUploadHtml();
+    }
     
     // Mostrar estado del PDF (base64 no está en memoria, usamos has_documento)
     document.getElementById('facturaDocumentoFileName').textContent = factura.has_documento 
