@@ -84,6 +84,9 @@ function showRegistrarFacturaModal() {
     }
     
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
+    // Hide PDF preview panel (no PDF was uploaded through extraction flow)
+    var pdfPreview = document.getElementById('facturaFormPdfPreview');
+    if (pdfPreview) pdfPreview.style.display = 'none';
     document.getElementById('registrarFacturaModal').classList.add('active');
     
     // Init paste listener (needs element to be visible)
@@ -136,6 +139,9 @@ function showEditFacturaModal(facturaId) {
         ? '📎 PDF guardado (seleccione otro para reemplazar)' : '';
     
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Modificar Factura';
+    // Hide PDF preview panel for edit mode
+    var pdfPreview = document.getElementById('facturaFormPdfPreview');
+    if (pdfPreview) pdfPreview.style.display = 'none';
     document.getElementById('registrarFacturaModal').classList.add('active');
 }
 
