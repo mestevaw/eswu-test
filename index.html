@@ -590,6 +590,7 @@
                                         <option value="mensajes">💬 Mensajes</option>
                                         <option value="bancos">🏦 Bancos</option>
                                         <option value="balance">📊 Balance</option>
+                                        <option value="usuarios">👤 Usuarios</option>
                                     </select>
                                     <select id="balanceYearSelectM" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;"></select>
                                     <select id="balanceMonthSelectM" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" class="balance-inline-filter" style="display:none;padding:0.4rem 0.3rem;border:1px solid var(--border);border-radius:4px;font-size:0.8rem;min-width:0;">
@@ -607,6 +608,7 @@
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'mensajes')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('eswu');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'bancos')">Bancos<span class="btn-add-inline" onclick="event.stopPropagation(); showAddBancoModal();" title="Agregar documento" style="color:var(--success);">+</span></button>
                                     <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'balance')">Balance</button>
+                                    <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('eswu', 'usuarios')">Usuarios</button>
                                     <span id="balanceInlineFilters" style="display:none;margin-left:auto;white-space:nowrap;">
                                         <select id="balanceYearSelect" onchange="syncBalanceFilter('year',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;"></select>
                                         <select id="balanceMonthSelect" onchange="syncBalanceFilter('month',this.value); renderBalanceTab()" style="padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;margin-bottom:-2px;">
@@ -664,6 +666,9 @@
                                             <tbody></tbody>
                                         </table>
                                     </div>
+                                </div>
+                                <div id="eswuUsuariosTab" class="tab-content">
+                                    <div id="eswuUsuariosTabContent"></div>
                                 </div>
                             </div>
                         </div>
