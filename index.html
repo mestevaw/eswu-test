@@ -1249,18 +1249,20 @@
                     <p style="font-size:0.88rem; color:var(--text); margin-bottom:0.6rem; text-align:center;">
                         Sube el PDF de la factura para extraer los datos automáticamente
                     </p>
-                    <div onclick="document.getElementById('invoicePdfInput').click()" style="padding:1rem; border:2px dashed var(--primary); border-radius:8px; cursor:pointer; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc;" onmouseover="this.style.background='#eff6ff'" onmouseout="this.style.background='#f8fafc'">
-                        <input type="file" id="invoicePdfInput" accept=".pdf" style="display:none;" onchange="handleInvoicePdfSelect(this)">
-                        <div style="font-size:2.5rem; margin-bottom:0.3rem;">📎</div>
-                        <strong>Click para seleccionar PDF</strong>
+                    <!-- Main: Drag & Drop -->
+                    <div id="invoicePdfDragZone" style="padding:1.2rem; border:2px dashed var(--primary); border-radius:8px; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc; cursor:default;" ondragover="event.preventDefault();this.style.background='#eff6ff';this.style.borderColor='#2563eb';" ondragleave="this.style.background='#f8fafc';this.style.borderColor='var(--primary)';" ondrop="handleInvoicePdfDrop(event);">
+                        <div style="font-size:2.5rem; margin-bottom:0.3rem;">📁</div>
+                        <strong>Arrastra tu PDF aquí</strong>
                     </div>
                     <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.5rem 0;">— o —</div>
+                    <!-- Secondary: Click & Paste side by side -->
                     <div style="display:flex; gap:0.5rem;">
+                        <div onclick="document.getElementById('invoicePdfInput').click()" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onmouseout="this.style.borderColor='var(--border)';this.style.background='';">
+                            <input type="file" id="invoicePdfInput" accept=".pdf" style="display:none;" onchange="handleInvoicePdfSelect(this)">
+                            📎 Seleccionar archivo
+                        </div>
                         <div id="invoicePdfPasteZone" tabindex="0" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
                             📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
-                        </div>
-                        <div id="invoicePdfDragZone" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" ondragover="event.preventDefault();this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" ondragleave="this.style.borderColor='var(--border)';this.style.background='';" ondrop="handleInvoicePdfDrop(event);">
-                            📁 Arrastra aquí
                         </div>
                     </div>
                     <div style="text-align:center; margin-top:0.8rem;">
@@ -2064,7 +2066,7 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=4"></script>
+    <script src="js/invoice-extractor.js?v=5"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
