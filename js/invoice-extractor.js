@@ -644,20 +644,96 @@ function _parseInvoiceText(text) {
 
     // ============================================
     // CADENA ORIGINAL CFDI — FALLBACK PARSER
-    // La cadena original es la fuente más confiable de datos CFDI.
-    // Formato: ||version|folio|fecha|...|subtotal|moneda|total|...|rfcEmisor|nombreEmisor|...
+    // Toda factura CFDI tiene una cadena original con formato:
+    // ||version|serie?|folio|fecha|...|subtotal|...|moneda|...|total|...|rfcEmisor|nombreEmisor|...
+    // Los campos varían por versión y generador, así que parseamos de forma flexible.
     // ============================================
-    var cadenaMatch = /\|\|(\d\.\d)\|([^|]*)\|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\|([^|]*)\|([^|]*)\|([\d.]+)\|([A-Z]{3})\|([\d.]+)\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|([A-ZÑ&\d]{10,14})\|([^|]+)\|/i.exec(t);
-    if (cadenaMatch) {
-        console.log('📋 Cadena original CFDI detectada, completando campos faltantes...');
-        var cFolio = cadenaMatch[2];
-        var cFecha = cadenaMatch[3].substring(0, 10); // YYYY-MM-DD
-        var cSubtotal = parseFloat(cadenaMatch[6]);
-        var cTotal = parseFloat(cadenaMatch[8]);
-        var cRfcEmisor = cadenaMatch[13];
-        var cNombreEmisor = cadenaMatch[14];
+    
+    // Find cadena original: starts with ||4.0| or ||3.3|
+    var cadenaStart = /\|\|(4\.0|3\.3)\|/.exec(t);
+    if (cadenaStart) {
+        var cadenaText = t.substring(cadenaStart.index);
+        // Find the end: usually ends with || or reaches end of recognizable pipe-separated data
+        var cadenaEnd = cadenaText.indexOf('||', 3);
+        if (cadenaEnd === -1) cadenaEnd = Math.min(cadenaText.length, 2000);
+        cadenaText = cadenaText.substring(0, cadenaEnd);
         
-        // Fill missing fields from cadena original
+        var fields = cadenaText.split('|').filter(function(f) { return f !== ''; });
+        console.log('📋 Cadena original detectada (' + fields.length + ' campos):', fields.slice(0, 8).join('|') + '...');
+        
+        // Search fields for recognizable patterns
+        var cFolio = null, cFecha = null, cSubtotal = null, cTotal = null, cRfc = null, cNombre = null;
+        
+        for (var ci = 0; ci < fields.length; ci++) {
+            var f = fields[ci].trim();
+            
+            // Date: YYYY-MM-DDTHH:MM:SS
+            if (!cFecha && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(f)) {
+                cFecha = f.substring(0, 10);
+                // The field before the date is usually the folio (or serie+folio)
+                if (!cFolio && ci > 1) {
+                    var prevF = fields[ci - 1].trim();
+                    // Folio is numeric or alphanumeric, not a version number
+                    if (/^\d{1,15}$/.test(prevF) && prevF !== '4' && prevF !== '3') {
+                        cFolio = prevF;
+                    } else if (ci > 2) {
+                        // Maybe serie is separate, check field before that
+                        var prevPrevF = fields[ci - 2].trim();
+                        if (/^\d{1,15}$/.test(prevPrevF) && prevPrevF.length > 1) {
+                            cFolio = prevPrevF;
+                        }
+                    }
+                }
+            }
+            
+            // RFC emisor: 12-13 char alphanumeric, not our RFC
+            if (!cRfc && /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/i.test(f)) {
+                var rfcUp = f.toUpperCase();
+                if (rfcIgnore.indexOf(rfcUp) === -1 && !/^(XAXX|XEXX)/.test(rfcUp)) {
+                    cRfc = rfcUp;
+                    // Next field is usually the nombre
+                    if (ci + 1 < fields.length) {
+                        var nextF = fields[ci + 1].trim();
+                        if (nextF.length >= 3 && !/^\d+$/.test(nextF) && !/INMOBILIARIS|ESWU/i.test(nextF)) {
+                            cNombre = nextF;
+                        }
+                    }
+                }
+            }
+            
+            // Monetary amounts: look for numbers with decimals near moneda field
+            if (/^(MXN|USD|EUR)$/i.test(f) && ci > 0) {
+                // Field before moneda is often subtotal, after might be tipoCambio or total
+                // Scan nearby fields for amounts
+                for (var si = Math.max(0, ci - 3); si < Math.min(fields.length, ci + 3); si++) {
+                    var sv = parseFloat(fields[si].trim());
+                    if (!isNaN(sv) && sv > 100 && fields[si].indexOf('.') > -1) {
+                        if (!cSubtotal) cSubtotal = sv;
+                        else if (sv > cSubtotal && !cTotal) cTotal = sv;
+                    }
+                }
+            }
+        }
+        
+        // If we didn't find total/subtotal near MXN, look for the two largest decimal numbers
+        if (!cTotal) {
+            var amounts = [];
+            for (var ai = 0; ai < fields.length; ai++) {
+                var av = parseFloat(fields[ai].trim());
+                if (!isNaN(av) && av > 0 && fields[ai].indexOf('.') > -1 && av < 99999999) {
+                    amounts.push(av);
+                }
+            }
+            amounts.sort(function(a, b) { return b - a; });
+            if (amounts.length >= 2) {
+                cTotal = amounts[0];
+                cSubtotal = amounts[1];
+            } else if (amounts.length === 1) {
+                cTotal = amounts[0];
+            }
+        }
+        
+        // Fill missing fields
         if (!result.numero_factura && cFolio) {
             result.numero_factura = cFolio;
             console.log('  → Folio de cadena:', cFolio);
@@ -670,28 +746,21 @@ function _parseInvoiceText(text) {
             result.total = cTotal;
             console.log('  → Total de cadena:', cTotal);
         }
-        if (!result.rfc_emisor && cRfcEmisor) {
-            // Skip our own RFC and SAT
-            var rfcUp = cRfcEmisor.toUpperCase();
-            if (rfcIgnore.indexOf(rfcUp) === -1 && !/^(XAXX|XEXX|1ES)/.test(rfcUp)) {
-                result.rfc_emisor = rfcUp;
-                console.log('  → RFC de cadena:', rfcUp);
-            }
+        if (!result.rfc_emisor && cRfc) {
+            result.rfc_emisor = cRfc;
+            console.log('  → RFC de cadena:', cRfc);
         }
-        if (!result.nombre_emisor && cNombreEmisor) {
-            if (!/INMOBILIARIS|ESWU/i.test(cNombreEmisor)) {
-                result.nombre_emisor = cNombreEmisor.trim();
-                console.log('  → Nombre de cadena:', cNombreEmisor);
-            }
+        if (!result.nombre_emisor && cNombre) {
+            result.nombre_emisor = cNombre;
+            console.log('  → Nombre de cadena:', cNombre);
         }
-        // IVA can be derived: total - subtotal
         if (!result.iva && cTotal > 0 && cSubtotal > 0 && cTotal > cSubtotal) {
             result.iva = Math.round((cTotal - cSubtotal) * 100) / 100;
             console.log('  → IVA calculado de cadena:', result.iva);
         }
     }
     
-    // Also try a simpler cadena pattern: |FOLIO|YYYY-MM-DDTHH:MM:SS| anywhere
+    // Fallback: look for |FOLIO|YYYY-MM-DDTHH:MM:SS| pattern anywhere
     if (!result.numero_factura || !result.fecha_factura) {
         var simpleCadena = /\|(\d{1,10})\|(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}\|/.exec(t);
         if (simpleCadena) {
@@ -1189,6 +1258,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS v5 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS v6 cargado — flujo de factura interceptado');
     }, 200);
 });
