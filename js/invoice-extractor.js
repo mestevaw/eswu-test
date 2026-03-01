@@ -248,7 +248,7 @@ async function _generatePdfThumbnail(arrayBuffer) {
     try {
         var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
         var page = await pdf.getPage(1);
-        var scale = 0.5; // Small thumbnail
+        var scale = 1.5; // Good quality for half-screen preview
         var viewport = page.getViewport({ scale: scale });
 
         var canvas = document.createElement('canvas');
@@ -914,6 +914,17 @@ function _proceedToRegistrarFactura() {
     }
 
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
+    
+    // Show PDF preview in the form if we have a thumbnail
+    var pdfPreviewPanel = document.getElementById('facturaFormPdfPreview');
+    var pdfPreviewImg = document.getElementById('facturaFormPdfImg');
+    if (pdfPreviewPanel && pdfPreviewImg && _invoicePdfThumbnailUrl) {
+        pdfPreviewImg.src = _invoicePdfThumbnailUrl;
+        pdfPreviewPanel.style.display = '';
+    } else if (pdfPreviewPanel) {
+        pdfPreviewPanel.style.display = 'none';
+    }
+    
     document.getElementById('registrarFacturaModal').classList.add('active');
 
     // Focus: if proveedor search is visible and no match, focus it
