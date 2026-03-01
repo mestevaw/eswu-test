@@ -1,7 +1,7 @@
 /* ========================================
-   INVOICE-EXTRACTOR.JS v1
+   js/invoice-extractor.js — V2
    Extracción inteligente de datos de facturas PDF
-   Fecha: 2026-02-28
+   Fecha: 2026-03-01
    ======================================== */
 
 // ============================================
@@ -427,12 +427,41 @@ function _parseInvoiceText(text) {
     }
 
     // --- NÚMERO DE FACTURA ---
+    // PASS 1: line-by-line search on original text (preserves column proximity)
+    var lines = text.split(/\n/);
+    for (var li = 0; li < lines.length && !result.numero_factura; li++) {
+        var line = lines[li].trim();
+        // "Folio/Serie 000534E" or "Folio/Serie: 000534E" on same line
+        var lineFolio = /folio\s*[\/\\]?\s*serie\s*[:;]?\s*([A-Z0-9][\dA-Z\-]{0,19})/i.exec(line);
+        if (lineFolio) {
+            var val = lineFolio[1].trim();
+            if (!(val.indexOf('-') > -1 && val.length > 20)) {
+                result.numero_factura = val;
+            }
+        }
+        if (!result.numero_factura) {
+            // "Serie: E Folio: 534" or "Serie E Folio 534"
+            var serieFolio = /serie\s*[:;]?\s*([A-Z]{1,5})\s+folio\s*[:;]?\s*(\d{1,10})/i.exec(line);
+            if (serieFolio) {
+                result.numero_factura = (serieFolio[1] + serieFolio[2]).trim();
+            }
+        }
+        if (!result.numero_factura) {
+            // "Folio: 534" or "Folio 534" (digit-only, on its own line)
+            var folioSimple = /\bfolio\s*[:;]?\s*(\d{1,10})\b/i.exec(line);
+            if (folioSimple && !/fiscal/i.test(line)) {
+                result.numero_factura = folioSimple[1].trim();
+            }
+        }
+    }
+
+    // PASS 2: collapsed text patterns (fallback)
     var folioPatterns = [
         // "Factura No.:" followed by numbers
         /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
-        // "Folio/Serie:" or "FolioSerie:" or "Folio Serie:"
-        /folio\s*[\/\\]?\s*serie\s*[:;]?\s*(\d[\dA-Z\-]{0,19})/i,
-        // "Folio:" or "Folio interno:" followed by number (must start with digit)
+        // "Folio/Serie:" or "FolioSerie:" or "Folio Serie:" — allow intervening non-digit text
+        /folio\s*[\/\\]?\s*serie[^0-9]{0,40}([A-Z0-9][\dA-Z\-]{0,19})/i,
+        // "Folio:" or "Folio interno:" followed by number (skip lines with "fiscal")
         /(?:serie\s*\/?\s*)?folio\s*(?:interno)?\s*[:;]\s*(\d[\dA-Z\-]{0,19})/i,
         // "Folio: 2236" simple
         /\bfolio\s*[:;]\s*(\d{1,10})\b/i,
@@ -444,7 +473,7 @@ function _parseInvoiceText(text) {
         // CFE: "NO. DE SERVICIO:" as fallback
         /no\.?\s*de\s*servicio\s*[:;]?\s*(\d{6,20})/i
     ];
-    for (var i = 0; i < folioPatterns.length; i++) {
+    for (var i = 0; i < folioPatterns.length && !result.numero_factura; i++) {
         var fm = folioPatterns[i].exec(t);
         if (fm) {
             if (fm[2]) {
@@ -462,6 +491,31 @@ function _parseInvoiceText(text) {
     }
 
     // --- FECHA DE FACTURA ---
+    // PASS 1: line-by-line search for emission date (best for 2-column PDFs)
+    for (var li = 0; li < lines.length && !result.fecha_factura; li++) {
+        var line = lines[li].trim();
+        // "Fecha y hora de emisión 2026-02-23T08:31:23" or with colon
+        var lineDate = /(?:fecha\s*(?:y\s*hora\s*(?:de\s*)?)?emisi[oó]n)\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i.exec(line);
+        if (lineDate) {
+            result.fecha_factura = lineDate[1] + '-' + lineDate[2].padStart(2, '0') + '-' + lineDate[3].padStart(2, '0');
+        }
+        if (!result.fecha_factura) {
+            // "Fecha y hora de emisión" DD/MM/YYYY
+            var lineDate2 = /(?:fecha\s*(?:y\s*hora\s*(?:de\s*)?)?emisi[oó]n)\s*[:;]?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i.exec(line);
+            if (lineDate2) {
+                result.fecha_factura = lineDate2[3] + '-' + lineDate2[2].padStart(2, '0') + '-' + lineDate2[1].padStart(2, '0');
+            }
+        }
+        if (!result.fecha_factura) {
+            // "Fecha/Hora expedición: 2026-02-04T11:43:03"
+            var lineDate3 = /(?:fecha\s*(?:[y\/]?\s*hora\s*(?:de\s*)?)?expedici[oó]n)\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i.exec(line);
+            if (lineDate3) {
+                result.fecha_factura = lineDate3[1] + '-' + lineDate3[2].padStart(2, '0') + '-' + lineDate3[3].padStart(2, '0');
+            }
+        }
+    }
+
+    // PASS 2: collapsed text patterns (fallback)
     // Meses abreviados y completos para parsing
     var mesesAbrev = {
         'ENE': '01', 'FEB': '02', 'MAR': '03', 'ABR': '04', 'MAY': '05', 'JUN': '06',
@@ -513,7 +567,7 @@ function _parseInvoiceText(text) {
         { rx: /\|(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}\|/i, type: 'ymd_groups' }
     ];
     
-    for (var i = 0; i < fechaPatterns.length; i++) {
+    for (var i = 0; i < fechaPatterns.length && !result.fecha_factura; i++) {
         var fp = fechaPatterns[i];
         var fd = fp.rx.exec(t);
         if (!fd) continue;
@@ -649,8 +703,8 @@ function _parseInvoiceText(text) {
     // Los campos varían por versión y generador, así que parseamos de forma flexible.
     // ============================================
     
-    // Find cadena original: starts with ||4.0| or ||3.3|
-    var cadenaStart = /\|\|(4\.0|3\.3)\|/.exec(t);
+    // Find cadena original: starts with ||4.0| or ||3.3| (CFDI) or ||1.1| (complement)
+    var cadenaStart = /\|\|(4\.0|3\.3|1\.1)\|/.exec(t);
     if (cadenaStart) {
         var cadenaText = t.substring(cadenaStart.index);
         // Find the end: usually ends with || or reaches end of recognizable pipe-separated data
@@ -1258,6 +1312,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS v6 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V2 cargado — flujo de factura interceptado');
     }, 200);
 });
