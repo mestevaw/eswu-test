@@ -1,5 +1,5 @@
 /* ========================================
-   js/invoice-extractor.js — V3
+   js/invoice-extractor.js — V4
    Extracción inteligente de datos de facturas PDF
    Fecha: 2026-03-01
    ======================================== */
@@ -344,38 +344,103 @@ function _parseInvoiceText(text) {
     var t = text.replace(/\s+/g, ' ').trim();
     var tUpper = t.toUpperCase();
 
-    // RFCs a ignorar
+    // RFCs a ignorar (receptor ESWU + SAT genérico)
     var rfcIgnore = ['IES9804035B5', 'SAT970701NN3'];
 
+    // Split text into lines for line-by-line searches (used throughout)
+    var lines = text.split(/\n/);
+
+    // --- PRE-PASO: Extraer RFC del PAC de la cadena 1.1 para ignorarlo ---
+    // La cadena del complemento tiene formato: ||1.1|UUID|fecha|RFC_PAC|sello...
+    var cadena11Match = /\|\|1\.1\|[A-F0-9\-]{36}\|\d{4}-\d{2}-\d{2}T[\d:]+\|([A-Z]{3,4}\d{6}[A-Z0-9]{3})\|/i.exec(t);
+    if (cadena11Match) {
+        var pacRfc = cadena11Match[1].toUpperCase();
+        if (rfcIgnore.indexOf(pacRfc) === -1) {
+            rfcIgnore.push(pacRfc);
+            console.log('  🔒 RFC del PAC ignorado:', pacRfc);
+        }
+    }
+
     // --- RFC EMISOR ---
-    // Method 1: Standard RFC pattern (3-4 letters + 6 digits + optional hyphen + 3 alphanum)
-    var rfcPattern = /\b([A-ZÑ&]{3,4}\d{6})-?([A-Z0-9]{3})\b/gi;
-    var rfcMatches = [];
-    var m;
-    while ((m = rfcPattern.exec(t)) !== null) {
-        var rfc = (m[1] + m[2]).toUpperCase();
-        if (rfcIgnore.indexOf(rfc) === -1 && !/^(XAXX|XEXX)/.test(rfc)) {
-            rfcMatches.push(rfc);
+    // Priority 1: Find RFC on same line or near "Emisor" label (line-by-line)
+    var rfcRegex = /\b([A-ZÑ&]{3,4}\d{6})-?([A-Z0-9]{3})\b/gi;
+    var rfcNearEmisor = null;
+    var emisorLineIdx = -1;
+    
+    for (var li = 0; li < lines.length; li++) {
+        var lineTxt = lines[li].trim();
+        // Must match "Datos del Emisor" or standalone "Emisor" or "Razón Social"
+        // But NOT "Sello Digital del Emisor", "CSD del Emisor", "Certificado del emisor"
+        if (/sello|csd|certificado/i.test(lineTxt)) continue;
+        if (/(?:datos\s*(?:del?\s*)?)?emisor|raz[oó]n\s*social/i.test(lineTxt) && !/receptor/i.test(lineTxt)) {
+            emisorLineIdx = li;
+            break;
         }
     }
     
-    // Method 2: Look for "RFC:" label and grab whatever follows (handles OCR errors)
-    if (rfcMatches.length === 0) {
-        var rfcLabelPattern = /RFC\s*[:;]\s*([A-Z0-9Ñ&\-]{9,18})/gi;
-        var rm;
-        while ((rm = rfcLabelPattern.exec(t)) !== null) {
-            var rawRfc = rm[1].replace(/[\-\s]/g, '').toUpperCase();
-            // Skip our own RFC and SAT (even with OCR errors - fuzzy match)
-            if (rawRfc.indexOf('IES') === 0 || rawRfc.indexOf('1ES') === 0) continue; // OCR: I→1
-            if (rawRfc.indexOf('SAT') === 0) continue;
-            if (rawRfc.length >= 12 && rawRfc.length <= 14) {
-                rfcMatches.push(rawRfc);
+    if (emisorLineIdx >= 0) {
+        // Search in a window of 5 lines after "Emisor" label
+        var searchWindow = lines.slice(emisorLineIdx, Math.min(emisorLineIdx + 6, lines.length)).join(' ');
+        rfcRegex.lastIndex = 0;
+        var em;
+        while ((em = rfcRegex.exec(searchWindow)) !== null) {
+            var rfc = (em[1] + em[2]).toUpperCase();
+            if (rfcIgnore.indexOf(rfc) === -1 && !/^(XAXX|XEXX)/.test(rfc)) {
+                rfcNearEmisor = rfc;
+                break;
             }
         }
     }
     
-    if (rfcMatches.length > 0) {
-        result.rfc_emisor = rfcMatches[0];
+    if (rfcNearEmisor) {
+        result.rfc_emisor = rfcNearEmisor;
+        console.log('  → RFC encontrado cerca de Emisor:', rfcNearEmisor);
+    } else {
+        // Priority 2: Any RFC in text (not in ignore list, not inside cadena section)
+        // First, find the cadena section boundaries to exclude
+        var cadenaStartPos = tUpper.indexOf('CADENA ORIGINAL');
+        var cadenaZone = cadenaStartPos > 0 ? cadenaStartPos : t.length;
+        var searchableText = t.substring(0, cadenaZone);
+        
+        rfcRegex.lastIndex = 0;
+        var rfcMatches = [];
+        var m;
+        while ((m = rfcRegex.exec(searchableText)) !== null) {
+            var rfc = (m[1] + m[2]).toUpperCase();
+            if (rfcIgnore.indexOf(rfc) === -1 && !/^(XAXX|XEXX)/.test(rfc)) {
+                rfcMatches.push(rfc);
+            }
+        }
+        
+        // Priority 3: Full text search (if nothing found before cadena)
+        if (rfcMatches.length === 0) {
+            rfcRegex.lastIndex = 0;
+            while ((m = rfcRegex.exec(t)) !== null) {
+                var rfc = (m[1] + m[2]).toUpperCase();
+                if (rfcIgnore.indexOf(rfc) === -1 && !/^(XAXX|XEXX)/.test(rfc)) {
+                    rfcMatches.push(rfc);
+                }
+            }
+        }
+        
+        // Method 2: Look for "RFC:" label (handles OCR errors)
+        if (rfcMatches.length === 0) {
+            var rfcLabelPattern = /RFC\s*[:;]\s*([A-Z0-9Ñ&\-]{9,18})/gi;
+            var rm;
+            while ((rm = rfcLabelPattern.exec(t)) !== null) {
+                var rawRfc = rm[1].replace(/[\-\s]/g, '').toUpperCase();
+                if (rawRfc.indexOf('IES') === 0 || rawRfc.indexOf('1ES') === 0) continue;
+                if (rawRfc.indexOf('SAT') === 0) continue;
+                if (rfcIgnore.indexOf(rawRfc) !== -1) continue;
+                if (rawRfc.length >= 12 && rawRfc.length <= 14) {
+                    rfcMatches.push(rawRfc);
+                }
+            }
+        }
+        
+        if (rfcMatches.length > 0) {
+            result.rfc_emisor = rfcMatches[0];
+        }
     }
 
     // --- NOMBRE DEL EMISOR ---
@@ -431,11 +496,18 @@ function _parseInvoiceText(text) {
     var cfdiFieldBlacklist = /^(moneda|mxn|usd|eur|pue|ppd|tasa|tipo|metodo|forma|uso|cfdi|regimen|version|exportacion|certificado|lugar|condiciones|receptor|emisor|factura|ingreso|egreso|nombre|fecha|pago|serie|total|subtotal|descuento|impuesto|transferencia|efectivo)$/i;
 
     // PASS 1: line-by-line search with NEXT-LINE LOOKAHEAD
-    // In 2-column PDFs, pdf.js often puts label and value on different lines
-    var lines = text.split(/\n/);
     for (var li = 0; li < lines.length && !result.numero_factura; li++) {
         var line = lines[li].trim();
-        var nextLine = (li + 1 < lines.length) ? lines[li + 1].trim() : '';
+
+        // "Folio Interno: HTXDLMA 10283" (CONTPAQi format)
+        var folioInterno = /folio\s*interno\s*[:;]?\s*([A-Z0-9][\w\s\-]{0,25})/i.exec(line);
+        if (folioInterno) {
+            var val = folioInterno[1].trim();
+            if (val && !cfdiFieldBlacklist.test(val.split(/\s/)[0])) {
+                result.numero_factura = val;
+                continue;
+            }
+        }
 
         // Check if line contains "Folio/Serie" or "Folio Serie"
         if (/folio\s*[\/\\]?\s*serie/i.test(line)) {
@@ -447,27 +519,21 @@ function _parseInvoiceText(text) {
                     result.numero_factura = val;
                 }
             }
-            // B) Value on NEXT line — common in 2-column PDFs
-            if (!result.numero_factura && nextLine) {
-                // Next line may be just the value (e.g., "000534E")
-                var nextClean = nextLine.replace(/^[\s:;]+/, '').trim();
-                var nextVal = /^([A-Z0-9][\dA-Z]{0,19})\b/i.exec(nextClean);
-                if (nextVal && !cfdiFieldBlacklist.test(nextVal[1]) && nextVal[1].length >= 2) {
-                    result.numero_factura = nextVal[1].trim();
-                }
-                // Next line may have mixed content: "...left column text... 000534E"
-                if (!result.numero_factura) {
-                    // Look for alphanumeric token that looks like a folio (digits + optional letters)
-                    var tokens = nextLine.split(/\s+/);
-                    for (var ti = tokens.length - 1; ti >= 0; ti--) {
+            // B) Value on NEXT LINE(S) — common in 2-column PDFs where label and value split
+            if (!result.numero_factura) {
+                for (var nli = 1; nli <= 3 && (li + nli) < lines.length; nli++) {
+                    var nLine = lines[li + nli].trim();
+                    var tokens = nLine.split(/\s+/);
+                    for (var ti = 0; ti < tokens.length; ti++) {
                         var tok = tokens[ti].replace(/[:;,]/g, '');
-                        if (/^[0-9]{3,}[A-Z]?$/i.test(tok) || /^[A-Z]{1,4}[0-9]{2,}$/i.test(tok)) {
-                            if (!cfdiFieldBlacklist.test(tok)) {
+                        if (/^[0-9]{3,}[A-Z]{0,3}$/i.test(tok) || /^[A-Z]{1,4}[0-9]{2,}[A-Z]?$/i.test(tok)) {
+                            if (!cfdiFieldBlacklist.test(tok) && tok.length >= 3) {
                                 result.numero_factura = tok;
                                 break;
                             }
                         }
                     }
+                    if (result.numero_factura) break;
                 }
             }
         }
@@ -480,9 +546,9 @@ function _parseInvoiceText(text) {
             }
         }
         // "Folio: 534" simple (skip lines with "fiscal")
-        if (!result.numero_factura) {
-            var folioSimple = /\bfolio\s*[:;]?\s*(\d{1,10})\b/i.exec(line);
-            if (folioSimple && !/fiscal/i.test(line)) {
+        if (!result.numero_factura && !/fiscal/i.test(line)) {
+            var folioSimple = /\bfolio\s*[:;]\s*(\d{1,10})\b/i.exec(line);
+            if (folioSimple) {
                 result.numero_factura = folioSimple[1].trim();
             }
         }
@@ -490,6 +556,8 @@ function _parseInvoiceText(text) {
 
     // PASS 2: collapsed text patterns (fallback)
     var folioPatterns = [
+        // "Folio Interno: HTXDLMA 10283" (CONTPAQi format — alphanumeric + spaces)
+        /folio\s*interno\s*[:;]?\s*([A-Z0-9][\w\s\-]{2,25}?)(?=\s*(?:folio\s*fiscal|tipo|$))/i,
         // "Factura No.:" followed by numbers
         /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
         // "Folio/Serie:" or "FolioSerie:" or "Folio Serie:" — allow intervening non-digit text
@@ -540,7 +608,7 @@ function _parseInvoiceText(text) {
         var nextLine = (li + 1 < lines.length) ? lines[li + 1].trim() : '';
 
         // Check for emission/expedition date label
-        var isEmisionLine = /fecha\s*(?:y\s*hora\s*(?:de\s*)?)?emisi[oó]n/i.test(line);
+        var isEmisionLine = /fecha\s*(?:(?:y\s*hora\s*)?(?:de\s*)?)?emisi[oó]n/i.test(line);
         var isExpedicionLine = !isEmisionLine && /fecha\s*(?:[y\/]?\s*hora\s*(?:de\s*)?)?expedici[oó]n/i.test(line);
 
         if (isEmisionLine || isExpedicionLine) {
@@ -593,7 +661,7 @@ function _parseInvoiceText(text) {
 
     var fechaPatterns = [
         // "Fecha y hora de emisión: 2026-02-27T05:31:23" (ISO datetime with T)
-        { rx: /fecha\s*(?:y\s*hora\s*(?:de\s*)?)?emisi[oó]n\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i, type: 'ymd_groups' },
+        { rx: /fecha\s*(?:(?:y\s*hora\s*)?(?:de\s*)?)?emisi[oó]n\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i, type: 'ymd_groups' },
         // "Fecha/Hora expedición: 04/02/2026 11:43:03"
         { rx: /fecha\s*(?:[y\/]?\s*hora\s*(?:de\s*)?)?expedici[oó]n\s*[:;]?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
         // "Fecha/Hora expedición: 2026-02-04T11:43:03"
@@ -1383,6 +1451,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS V3 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V4 cargado — flujo de factura interceptado');
     }, 200);
 });
