@@ -1236,7 +1236,7 @@
 
     <!-- Modal: Subir PDF de Factura (paso previo a registrar) -->
     <div id="uploadInvoicePdfModal" class="modal">
-        <div class="modal-content" style="max-width:850px; width:92vw;">
+        <div id="uploadInvoicePdfModalContent" class="modal-content" style="max-width:480px;">
             <div class="modal-header modal-header-sticky">
                 <h2 class="modal-title">📄 Subir Factura PDF</h2>
                 <div style="display:flex; align-items:center; gap:0.25rem;">
@@ -1281,12 +1281,12 @@
                 <!-- Results Area: Split Layout -->
                 <div id="invoicePdfResult" style="display:none;">
                     <div style="display:flex; gap:1rem; align-items:flex-start;">
-                        <!-- Left: PDF Preview (half) -->
-                        <div style="flex:1; min-width:0; max-height:65vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+                        <!-- Left: PDF Preview (60%) -->
+                        <div style="flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
                             <img id="invoicePdfThumb" src="" alt="PDF" style="display:block; width:100%; height:auto;">
                         </div>
-                        <!-- Right: Extracted Data (half) -->
-                        <div style="flex:1; min-width:0;">
+                        <!-- Right: Extracted Data (40%) -->
+                        <div style="flex:2; min-width:0;">
                             <div id="invoiceExtractedSummary" style="margin-bottom:0.5rem;"></div>
                             <div id="invoiceExtractStatus" style="font-size:0.85rem; margin-bottom:0.5rem;"></div>
                             <div id="invoiceProveedorMatch" style="display:none; margin-bottom:0.5rem;"></div>
@@ -1314,11 +1314,11 @@
             <div style="padding: 1rem 1.25rem;">
                 <div style="display:flex; gap:1rem; align-items:flex-start;">
                     <!-- Left: PDF Preview (hidden if no PDF uploaded) -->
-                    <div id="facturaFormPdfPreview" style="display:none; flex:1; min-width:0; max-height:68vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+                    <div id="facturaFormPdfPreview" style="display:none; flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
                         <img id="facturaFormPdfImg" src="" alt="PDF" style="display:block; width:100%; height:auto;">
                     </div>
                     <!-- Right: Form -->
-                    <div id="facturaFormPanel" style="flex:1; min-width:0;">
+                    <div id="facturaFormPanel" style="flex:2; min-width:0;">
                         <form id="facturaForm" onsubmit="saveFactura(event)">
                             <div id="facturaProveedorRow" style="display:none; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);">
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -2064,7 +2064,7 @@
     <script src="js/modals/modals.js?v=24"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=3"></script>
+    <script src="js/invoice-extractor.js?v=4"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
