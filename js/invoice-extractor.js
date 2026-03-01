@@ -642,6 +642,70 @@ function _parseInvoiceText(text) {
         if (result.fecha_vencimiento) break;
     }
 
+    // ============================================
+    // CADENA ORIGINAL CFDI — FALLBACK PARSER
+    // La cadena original es la fuente más confiable de datos CFDI.
+    // Formato: ||version|folio|fecha|...|subtotal|moneda|total|...|rfcEmisor|nombreEmisor|...
+    // ============================================
+    var cadenaMatch = /\|\|(\d\.\d)\|([^|]*)\|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})\|([^|]*)\|([^|]*)\|([\d.]+)\|([A-Z]{3})\|([\d.]+)\|([^|]*)\|([^|]*)\|([^|]*)\|([^|]*)\|([A-ZÑ&\d]{10,14})\|([^|]+)\|/i.exec(t);
+    if (cadenaMatch) {
+        console.log('📋 Cadena original CFDI detectada, completando campos faltantes...');
+        var cFolio = cadenaMatch[2];
+        var cFecha = cadenaMatch[3].substring(0, 10); // YYYY-MM-DD
+        var cSubtotal = parseFloat(cadenaMatch[6]);
+        var cTotal = parseFloat(cadenaMatch[8]);
+        var cRfcEmisor = cadenaMatch[13];
+        var cNombreEmisor = cadenaMatch[14];
+        
+        // Fill missing fields from cadena original
+        if (!result.numero_factura && cFolio) {
+            result.numero_factura = cFolio;
+            console.log('  → Folio de cadena:', cFolio);
+        }
+        if (!result.fecha_factura && cFecha) {
+            result.fecha_factura = cFecha;
+            console.log('  → Fecha de cadena:', cFecha);
+        }
+        if (!result.total && cTotal > 0) {
+            result.total = cTotal;
+            console.log('  → Total de cadena:', cTotal);
+        }
+        if (!result.rfc_emisor && cRfcEmisor) {
+            // Skip our own RFC and SAT
+            var rfcUp = cRfcEmisor.toUpperCase();
+            if (rfcIgnore.indexOf(rfcUp) === -1 && !/^(XAXX|XEXX|1ES)/.test(rfcUp)) {
+                result.rfc_emisor = rfcUp;
+                console.log('  → RFC de cadena:', rfcUp);
+            }
+        }
+        if (!result.nombre_emisor && cNombreEmisor) {
+            if (!/INMOBILIARIS|ESWU/i.test(cNombreEmisor)) {
+                result.nombre_emisor = cNombreEmisor.trim();
+                console.log('  → Nombre de cadena:', cNombreEmisor);
+            }
+        }
+        // IVA can be derived: total - subtotal
+        if (!result.iva && cTotal > 0 && cSubtotal > 0 && cTotal > cSubtotal) {
+            result.iva = Math.round((cTotal - cSubtotal) * 100) / 100;
+            console.log('  → IVA calculado de cadena:', result.iva);
+        }
+    }
+    
+    // Also try a simpler cadena pattern: |FOLIO|YYYY-MM-DDTHH:MM:SS| anywhere
+    if (!result.numero_factura || !result.fecha_factura) {
+        var simpleCadena = /\|(\d{1,10})\|(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}:\d{2}\|/.exec(t);
+        if (simpleCadena) {
+            if (!result.numero_factura && simpleCadena[1]) {
+                result.numero_factura = simpleCadena[1];
+                console.log('  → Folio de cadena simple:', simpleCadena[1]);
+            }
+            if (!result.fecha_factura && simpleCadena[2]) {
+                result.fecha_factura = simpleCadena[2];
+                console.log('  → Fecha de cadena simple:', simpleCadena[2]);
+            }
+        }
+    }
+
     // Si no se encontró vencimiento, calcular default: 2 días hábiles antes del fin del mes en curso
     if (!result.fecha_vencimiento) {
         result.fecha_vencimiento = _calcDefaultVencimiento();
@@ -1125,6 +1189,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS v1 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS v5 cargado — flujo de factura interceptado');
     }, 200);
 });
