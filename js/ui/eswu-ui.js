@@ -1,6 +1,7 @@
 /* ========================================
-   ESWU-UI.JS v5
-   Ficha ESWU - Select dropdown contacts, subfolder nav
+   js/ui/eswu-ui.js — V2
+   Ficha ESWU - subfolder nav, balance Excel export
+   Fecha: 2026-03-01
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
@@ -100,33 +101,13 @@ async function selectEswuActa() {
 }
 
 // ============================================
-// CONTACTOS (select dropdown)
+// CONTACTOS — ELIMINADO (cubierto en pestaña Usuarios)
 // ============================================
 
 function renderEswuContacts() {
+    // Sección eliminada: la info de usuarios está en la pestaña Usuarios
     var div = document.getElementById('eswuContactsList');
-    var allUsers = (typeof usuarios !== 'undefined') ? usuarios : [];
-    var activeUsers = allUsers.filter(function(u) { return u.activo; });
-    
-    // Sort alphabetically
-    activeUsers.sort(function(a, b) { return a.nombre.localeCompare(b.nombre); });
-    
-    var html = '<div style="background:var(--bg);border-radius:8px;padding:0.4rem 0.6rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">';
-    html += '<span style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600;">Usuarios</span>';
-    
-    // Select dropdown — first user is default
-    html += '<select id="eswuUsuarioSelect" onchange="onEswuUsuarioSelect(this.value)" style="flex:1;min-width:140px;padding:0.3rem 0.4rem;border:1px solid var(--border);border-radius:4px;font-size:0.85rem;cursor:pointer;">';
-    activeUsers.forEach(function(u, i) {
-        var nivel = {1:'Admin',2:'Edita',3:'Consulta',4:'Contabilidad'}[u.nivel] || '';
-        html += '<option value="' + u.id + '"' + (i === 0 ? ' selected' : '') + '>' + u.nombre + (nivel ? ' (' + nivel + ')' : '') + '</option>';
-    });
-    html += '</select>';
-    
-    // Add button
-    html += '<span onclick="showEswuAddUsuario()" title="Agregar usuario" style="color:var(--success);font-size:1.3rem;font-weight:700;cursor:pointer;padding:0 0.3rem;border-radius:4px;" onmouseover="this.style.background=\'#dcfce7\'" onmouseout="this.style.background=\'transparent\'">+</span>';
-    html += '</div>';
-    
-    div.innerHTML = html;
+    if (div) div.innerHTML = '';
 }
 
 function onEswuUsuarioSelect(val) {
@@ -135,11 +116,8 @@ function onEswuUsuarioSelect(val) {
 }
 
 function editEswuUsuarios() {
-    // Pencil icon: open edit for currently selected user
-    var sel = document.getElementById('eswuUsuarioSelect');
-    if (sel && sel.value) {
-        showEswuEditUsuario(parseInt(sel.value));
-    }
+    // Pencil icon: switch to the Usuarios tab
+    switchTab('eswu', 'usuarios');
 }
 
 // ============================================
@@ -998,6 +976,112 @@ function fmtMonto(amount) {
 }
 
 // ============================================
+// EXPORTAR BALANCE A EXCEL
+// ============================================
+
+function exportBalanceToExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Librería SheetJS no disponible.');
+        return;
+    }
+
+    var yearSel = document.getElementById('balanceYearSelect');
+    var monthSel = document.getElementById('balanceMonthSelect');
+    var filterYear = yearSel ? parseInt(yearSel.value) : new Date().getFullYear();
+    var filterMonth = monthSel ? parseInt(monthSel.value) : 0;
+
+    var mesesNombres = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var periodoLabel = filterMonth ? mesesNombres[filterMonth] + ' ' + filterYear : 'Año ' + filterYear;
+
+    // Collect rows (same logic as renderBalanceTab)
+    var rows = [];
+
+    (typeof inquilinos !== 'undefined' ? inquilinos : []).forEach(function(inq) {
+        (inq.pagos || []).forEach(function(p) {
+            if (!p.fecha || !p.monto) return;
+            var d = new Date(p.fecha);
+            if (d.getFullYear() !== filterYear) return;
+            if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
+            rows.push({
+                fecha: p.fecha,
+                concepto: inq.nombre,
+                ingreso: parseFloat(p.monto) || 0,
+                egreso: 0
+            });
+        });
+    });
+
+    (typeof proveedores !== 'undefined' ? proveedores : []).forEach(function(prov) {
+        (prov.facturas || []).forEach(function(f) {
+            if (!f.fecha_pago) return;
+            var d = new Date(f.fecha_pago);
+            if (d.getFullYear() !== filterYear) return;
+            if (filterMonth && (d.getMonth() + 1) !== filterMonth) return;
+            rows.push({
+                fecha: f.fecha_pago,
+                concepto: prov.nombre + (f.numero ? ' #' + f.numero : ''),
+                ingreso: 0,
+                egreso: parseFloat(f.monto) || 0
+            });
+        });
+    });
+
+    // Sort by date ascending
+    rows.sort(function(a, b) { return new Date(a.fecha) - new Date(b.fecha); });
+
+    // Build spreadsheet data
+    var wsData = [
+        ['Balance ESWU — ' + periodoLabel],
+        [],
+        ['Fecha', 'Concepto', 'Ingresos', 'Egresos']
+    ];
+
+    var totalIngresos = 0;
+    var totalEgresos = 0;
+
+    rows.forEach(function(r) {
+        totalIngresos += r.ingreso;
+        totalEgresos += r.egreso;
+        wsData.push([
+            r.fecha,
+            r.concepto,
+            r.ingreso || '',
+            r.egreso || ''
+        ]);
+    });
+
+    wsData.push([]);
+    wsData.push(['', 'Total Ingresos', totalIngresos, '']);
+    wsData.push(['', 'Total Egresos', '', totalEgresos]);
+    wsData.push(['', 'Balance', totalIngresos - totalEgresos, '']);
+
+    var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Set column widths
+    ws['!cols'] = [
+        { wch: 12 },
+        { wch: 35 },
+        { wch: 15 },
+        { wch: 15 }
+    ];
+
+    // Format currency columns (C and D from row 4 onwards)
+    var range = XLSX.utils.decode_range(ws['!ref']);
+    for (var R = 3; R <= range.e.r; R++) {
+        for (var C = 2; C <= 3; C++) {
+            var addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (ws[addr] && typeof ws[addr].v === 'number') {
+                ws[addr].z = '$#,##0.00';
+            }
+        }
+    }
+
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Balance');
+    XLSX.writeFile(wb, 'Balance_ESWU_' + filterYear + (filterMonth ? '_' + String(filterMonth).padStart(2, '0') : '') + '.xlsx');
+}
+
+// ============================================
 // USUARIOS TAB (dentro de ficha ESWU)
 // ============================================
 
@@ -1043,4 +1127,4 @@ function renderEswuUsuariosTab() {
     div.innerHTML = html;
 }
 
-console.log('✅ ESWU-UI.JS v11 cargado');
+console.log('✅ ESWU-UI.JS V2 cargado');
