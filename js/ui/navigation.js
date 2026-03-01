@@ -23,7 +23,8 @@ var mobileMenuData = {
         { label: 'Números',          action: 'showNumerosPage()' }
     ]},
     eswu:        { icon: '🏢', label: 'ESWU', subs: [
-        { label: 'Ficha',            action: 'showEswuFicha()' }
+        { label: 'Ficha',            action: 'showEswuFicha()' },
+        { label: 'Usuarios',         action: 'editEswuUsuarios()' }
     ]},
     inquilinos:  { icon: '👥', label: 'Inquilinos', subs: [
         { label: 'Listado',          action: "showInquilinosView('list')" },
@@ -85,16 +86,6 @@ function hideMobileMenu() {
 }
 
 function mobileMenuSelect(menu) {
-    // ESWU: ir directo a ficha (solo tiene 1 opción)
-    if (menu === 'eswu') {
-        mobileMenuCurrentSection = 'eswu';
-        currentMenuContext = 'eswu';
-        var btns = document.querySelectorAll('.mm-btn');
-        btns.forEach(function(b) { b.classList.add('mm-fadeout'); });
-        setTimeout(function() { showEswuFicha(); }, 300);
-        return;
-    }
-    
     mobileMenuCurrentSection = menu;
     currentMenuContext = menu;
     
@@ -932,7 +923,7 @@ function switchTab(type, tabName) {
         document.querySelectorAll('#eswuDocsPage .tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('#eswuDocsPage .tab-content').forEach(tc => tc.classList.remove('active'));
         
-        var tabMap = { legales: 1, generales: 2, mensajes: 3, bancos: 4, balance: 5, usuarios: 6 };
+        var tabMap = { legales: 1, generales: 2, mensajes: 3, bancos: 4, balance: 5 };
         var tabIndex = tabMap[tabName] || 1;
         var tabBtn = document.querySelector('#eswuDocsPage .tab:nth-child(' + tabIndex + ')');
         if (tabBtn) tabBtn.classList.add('active');
@@ -961,9 +952,6 @@ function switchTab(type, tabName) {
         }
         if (tabName === 'bancos' && typeof renderEswuBancosTable === 'function') {
             renderEswuBancosTable();
-        }
-        if (tabName === 'usuarios' && typeof renderEswuUsuariosTab === 'function') {
-            renderEswuUsuariosTab();
         }
     } else if (type === 'inquilino') {
         document.querySelectorAll('#inquilinoDetailModal .tab').forEach(t => t.classList.remove('active'));
@@ -1291,4 +1279,4 @@ function headerSearchLive() {
     }
 }
 
-console.log('✅ NAVIGATION.JS V1 cargado (2026-02-27)');
+console.log('✅ NAVIGATION.JS v3 cargado (mobile menu)');
