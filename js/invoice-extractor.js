@@ -39,6 +39,13 @@ function showUploadInvoicePdfModal(fromContext) {
     if (processing) processing.style.display = 'none';
     if (resultArea) resultArea.style.display = 'none';
     
+    // Reset modal to narrow width for upload
+    var modalContent = document.getElementById('uploadInvoicePdfModalContent');
+    if (modalContent) {
+        modalContent.style.maxWidth = '480px';
+        modalContent.style.width = '';
+    }
+    
     // Reset file input
     var fileInput = document.getElementById('invoicePdfInput');
     if (fileInput) fileInput.value = '';
@@ -423,6 +430,8 @@ function _parseInvoiceText(text) {
     var folioPatterns = [
         // "Factura No.:" followed by numbers
         /factura\s*(?:no\.?|n[uú]mero|num\.?)\s*[:;#]?\s*(?:\d\s*:\s*)?(\d{4,20})/i,
+        // "Folio/Serie:" or "FolioSerie:" or "Folio Serie:"
+        /folio\s*[\/\\]?\s*serie\s*[:;]?\s*(\d[\dA-Z\-]{0,19})/i,
         // "Folio:" or "Folio interno:" followed by number (must start with digit)
         /(?:serie\s*\/?\s*)?folio\s*(?:interno)?\s*[:;]\s*(\d[\dA-Z\-]{0,19})/i,
         // "Folio: 2236" simple
@@ -464,30 +473,34 @@ function _parseInvoiceText(text) {
     };
 
     var fechaPatterns = [
-        // "Fecha/Hora expedición: 04/02/2026 11:43:03" or "Fecha expedición: 2026-02-04"
-        { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
-        { rx: /fecha\s*(?:\/?\s*hora)?\s*(?:de\s*)?expedici[oó]n\s*[:;]?\s*(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
-        // "Fecha de emisión:" or "Fecha emisión:"
-        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
-        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
-        // Flexible: "expedición" then closest date within 80 chars (handles table column mixing)
-        { rx: /expedici[oó]n[^0-9]{0,80}(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
-        { rx: /expedici[oó]n[^0-9]{0,80}(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
-        // Flexible: "emisión" then closest date within 80 chars
-        { rx: /emisi[oó]n[^0-9]{0,80}(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' },
-        { rx: /emisi[oó]n[^0-9]{0,80}(\d{4}[\-\/]\d{1,2}[\-\/]\d{1,2})/i, type: 'standard' },
+        // "Fecha y hora de emisión: 2026-02-27T05:31:23" (ISO datetime with T)
+        { rx: /fecha\s*(?:y\s*hora\s*(?:de\s*)?)?emisi[oó]n\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i, type: 'ymd_groups' },
+        // "Fecha/Hora expedición: 04/02/2026 11:43:03"
+        { rx: /fecha\s*(?:[y\/]?\s*hora\s*(?:de\s*)?)?expedici[oó]n\s*[:;]?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
+        // "Fecha/Hora expedición: 2026-02-04T11:43:03"
+        { rx: /fecha\s*(?:[y\/]?\s*hora\s*(?:de\s*)?)?expedici[oó]n\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s)/i, type: 'ymd_groups' },
+        // "Fecha de emisión:" DD/MM/YYYY
+        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
+        // "Fecha de emisión:" YYYY-MM-DD
+        { rx: /fecha\s*(?:de\s*)?emisi[oó]n\s*[:;]?\s*(\d{4})-(\d{1,2})-(\d{1,2})/i, type: 'ymd_groups' },
+        // Flexible: "emisión" then closest ISO datetime within 80 chars
+        { rx: /emisi[oó]n[^0-9]{0,80}(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s|$)/i, type: 'ymd_groups' },
+        // Flexible: "expedición" then closest date within 80 chars
+        { rx: /expedici[oó]n[^0-9]{0,80}(\d{4})-(\d{1,2})-(\d{1,2})(?:T|\s|$)/i, type: 'ymd_groups' },
+        { rx: /expedici[oó]n[^0-9]{0,80}(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
+        { rx: /emisi[oó]n[^0-9]{0,80}(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
         // CFDI: "Fecha" seguido de AAAA MM DD (con espacios)
         { rx: /(?:fecha)\s*[:;]?\s*(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
         // DD-MES-AAAA (abbreviated month): 21-ENE-2026, 22-FEB-2026
         { rx: /(?:fecha|emisi[oó]n|expedici[oó]n|facturaci[oó]n)[^0-9]{0,30}(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
         // Standalone DD-MES-AAAA near RFC line
         { rx: /RFC[^0-9]{0,30}[\-_\s]*(\d{1,2})[\-\/\s]+(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)[\-\/\s]+(\d{4})/i, type: 'dmy_abrev' },
-        // YYYY-MM-DD standard
-        { rx: /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura|comprobante|cfdi))\s*[:;]?\s*(\d{4}[\-\/\.]\d{1,2}[\-\/\.]\d{1,4})/i, type: 'standard' },
-        // "Fecha y Hora de Certificación: 2026-01-28T07:12:04"
-        { rx: /(?:certificaci[oó]n)\s*[:;]?\s*(\d{4})-(\d{2})-(\d{2})/i, type: 'ymd_groups' },
+        // YYYY-MM-DD standard near "fecha"
+        { rx: /(?:fecha\s*(?:de\s*)?(?:emisi[oó]n|expedici[oó]n|factura|comprobante|cfdi))\s*[:;]?\s*(\d{4})[\-\/\.](\d{1,2})[\-\/\.](\d{1,2})/i, type: 'ymd_groups' },
+        // "Fecha y Hora de Certificación: 2026-01-28T07:12:04" (fallback)
+        { rx: /certificaci[oó]n\s*[:;]?\s*(\d{4})-(\d{2})-(\d{2})/i, type: 'ymd_groups' },
         // Any YYYY-MM-DD near "fecha"
-        { rx: /fecha[^0-9]{0,20}(\d{4}[\-\/]\d{2}[\-\/]\d{2})/i, type: 'standard' },
+        { rx: /fecha[^0-9]{0,20}(\d{4})-(\d{2})-(\d{2})/i, type: 'ymd_groups' },
         // Any YYYY MM DD (spaces) near "fecha"
         { rx: /fecha[^0-9]{0,20}(\d{4})\s+(\d{1,2})\s+(\d{1,2})/i, type: 'ymd_groups' },
         // "Mes de Facturación: Enero" + year from nearby context
@@ -495,7 +508,9 @@ function _parseInvoiceText(text) {
         // CFE: "PERIODO FACTURADO:20 ENE 26-19 FEB 26" — use end date
         { rx: /periodo\s*facturado\s*[:;]?\s*\d{1,2}\s*(?:ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*\d{2,4}\s*[-–]\s*(\d{1,2})\s*(ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC)\s*(\d{2,4})/i, type: 'dmy_abrev' },
         // "Fecha de impresion:25/02/2026"
-        { rx: /fecha[^0-9]{0,30}impresi[oó]n\s*[:;]?\s*(\d{1,2}\/\d{1,2}\/\d{4})/i, type: 'standard' }
+        { rx: /fecha[^0-9]{0,30}impresi[oó]n\s*[:;]?\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i, type: 'dmy_groups' },
+        // Last resort: CFDI cadena original "|2026-02-04T11:43:03|" 
+        { rx: /\|(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}\|/i, type: 'ymd_groups' }
     ];
     
     for (var i = 0; i < fechaPatterns.length; i++) {
@@ -505,6 +520,9 @@ function _parseInvoiceText(text) {
         
         if (fp.type === 'ymd_groups' && fd[1] && fd[2] && fd[3]) {
             result.fecha_factura = fd[1] + '-' + fd[2].padStart(2, '0') + '-' + fd[3].padStart(2, '0');
+        } else if (fp.type === 'dmy_groups' && fd[1] && fd[2] && fd[3]) {
+            // fd[1]=day, fd[2]=month, fd[3]=year
+            result.fecha_factura = fd[3] + '-' + fd[2].padStart(2, '0') + '-' + fd[1].padStart(2, '0');
         } else if (fp.type === 'dmy_abrev' && fd[1] && fd[2] && fd[3]) {
             var mesNum = mesesAbrev[fd[2].toUpperCase()];
             if (mesNum) {
@@ -713,6 +731,13 @@ function _showExtractionResults(parsed, thumbnailUrl) {
     var resultArea = document.getElementById('invoicePdfResult');
     if (processing) processing.style.display = 'none';
     if (resultArea) resultArea.style.display = '';
+
+    // Expand modal for split layout
+    var modalContent = document.getElementById('uploadInvoicePdfModalContent');
+    if (modalContent) {
+        modalContent.style.maxWidth = '900px';
+        modalContent.style.width = '92vw';
+    }
 
     // Thumbnail
     var thumbEl = document.getElementById('invoicePdfThumb');
