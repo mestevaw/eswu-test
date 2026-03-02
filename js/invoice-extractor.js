@@ -1,5 +1,5 @@
 /* ========================================
-   js/invoice-extractor.js — V4
+   js/invoice-extractor.js — V5
    Extracción inteligente de datos de facturas PDF
    Fecha: 2026-03-01
    ======================================== */
@@ -499,6 +499,22 @@ function _parseInvoiceText(text) {
     for (var li = 0; li < lines.length && !result.numero_factura; li++) {
         var line = lines[li].trim();
 
+        // "FACTURA A1061" or "FACTURA 1234" (standalone invoice number in header)
+        var facturaHeader = /\bFACTURA\s+([A-Z]?\d{1,10})\b/i.exec(line);
+        if (facturaHeader && !/fiscal|digital|internet|impresa|cfdi|comprobante/i.test(line)) {
+            result.numero_factura = facturaHeader[1].trim();
+            continue;
+        }
+        // "FACTURA" alone on one line, "A1061" on next line
+        if (/^\s*FACTURA\s*$/i.test(line) || /\bFACTURA\s*$/i.test(line)) {
+            var nextLine = (li + 1 < lines.length) ? lines[li + 1].trim() : '';
+            var nextFact = /^([A-Z]?\d{1,10})\b/.exec(nextLine);
+            if (nextFact && !cfdiFieldBlacklist.test(nextFact[1])) {
+                result.numero_factura = nextFact[1].trim();
+                continue;
+            }
+        }
+
         // "Folio Interno: HTXDLMA 10283" (CONTPAQi format)
         var folioInterno = /folio\s*interno\s*[:;]?\s*([A-Z0-9][\w\s\-]{0,25})/i.exec(line);
         if (folioInterno) {
@@ -556,6 +572,8 @@ function _parseInvoiceText(text) {
 
     // PASS 2: collapsed text patterns (fallback)
     var folioPatterns = [
+        // "FACTURA A1061" or "FACTURA 1234" (header-style invoice number)
+        /\bFACTURA\s+([A-Z]?\d{1,10})\b/i,
         // "Folio Interno: HTXDLMA 10283" (CONTPAQi format — alphanumeric + spaces)
         /folio\s*interno\s*[:;]?\s*([A-Z0-9][\w\s\-]{2,25}?)(?=\s*(?:folio\s*fiscal|tipo|$))/i,
         // "Factura No.:" followed by numbers
@@ -730,6 +748,38 @@ function _parseInvoiceText(text) {
         
         if (result.fecha_factura) break;
     }
+    
+    // PASS 3 (Fecha): Robust fallback — find ISO datetime NOT in cadena section
+    // This catches cases where PDF.js text extraction order is unpredictable
+    if (!result.fecha_factura) {
+        var cadenaPos = text.indexOf('Cadena Original');
+        if (cadenaPos === -1) cadenaPos = text.indexOf('cadena original');
+        var selloPos = text.indexOf('Sello Digital');
+        if (selloPos === -1) selloPos = text.indexOf('sello digital');
+        // Exclude cadena and sello sections (they contain timestamps that aren't invoice dates)
+        var cutoff = Math.min(
+            cadenaPos > 0 ? cadenaPos : text.length,
+            selloPos > 0 ? selloPos : text.length
+        );
+        var headerText = text.substring(0, cutoff);
+        
+        // Find first ISO datetime YYYY-MM-DDTHH:MM:SS in the header area
+        var isoFallback = /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/g;
+        var isoMatch;
+        var bestDate = null;
+        while ((isoMatch = isoFallback.exec(headerText)) !== null) {
+            var year = parseInt(isoMatch[1]);
+            if (year >= 2020 && year <= 2030) {
+                bestDate = isoMatch[1] + '-' + isoMatch[2] + '-' + isoMatch[3];
+                // Prefer emission over certification — if we find a second date, use it
+                // (certification usually comes after emission in the same PDF area)
+            }
+        }
+        if (bestDate) {
+            result.fecha_factura = bestDate;
+            console.log('  → Fecha (fallback ISO):', bestDate);
+        }
+    }
 
     // --- TOTAL ---
     var totalPatterns = [
@@ -744,48 +794,134 @@ function _parseInvoiceText(text) {
         // "$490" standalone with dollar sign (CFE big display)
         /\$\s*([\d,]{3,}\.?\d{0,2})/
     ];
-    var totalCandidates = [];
-    for (var i = 0; i < totalPatterns.length; i++) {
-        var totalRegex = new RegExp(totalPatterns[i].source, 'gi');
-        var tm;
-        while ((tm = totalRegex.exec(t)) !== null) {
-            var val = parseFloat(tm[1].replace(/,/g, ''));
-            if (!isNaN(val) && val > 0) {
-                totalCandidates.push(val);
+    
+    // PASS 1 (Total): Line-by-line — find the LAST standalone "Total" line
+    // (excludes Subtotal, Total Impuestos, Total Descuentos, Total Retenidos)
+    var totalFromLine = null;
+    for (var li = 0; li < lines.length; li++) {
+        var line = lines[li].trim();
+        // Must contain "total" but NOT "subtotal", "total impuestos", "total descuentos", "total retenidos", "con letra"
+        if (/\btotal\b/i.test(line) && !/sub\s*total|total\s*(?:impuestos|descuentos|retenidos|con\s*letra)/i.test(line)) {
+            // Extract dollar amount from this line
+            var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
+            if (totalMatch) {
+                var tv = parseFloat(totalMatch[1].replace(/,/g, ''));
+                if (!isNaN(tv) && tv > 0) {
+                    totalFromLine = tv;
+                    // Don't break — use the LAST matching "Total" line (it's usually the grand total)
+                }
             }
         }
     }
-    if (totalCandidates.length > 0) {
-        result.total = Math.max.apply(null, totalCandidates);
+    
+    if (totalFromLine) {
+        result.total = totalFromLine;
+    } else {
+        // PASS 2 (Total): Collapsed text patterns (fallback)
+        var totalCandidates = [];
+        for (var i = 0; i < totalPatterns.length; i++) {
+            var totalRegex = new RegExp(totalPatterns[i].source, 'gi');
+            var tm;
+            while ((tm = totalRegex.exec(t)) !== null) {
+                var val = parseFloat(tm[1].replace(/,/g, ''));
+                if (!isNaN(val) && val > 0) {
+                    totalCandidates.push(val);
+                }
+            }
+        }
+        if (totalCandidates.length > 0) {
+            result.total = Math.max.apply(null, totalCandidates);
+        }
     }
 
     // --- IVA ---
-    var ivaPatterns = [
-        // "Impuestos trasladados IVA 16.00% $ 272.00" — skip the percentage, get the amount
-        /(?:impuestos?\s*trasladados?)\s*(?:IVA)?\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        // "IVA 16% $ 272.00" or "IVA 16.00% $272.00" — skip percentage, get amount after
-        /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        // "IVA Traslado ... 272.000000" (CFDI table format with Importe column)
-        /\bIVA\s+Traslad[oa]\w*\s+[\d,]+\.?\d*\s+\w+\s+\d{1,2}[\.,]\d{2}%?\s+([\d,]+\.?\d{0,6})/i,
-        // "I.V.A. $ 55.03" or "IVA: $55.03" (no percentage)
-        /(?:i\.?v\.?a\.?)\s*[:;]?\s*\$\s*([\d,]+\.?\d{0,2})/i,
-        // "IVA trasladado: 272.00" or "Impuesto trasladado $272.00"
-        /(?:i\.?v\.?a\.?\s*trasladado|impuesto\s*trasladado)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        // "IVA 16% 55.03" (percentage then amount, no $ sign)
-        /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*([\d,]+\.\d{2})\b/i
-    ];
-    for (var i = 0; i < ivaPatterns.length; i++) {
-        var iv = ivaPatterns[i].exec(t);
-        if (iv) {
-            var ivaVal = parseFloat(iv[1].replace(/,/g, ''));
-            // Sanity check: IVA should not be the percentage itself (16 or less is suspicious unless total is very small)
-            if (!isNaN(ivaVal) && ivaVal > 0) {
-                // If IVA looks like a percentage (e.g. 16.00) and we have a total, verify
-                if (ivaVal <= 16.01 && result.total && result.total > 200) {
-                    continue; // Skip, this is probably the rate not the amount
+    // PASS 1a (IVA): Find "Total Impuestos Trasladados" line (most reliable single-line source)
+    var ivaFromLine = null;
+    for (var li = 0; li < lines.length; li++) {
+        var line = lines[li].trim();
+        if (/total\s*impuestos?\s*trasladados?/i.test(line)) {
+            var tit = /\$?\s*([\d,]+\.\d{2})/.exec(line);
+            if (tit) {
+                var titVal = parseFloat(tit[1].replace(/,/g, ''));
+                if (!isNaN(titVal) && titVal > 0) {
+                    ivaFromLine = titVal;
+                    break;
                 }
-                result.iva = ivaVal;
-                break;
+            }
+        }
+    }
+    
+    // PASS 1b (IVA): Individual IVA line with 16% rate (trasladado only)
+    if (!ivaFromLine) {
+        for (var li = 0; li < lines.length; li++) {
+            var line = lines[li].trim();
+            // Skip retained IVA lines
+            if (/reten/i.test(line) || /ret\.?\s*iva/i.test(line)) continue;
+            
+            // Look for IVA 16% or IVA 0.16 (not just "16" anywhere)
+            if (/\biva\b/i.test(line) && (/16[.\s%]|0\.16/i.test(line))) {
+                var amounts = line.match(/\$?\s*[\d,]+\.\d{2,6}/g);
+                if (amounts) {
+                    // Find position of rate indicator (16% or 0.16)
+                    var ratePos = line.search(/16[.\s%]|0\.16/i);
+                    // Take the FIRST amount AFTER the rate position (this is the IVA amount)
+                    var bestIva = null;
+                    for (var ai = 0; ai < amounts.length; ai++) {
+                        var amtPos = line.indexOf(amounts[ai]);
+                        var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
+                        if (isNaN(av) || av <= 16.01) continue; // skip rate values
+                        if (amtPos >= ratePos && !bestIva) {
+                            bestIva = av;
+                            break;
+                        }
+                    }
+                    // Fallback: take smallest amount > 16 (IVA is typically smaller than base)
+                    if (!bestIva) {
+                        var allAmts = [];
+                        for (var ai = 0; ai < amounts.length; ai++) {
+                            var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
+                            if (!isNaN(av) && av > 16.01) allAmts.push(av);
+                        }
+                        if (allAmts.length > 0) bestIva = Math.min.apply(null, allAmts);
+                    }
+                    if (bestIva) {
+                        ivaFromLine = bestIva;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    if (ivaFromLine) {
+        result.iva = ivaFromLine;
+    } else {
+        // PASS 2 (IVA): Collapsed text patterns (fallback)
+        var ivaPatterns = [
+            // "Impuestos trasladados IVA 16.00% $ 272.00" — skip the percentage, get the amount
+            /(?:impuestos?\s*trasladados?)\s*(?:IVA)?\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+            // "IVA 16% $ 272.00" or "IVA 16.00% $272.00" — skip percentage, get amount after
+            /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+            // "IVA Traslado ... 272.000000" (CFDI table format with Importe column)
+            /\bIVA\s+Traslad[oa]\w*\s+[\d,]+\.?\d*\s+\w+\s+\d{1,2}[\.,]\d{2}%?\s+([\d,]+\.?\d{0,6})/i,
+            // "I.V.A. $ 55.03" or "IVA: $55.03" (no percentage)
+            /(?:i\.?v\.?a\.?)\s*[:;]?\s*\$\s*([\d,]+\.?\d{0,2})/i,
+            // "IVA trasladado: 272.00" or "Impuesto trasladado $272.00"
+            /(?:i\.?v\.?a\.?\s*trasladado|impuesto\s*trasladado)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
+            // "IVA 16% 55.03" (percentage then amount, no $ sign)
+            /\bIVA\s*\d{1,2}[\.,]?\d{0,2}\s*%\s*([\d,]+\.\d{2})\b/i
+        ];
+        for (var i = 0; i < ivaPatterns.length; i++) {
+            var iv = ivaPatterns[i].exec(t);
+            if (iv) {
+                var ivaVal = parseFloat(iv[1].replace(/,/g, ''));
+                if (!isNaN(ivaVal) && ivaVal > 0) {
+                    if (ivaVal <= 16.01 && result.total && result.total > 200) {
+                        continue;
+                    }
+                    result.iva = ivaVal;
+                    break;
+                }
             }
         }
     }
@@ -1451,6 +1587,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS V4 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V5 cargado — flujo de factura interceptado');
     }, 200);
 });
