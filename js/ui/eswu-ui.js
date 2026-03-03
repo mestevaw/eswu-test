@@ -1,7 +1,7 @@
 /* ========================================
-   js/ui/eswu-ui.js — V2
-   Ficha ESWU - subfolder nav, balance Excel export
-   Fecha: 2026-03-01
+   js/ui/eswu-ui.js — V3
+   Ficha ESWU - subfolder nav, balance Excel export, banco drag&drop
+   Fecha: 2026-03-03
    ======================================== */
 
 var eswuFolderIds = { legales: null, generales: null };
@@ -634,11 +634,10 @@ function handleBancoDrop(files) {
     // Pre-fill file name display and set current date
     setTimeout(function() {
         var nameEl = document.getElementById('bancoDocumentoFileName');
-        if (nameEl) nameEl.textContent = bancoPendingDropFile.name;
-        
-        // Remove required from file input since we have the drop file
-        var fileInput = document.getElementById('bancoDocumento');
-        if (fileInput) fileInput.removeAttribute('required');
+        if (nameEl) {
+            nameEl.textContent = bancoPendingDropFile.name;
+            nameEl.style.display = 'block';
+        }
         
         var now = new Date();
         var anioEl = document.getElementById('bancoAnio');
@@ -646,6 +645,38 @@ function handleBancoDrop(files) {
         var mesEl = document.getElementById('bancoMes');
         if (mesEl && !mesEl.value) mesEl.value = now.getMonth() + 1;
     }, 100);
+}
+
+// Handle file drop INSIDE the banco modal (on the drop zone area)
+function handleBancoModalDrop(files) {
+    if (!files || !files.length) return;
+    bancoPendingDropFile = files[0];
+    var nameEl = document.getElementById('bancoDocumentoFileName');
+    if (nameEl) {
+        nameEl.textContent = bancoPendingDropFile.name;
+        nameEl.style.display = 'block';
+    }
+    console.log('📎 Archivo arrastrado al modal banco:', bancoPendingDropFile.name);
+}
+
+// Handle file selection via file input in banco modal
+function handleBancoFileSelect(input) {
+    if (input.files && input.files[0]) {
+        bancoPendingDropFile = input.files[0];
+        var nameEl = document.getElementById('bancoDocumentoFileName');
+        if (nameEl) {
+            nameEl.textContent = input.files[0].name;
+            nameEl.style.display = 'block';
+        }
+        console.log('📎 Archivo seleccionado para banco:', input.files[0].name);
+    } else {
+        bancoPendingDropFile = null;
+        var nameEl = document.getElementById('bancoDocumentoFileName');
+        if (nameEl) {
+            nameEl.textContent = '';
+            nameEl.style.display = 'none';
+        }
+    }
 }
 
 // ============================================
@@ -1127,4 +1158,4 @@ function renderEswuUsuariosTab() {
     div.innerHTML = html;
 }
 
-console.log('✅ ESWU-UI.JS V2 cargado');
+console.log('✅ ESWU-UI.JS V3 cargado');
