@@ -1695,10 +1695,15 @@
                     </div>
                     <div style="margin-bottom:0.5rem;">
                         <label style="font-weight:500; font-size:0.9rem; display:block; margin-bottom:0.25rem;">Documento *</label>
-                        <div class="file-upload" onclick="document.getElementById('bancoDocumento').click()">
-                            <input type="file" id="bancoDocumento" accept="*/*,.pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" required>
-                            <p>Click para seleccionar documento</p>
-                            <p id="bancoDocumentoFileName" style="color: var(--success); margin-top: 0.5rem;"></p>
+                        <div id="bancoDropZone" class="file-upload" 
+                             onclick="document.getElementById('bancoDocumento').click()"
+                             ondragover="event.preventDefault(); event.stopPropagation(); this.style.borderColor='var(--success)'; this.style.background='#f0fdf4';"
+                             ondragleave="this.style.borderColor='var(--border)'; this.style.background='';"
+                             ondrop="event.preventDefault(); event.stopPropagation(); this.style.borderColor='var(--border)'; this.style.background=''; handleBancoModalDrop(event.dataTransfer.files);"
+                             style="border:2px dashed var(--border); border-radius:8px; padding:1.5rem; text-align:center; cursor:pointer; transition:all 0.2s;">
+                            <input type="file" id="bancoDocumento" accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.jpg,.jpeg,.png,.heic" style="display:none;" onchange="handleBancoFileSelect(this);">
+                            <p style="color:var(--text-light); font-size:0.9rem;">📎 Arrastra un archivo aquí o click para seleccionar</p>
+                            <p id="bancoDocumentoFileName" style="color: var(--success); margin-top: 0.5rem; font-weight:500;"></p>
                         </div>
                     </div>
                 </form>
@@ -2066,14 +2071,14 @@
     <script src="js/ui/proveedores-ui.js?v=44"></script>
     <script src="js/ui/mantenimiento-ui.js?v=16"></script>
     <script src="js/ui/contabilidad-ui.js?v=27"></script>
-    <script src="js/ui/eswu-ui.js?v=41"></script>
+    <script src="js/ui/eswu-ui.js?v=42"></script>
     <script src="js/ui/admin-ui.js?v=21"></script>
     <script src="js/ui/numeros-ui.js?v=24"></script>
     <script src="js/ui/mensajes-ui.js?v=24"></script>
-    <script src="js/modals/modals.js?v=24"></script>
+    <script src="js/modals/modals.js?v=25"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=10"></script>
+    <script src="js/invoice-extractor.js?v=12"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
