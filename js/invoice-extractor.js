@@ -1,5 +1,5 @@
 /* ========================================
-   js/invoice-extractor.js — V5
+   js/invoice-extractor.js — V7
    Extracción inteligente de datos de facturas PDF
    Fecha: 2026-03-01
    ======================================== */
@@ -783,33 +783,44 @@ function _parseInvoiceText(text) {
 
     // --- TOTAL ---
     var totalPatterns = [
-        // "TOTAL A PAGAR: $490" or "Total a Pagar: $ 1,234.56"
         /(?:total\s*a\s*pagar)\s*[:;]?\s*\$\s*([\d,]+\.?\d{0,2})/i,
-        // "Total 490.28" (right side of table in CFE)
         /\bTotal\s+([\d,]+\.\d{2})\b/,
-        // Generic total patterns
         /(?:total\s*(?:a\s*pagar|con\s*letra|cfdi|factura)?)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
         /(?:importe\s*total|monto\s*total|gran\s*total)\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
         /(?:saldo\s*(?:al\s*corte|total))\s*[:;$]?\s*\$?\s*([\d,]+\.?\d{0,2})/i,
-        // "$490" standalone with dollar sign (CFE big display)
         /\$\s*([\d,]{3,}\.?\d{0,2})/
     ];
     
-    // PASS 1 (Total): Line-by-line — find the LAST standalone "Total" line
-    // (excludes Subtotal, Total Impuestos, Total Descuentos, Total Retenidos)
+    // First, extract Subtotal for validation
+    var subtotalVal = null;
+    for (var li = 0; li < lines.length; li++) {
+        if (/sub\s*total/i.test(lines[li])) {
+            var stm = /\$?\s*([\d,]+\.\d{2})/.exec(lines[li]);
+            if (stm) { subtotalVal = parseFloat(stm[1].replace(/,/g, '')); break; }
+        }
+    }
+    
+    // PASS 1 (Total): Line-by-line - find standalone "Total" line
+    // Excludes: Subtotal, Total Impuestos/Descuentos/Retenidos/con letra, and tax-code lines
     var totalFromLine = null;
     for (var li = 0; li < lines.length; li++) {
         var line = lines[li].trim();
-        // Must contain "total" but NOT "subtotal", "total impuestos", "total descuentos", "total retenidos", "con letra"
-        if (/\btotal\b/i.test(line) && !/sub\s*total|total\s*(?:impuestos|descuentos|retenidos|con\s*letra)/i.test(line)) {
-            // Extract dollar amount from this line
-            var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
-            if (totalMatch) {
-                var tv = parseFloat(totalMatch[1].replace(/,/g, ''));
-                if (!isNaN(tv) && tv > 0) {
-                    totalFromLine = tv;
-                    // Don't break — use the LAST matching "Total" line (it's usually the grand total)
-                }
+        // Must contain "total" as standalone word
+        if (!/\btotal\b/i.test(line)) continue;
+        // Exclude compound "total" terms
+        if (/sub\s*total|total\s*(?:impuestos?|descuentos?|retenidos?|con\s*letra|trasladados?)/i.test(line)) continue;
+        // Exclude tax-code lines (002-IVA, 001-ISR, Ret., Trasladado, Retenido)
+        if (/\b(?:002|001)\s*[-:]|iva\s*\d|\bisr\b|trasladad|retenid|ret\.\s*iva/i.test(line)) continue;
+        
+        // Extract dollar amount from this line
+        var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
+        if (totalMatch) {
+            var tv = parseFloat(totalMatch[1].replace(/,/g, ''));
+            if (!isNaN(tv) && tv > 0) {
+                // Sanity: if we have subtotal, total should be >= 50% of subtotal (retentions)
+                if (subtotalVal && tv < subtotalVal * 0.5) continue;
+                totalFromLine = tv;
+                break; // Use FIRST valid match
             }
         }
     }
@@ -1587,6 +1598,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS V5 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V7 cargado — flujo de factura interceptado');
     }, 200);
 });
