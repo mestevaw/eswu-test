@@ -70,6 +70,9 @@ function showAddUsuarioModal() {
 function showAddBancoModal() {
     document.getElementById('bancoForm').reset();
     document.getElementById('bancoDocumentoFileName').textContent = '';
+    document.getElementById('bancoDocumentoFileName').style.display = 'none';
+    // Clear any pending drop file
+    if (typeof bancoPendingDropFile !== 'undefined') bancoPendingDropFile = null;
     // Prefill with current year and month
     document.getElementById('bancoAnio').value = new Date().getFullYear();
     document.getElementById('bancoMes').value = new Date().getMonth() + 1;
@@ -88,4 +91,4 @@ function populateProveedoresDropdown() {
     });
 }
 
-console.log('✅ MODALS.JS V1 cargado (2026-02-27)');
+console.log('✅ MODALS.JS V2 cargado (2026-03-03)');
