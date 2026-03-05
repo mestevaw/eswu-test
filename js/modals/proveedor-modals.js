@@ -47,7 +47,10 @@ function showEditContactoProveedorModal(index) {
     document.getElementById('addContactoProveedorModal').classList.add('active');
 }
 
-function showRegistrarFacturaModal() {
+// ── Función interna — NO llamar directamente desde UI.
+// El flujo correcto siempre pasa por showUploadInvoicePdfModal()
+// que llama a _proceedToRegistrarFactura() → que llama a esta función vía extractor.
+function _showRegistrarFacturaModalDirect() {
     window.isEditingFactura = false;
     currentFacturaId = null;
     
