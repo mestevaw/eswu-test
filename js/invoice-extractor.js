@@ -1,12 +1,12 @@
 /* ========================================
-   js/invoice-extractor.js — V10
+   js/invoice-extractor.js — V11
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-05
-   Cambios V10:
-   - Detección y parseo de documentos SHCP/SAT
-     (Acuse de Recibo, Declaración Provisional)
-   - Thumbnail muestra página 2 para docs SHCP
-   - Título modal "Verificar y Cambiar datos Factura"
+   Cambios V11:
+   - Total: toma el MAYOR valor (no el primero) para evitar
+     confundir Subtotal con Total cuando aparecen separados
+   - Exclusión explícita de líneas cuyo monto == subtotal
+   - Agrega "REFERENCIA NO." como patrón de número de factura
    ======================================== */
 
 // ============================================
@@ -668,6 +668,13 @@ function _parseInvoiceText(text) {
             result.numero_factura = facturaHeader[1].trim();
             continue;
         }
+
+        // "REFERENCIA NO. 104186" o "REFERENCIA: 104186" (ej. Eulen, otros proveedores)
+        var referenciaMatch = /\breferencia\s*(?:no\.?|n[uú]m(?:ero)?\.?)?\s*[:;#.]?\s*(\d{3,15})\b/i.exec(line);
+        if (referenciaMatch && !/bancaria|cuenta|pago|clabe/i.test(line)) {
+            result.numero_factura = referenciaMatch[1].trim();
+            continue;
+        }
         // "FACTURA" alone on one line, "A1061" on next line
         if (/^\s*FACTURA\s*$/i.test(line) || /\bFACTURA\s*$/i.test(line)) {
             var nextLine = (li + 1 < lines.length) ? lines[li + 1].trim() : '';
@@ -735,6 +742,8 @@ function _parseInvoiceText(text) {
 
     // PASS 2: collapsed text patterns (fallback)
     var folioPatterns = [
+        // "REFERENCIA NO. 104186" (ej. Eulen y otros proveedores que no usan Folio)
+        /\breferencia\s*(?:no\.?|n[uú]m(?:ero)?\.?)?\s*[:;#.]?\s*(\d{3,15})\b/i,
         // "FACTURA A1061" or "FACTURA 1234" (header-style invoice number)
         /\bFACTURA\s+([A-Z]?\d{1,10})\b/i,
         // "Folio Interno: HTXDLMA 10283" (CONTPAQi format — alphanumeric + spaces)
@@ -963,31 +972,34 @@ function _parseInvoiceText(text) {
         }
     }
     
-    // PASS 1 (Total): Line-by-line - find standalone "Total" line
-    // Excludes: Subtotal, Total Impuestos/Descuentos/Retenidos/con letra, and tax-code lines
-    var totalFromLine = null;
+    // PASS 1 (Total): Line-by-line — recolecta TODOS los candidatos y toma el MAYOR.
+    // Razón: PDF.js puede extraer "Sub" y "Total" en líneas separadas, haciendo fallar
+    // el filtro de exclusión. El gran total SIEMPRE es >= al subtotal.
+    var totalCandidatesLine = [];
     for (var li = 0; li < lines.length; li++) {
         var line = lines[li].trim();
-        // Must contain "total" as standalone word
+        // Debe contener "total" como palabra individual
         if (!/\btotal\b/i.test(line)) continue;
-        // Exclude compound "total" terms
-        if (/sub\s*total|total\s*(?:impuestos?|descuentos?|retenidos?|con\s*letra|trasladados?)/i.test(line)) continue;
-        // Exclude tax-code lines (002-IVA, 001-ISR, Ret., Trasladado, Retenido)
-        if (/\b(?:002|001)\s*[-:]|iva\s*\d|\bisr\b|trasladad|retenid|ret\.\s*iva/i.test(line)) continue;
-        
-        // Extract dollar amount from this line
+        // Excluir líneas compuestas de "total"
+        if (/sub\s*total|total\s*(?:impuestos?|descuentos?|retenidos?|con\s*letra|trasladados?|locales?)/i.test(line)) continue;
+        // Excluir líneas con códigos fiscales o retenciones
+        if (/\b(?:002|001)\s*[-:]|iva\s*\d|\bisr\b|trasladad|retenid|ret\.?\s*iva/i.test(line)) continue;
+        // Excluir encabezados de columna de tabla sin importe
+        if (/\b(descripci[oó]n|unidad|cantidad|clave|l[ií]nea|venta|base)\b/i.test(line) && ![\d,]+\.\d{2}/.test(line)) continue;
+
         var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
         if (totalMatch) {
             var tv = parseFloat(totalMatch[1].replace(/,/g, ''));
             if (!isNaN(tv) && tv > 0) {
-                // Sanity: if we have subtotal, total should be >= 50% of subtotal (retentions)
-                if (subtotalVal && tv < subtotalVal * 0.5) continue;
-                totalFromLine = tv;
-                break; // Use FIRST valid match
+                // Excluir si el valor coincide exactamente con el subtotal
+                if (subtotalVal && Math.abs(tv - subtotalVal) < 0.01) continue;
+                totalCandidatesLine.push(tv);
             }
         }
     }
-    
+    // Tomar el MAYOR de todos los candidatos
+    var totalFromLine = totalCandidatesLine.length > 0 ? Math.max.apply(null, totalCandidatesLine) : null;
+
     if (totalFromLine) {
         result.total = totalFromLine;
     } else {
