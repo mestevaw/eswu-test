@@ -1,12 +1,11 @@
 /* ========================================
-   js/invoice-extractor.js — V8
+   js/invoice-extractor.js — V9
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-05
-   Cambios V8:
-   - Soporte para imágenes desde cámara (handleInvoiceImageSelect)
-   - Web Share Target: detección de ?from=share al cargar
-   - Vista de verificación mobile con tabs (Datos / Ver Factura)
-   - handleInvoicePdfSelect enruta PDF vs imagen automáticamente
+   Cambios V9:
+   - Bug fix: nombre proveedor ya no desaparece en registrarFactura
+     (se pre-llena el campo aunque el proveedor no esté en la BD)
+   - Tabs mobile en registrarFactura (Datos / Ver Factura)
    ======================================== */
 
 // ============================================
@@ -1274,6 +1273,27 @@ function _calcDefaultVencimiento(fechaFactura) {
 // 4b. CONTROL DE TABS MOBILE (Datos / Factura)
 // ============================================
 
+// Control de tabs del modal registrarFactura (mobile)
+function switchRegistrarFacturaTab(tab) {
+    var previewPanel = document.getElementById('rfPreviewPanel');
+    var formPanel    = document.getElementById('rfFormPanel');
+    var previewBtn   = document.getElementById('rfTabPreviewBtn');
+    var datosBtn     = document.getElementById('rfTabDatosBtn');
+    if (!previewPanel || !formPanel) return;
+
+    if (tab === 'datos') {
+        formPanel.style.display    = '';
+        previewPanel.style.display = 'none';
+        if (datosBtn)    { datosBtn.style.background    = '#3b82f6'; datosBtn.style.color    = 'white'; }
+        if (previewBtn)  { previewBtn.style.background  = '#f1f5f9'; previewBtn.style.color  = '#475569'; }
+    } else {
+        previewPanel.style.display = '';
+        formPanel.style.display    = 'none';
+        if (previewBtn)  { previewBtn.style.background  = '#3b82f6'; previewBtn.style.color  = 'white'; }
+        if (datosBtn)    { datosBtn.style.background    = '#f1f5f9'; datosBtn.style.color    = '#475569'; }
+    }
+}
+
 function switchInvoiceTab(tab) {
     var previewPanel = document.getElementById('invoiceResultPreviewPanel');
     var dataPanel    = document.getElementById('invoiceResultDataPanel');
@@ -1496,15 +1516,20 @@ function _proceedToRegistrarFactura() {
             provRow.style.display = 'none';
         } else if (needsProvSearch) {
             provRow.style.display = '';
-            document.getElementById('facturaProveedorSearch').value = '';
             document.getElementById('facturaProveedorId').value = '';
             document.getElementById('facturaProveedorResults').style.display = 'none';
-            document.getElementById('facturaProveedorSearch').style.borderColor = 'var(--border)';
-            document.getElementById('facturaProveedorSearch').style.background = '';
 
-            // If we found the proveedor by RFC, pre-select it
+            // Si el proveedor fue identificado por RFC → seleccionarlo
             if (data._proveedorId) {
                 selectFacturaProveedor(data._proveedorId, data._proveedorNombre);
+            } else {
+                // Proveedor no está en BD pero sí tenemos el nombre del OCR → pre-llenar como hint
+                var searchInput = document.getElementById('facturaProveedorSearch');
+                if (searchInput) {
+                    searchInput.value = data.nombre_emisor || '';
+                    searchInput.style.borderColor = data.nombre_emisor ? '#fbbf24' : 'var(--border)';
+                    searchInput.style.background  = data.nombre_emisor ? '#fffbeb' : '';
+                }
             }
         } else if (data._proveedorId) {
             provRow.style.display = 'none';
@@ -1514,12 +1539,12 @@ function _proceedToRegistrarFactura() {
         }
     }
 
-    // --- REPLACE FILE UPLOAD AREA WITH PDF THUMBNAIL ---
+    // --- REEMPLAZAR ÁREA DE UPLOAD CON THUMBNAIL DEL PDF ---
     var facturaFileSection = document.getElementById('facturaFileUploadSection');
     if (facturaFileSection && _invoicePdfFile) {
         var thumbHtml = '<div style="display:flex;align-items:center;gap:0.6rem;padding:0.5rem;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;">';
         if (_invoicePdfThumbnailUrl) {
-            thumbHtml += '<img src="' + _invoicePdfThumbnailUrl + '" style="width:48px;height:auto;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;" onclick="_previewInvoicePdf()" title="Click para ver">';
+            thumbHtml += '<img src="' + _invoicePdfThumbnailUrl + '" style="width:48px;height:auto;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;" onclick="switchRegistrarFacturaTab(\'preview\')" title="Ver factura">';
         } else {
             thumbHtml += '<span style="font-size:2rem;">📄</span>';
         }
@@ -1533,18 +1558,37 @@ function _proceedToRegistrarFactura() {
     }
 
     document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
-    
-    // Show PDF preview in the form if we have a thumbnail
-    var pdfPreviewPanel = document.getElementById('facturaFormPdfPreview');
-    var pdfPreviewImg = document.getElementById('facturaFormPdfImg');
-    if (pdfPreviewPanel && pdfPreviewImg && _invoicePdfThumbnailUrl) {
-        pdfPreviewImg.src = _invoicePdfThumbnailUrl;
-        pdfPreviewPanel.style.display = '';
-    } else if (pdfPreviewPanel) {
-        pdfPreviewPanel.style.display = 'none';
+
+    // Cargar thumbnail en el panel izquierdo (rfPreviewPanel)
+    var rfPreviewImg   = document.getElementById('facturaFormPdfImg');
+    var rfPreviewPanel = document.getElementById('rfPreviewPanel');
+    var rfPreviewBadge = document.getElementById('facturaFormPdfPreview');
+    var rfPreviewName  = document.getElementById('facturaFormPdfName');
+
+    if (rfPreviewImg && _invoicePdfThumbnailUrl) {
+        rfPreviewImg.src = _invoicePdfThumbnailUrl;
+    }
+    if (rfPreviewPanel && _invoicePdfThumbnailUrl) {
+        rfPreviewPanel.style.display = '';
+    } else if (rfPreviewPanel) {
+        rfPreviewPanel.style.display = 'none';
+    }
+    if (rfPreviewBadge) {
+        rfPreviewBadge.style.display = _invoicePdfThumbnailUrl ? '' : 'none';
+    }
+    if (rfPreviewName && _invoicePdfFile) {
+        rfPreviewName.textContent = _invoicePdfFile.name || 'Ver factura adjunta';
     }
     
     document.getElementById('registrarFacturaModal').classList.add('active');
+
+    // ── MOBILE: activar tabs en registrarFactura ──────────────────────
+    if (isMobile()) {
+        var rfTabs = document.getElementById('registrarFacturaTabsRow');
+        if (rfTabs) rfTabs.style.display = '';
+        // Si hay thumbnail → empezar en Datos (el usuario puede cambiar a Ver Factura)
+        switchRegistrarFacturaTab('datos');
+    }
 
     // Focus: if proveedor search is visible and no match, focus it
     setTimeout(function() {
