@@ -1,5 +1,9 @@
 /* ========================================
-   PROVEEDORES-UI.JS v2
+   js/ui/proveedores-ui.js — V3
+   Ruta: js/ui/proveedores-ui.js
+   Fecha: 2026-03-05
+   Cambios V3: Agrega botón "+" en toolbar mobile
+               de la vista Facturas x Pagar
    ======================================== */
 
 // ============================================
@@ -103,7 +107,10 @@ function showProveedoresView(view) {
             { type: 'year', syncFrom: 'provFactPorPagYear', onChange: function(){ renderProveedoresFacturasPorPagar(); } },
             { type: 'month', syncFrom: 'provFactPorPagMonth', onChange: function(){ renderProveedoresFacturasPorPagar(); } }
         ];
-        headerCfg.actions = [{ icon: '📊', onclick: 'exportFacturasPorPagarToExcel()' }];
+        headerCfg.actions = [
+            { icon: '📊', onclick: 'exportFacturasPorPagarToExcel()' },
+            { icon: '+', onclick: "window.facturaActionContext='standalone-porpagar'; showRegistrarFacturaModal();" }
+        ];
     } else if (view === 'mantenimiento') {
         currentSearchContext = null;
     }
