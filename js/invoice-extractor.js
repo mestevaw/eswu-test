@@ -1,11 +1,12 @@
 /* ========================================
-   js/invoice-extractor.js — V9
+   js/invoice-extractor.js — V10
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-05
-   Cambios V9:
-   - Bug fix: nombre proveedor ya no desaparece en registrarFactura
-     (se pre-llena el campo aunque el proveedor no esté en la BD)
-   - Tabs mobile en registrarFactura (Datos / Ver Factura)
+   Cambios V10:
+   - Detección y parseo de documentos SHCP/SAT
+     (Acuse de Recibo, Declaración Provisional)
+   - Thumbnail muestra página 2 para docs SHCP
+   - Título modal "Verificar y Cambiar datos Factura"
    ======================================== */
 
 // ============================================
@@ -138,6 +139,21 @@ async function _processInvoicePdf(file) {
         // Try pdf.js text extraction first
         var textContent = await _extractPdfText(arrayBuffer.slice(0));
 
+        // ── SHCP / Hacienda detection ─────────────────────────────────
+        if (_isShcpDocument(textContent)) {
+            console.log('🏛️ Documento SHCP detectado — usando parser especializado y página 2');
+            if (processingMsg) processingMsg.textContent = 'Documento Hacienda detectado...';
+            // Generar thumbnail de la página 2 (donde está la Línea de Captura)
+            var thumbnailUrl = await _generatePdfThumbnail(arrayBuffer.slice(0), 2);
+            _invoicePdfThumbnailUrl = thumbnailUrl;
+            var parsed = _parseShcpDocument(textContent);
+            _extractedInvoiceData = parsed;
+            console.log('📋 Datos SHCP:', JSON.stringify(parsed, null, 2));
+            _showExtractionResults(parsed, thumbnailUrl);
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────
+
         // Parse the extracted text
         var parsed = _parseInvoiceText(textContent);
         
@@ -261,17 +277,18 @@ async function _extractPdfText(arrayBuffer) {
     return fullText;
 }
 
-async function _generatePdfThumbnail(arrayBuffer) {
+async function _generatePdfThumbnail(arrayBuffer, pageNum) {
     if (typeof pdfjsLib === 'undefined') return null;
-    // Ensure worker is set
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
 
     try {
         var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-        var page = await pdf.getPage(1);
-        var scale = 1.5; // Good quality for half-screen preview
+        // pageNum defaults to 1; for SHCP we pass 2
+        var targetPage = (pageNum && pageNum <= pdf.numPages) ? pageNum : 1;
+        var page = await pdf.getPage(targetPage);
+        var scale = 1.5;
         var viewport = page.getViewport({ scale: scale });
 
         var canvas = document.createElement('canvas');
@@ -397,6 +414,78 @@ async function _generateImageThumbnail(file) {
         reader.onerror = function()  { resolve(null); };
         reader.readAsDataURL(file);
     });
+}
+
+// ============================================
+// 2d. DETECCIÓN Y PARSEO DE DOCUMENTOS SHCP/SAT
+// ============================================
+
+function _isShcpDocument(text) {
+    return (
+        /SECRETAR[IÍ]A\s*DE\s*HACIENDA/i.test(text) ||
+        /DECLARACI[OÓ]N\s*PROVISIONAL\s*O\s*DEFINITIVA\s*DE\s*IMPUESTOS\s*FEDERALES/i.test(text) ||
+        /ACUSE\s*DE\s*RECIBO[\s\S]{0,200}IMPUESTOS\s*FEDERALES/i.test(text) ||
+        (/L[IÍ]NEA\s*DE\s*CAPTURA/i.test(text) && /VIGENTE\s*HASTA/i.test(text))
+    );
+}
+
+function _parseShcpDocument(text) {
+    var result = {
+        rfc_emisor:        null,
+        nombre_emisor:     'Secretaría de Hacienda y Crédito Público',
+        numero_factura:    null,
+        fecha_factura:     null,
+        total:             null,
+        iva:               null,
+        fecha_vencimiento: null,
+        _isShcp:           true    // bandera interna — indica usar página 2 como thumbnail
+    };
+
+    // --- LÍNEA DE CAPTURA → número de factura ---
+    // Formato típico: "0426 0BFQ 7000 4856 6464" (espaciado variable)
+    var lcMatch = /l[ií]nea\s*de\s*captura\s*[:;]?\s*([\dA-Z][\dA-Z\s]{10,35}[\dA-Z])/i.exec(text);
+    if (lcMatch) {
+        result.numero_factura = lcMatch[1].replace(/\s+/g, ' ').trim();
+        console.log('  → SHCP Línea Captura:', result.numero_factura);
+    }
+
+    // --- VIGENTE HASTA → fecha vencimiento (DD/MM/YYYY) ---
+    var vigMatch = /vigente\s*hasta\s*[:;]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/i.exec(text);
+    if (vigMatch) {
+        result.fecha_vencimiento = _normalizeDateString(vigMatch[1]);
+        console.log('  → SHCP Vigente hasta:', result.fecha_vencimiento);
+    }
+
+    // --- FECHA Y HORA DE PRESENTACIÓN → fecha factura (DD/MM/YYYY) ---
+    var presMatch = /fecha\s*y\s*hora\s*de\s*presentaci[oó]n\s*[:;]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4})/i.exec(text);
+    if (presMatch) {
+        result.fecha_factura = _normalizeDateString(presMatch[1]);
+        console.log('  → SHCP Fecha presentación:', result.fecha_factura);
+    }
+
+    // --- IMPORTE TOTAL A PAGAR → total ---
+    var totalMatch = /importe\s*total[\s\S]{0,10}?pagar\s*[:;]?\s*\$?\s*([\d,]+)/i.exec(text);
+    if (totalMatch) {
+        result.total = parseFloat(totalMatch[1].replace(/,/g, ''));
+        console.log('  → SHCP Total:', result.total);
+    }
+
+    // --- IVA: suma de "Impuesto al Valor Agregado" + "IVA retenciones" ---
+    var ivaSum = 0;
+    var ivaPersonasMatch = /impuesto\s*al\s*valor\s*agregado[\s\S]{0,80}?cantidad\s*a\s*pagar\s*[:;]?\s*([\d,]+)/i.exec(text);
+    if (ivaPersonasMatch) ivaSum += parseFloat(ivaPersonasMatch[1].replace(/,/g, ''));
+    var ivaRetMatch    = /iva\s*retenciones[\s\S]{0,80}?cantidad\s*a\s*pagar\s*[:;]?\s*([\d,]+)/i.exec(text);
+    if (ivaRetMatch)    ivaSum += parseFloat(ivaRetMatch[1].replace(/,/g, ''));
+    if (ivaSum > 0) {
+        result.iva = ivaSum;
+        console.log('  → SHCP IVA total:', result.iva);
+    }
+
+    if (!result.fecha_vencimiento) {
+        result.fecha_vencimiento = _calcDefaultVencimiento();
+    }
+
+    return result;
 }
 
 
@@ -1557,7 +1646,7 @@ function _proceedToRegistrarFactura() {
         facturaFileSection.innerHTML = thumbHtml;
     }
 
-    document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Registrar Factura';
+    document.querySelector('#registrarFacturaModal .modal-title').textContent = 'Verificar y Cambiar datos Factura';
 
     // Cargar thumbnail en el panel izquierdo (rfPreviewPanel)
     var rfPreviewImg   = document.getElementById('facturaFormPdfImg');
