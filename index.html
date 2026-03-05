@@ -1413,14 +1413,40 @@
                     <button class="close-modal" onclick="closeModal('registrarFacturaModal')">×</button>
                 </div>
             </div>
+
+            <!-- Estilos tabs mobile para registrarFactura -->
+            <style>
+                #registrarFacturaTabsRow { display: none; }
+                @media (max-width: 768px) {
+                    #registrarFacturaTabsRow { display: block !important; }
+                    #rfFlexLayout { flex-direction: column !important; }
+                }
+            </style>
+
             <div style="padding: 1rem 1.25rem;">
-                <div style="display:flex; gap:1rem; align-items:flex-start;">
-                    <!-- Left: PDF Preview (hidden if no PDF uploaded) -->
-                    <div id="facturaFormPdfPreview" style="display:none; flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+
+                <!-- ── MOBILE: barra de tabs ── -->
+                <div id="registrarFacturaTabsRow" style="margin-bottom:0.75rem;">
+                    <div style="display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                        <button id="rfTabDatosBtn"   class="inv-tab-btn active"   onclick="switchRegistrarFacturaTab('datos')">📋 Datos</button>
+                        <button id="rfTabPreviewBtn" class="inv-tab-btn inactive" onclick="switchRegistrarFacturaTab('preview')">📄 Ver Factura</button>
+                    </div>
+                </div>
+
+                <!-- ── Flex: desktop = row, mobile = column gestionado por JS ── -->
+                <div id="rfFlexLayout" style="display:flex; gap:1rem; align-items:flex-start;">
+
+                    <!-- Panel izquierdo: Preview PDF -->
+                    <div id="rfPreviewPanel" style="flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; display:none;">
                         <img id="facturaFormPdfImg" src="" alt="PDF" style="display:block; width:100%; height:auto;">
                     </div>
-                    <!-- Right: Form -->
-                    <div id="facturaFormPanel" style="flex:2; min-width:0;">
+
+                    <!-- Panel derecho: Formulario -->
+                    <div id="rfFormPanel" style="flex:2; min-width:0;">
+                        <!-- Thumb pequeño para desktop (muestra que hay PDF cargado) -->
+                        <div id="facturaFormPdfPreview" style="display:none; margin-bottom:0.5rem; padding:0.4rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534; cursor:pointer;" onclick="switchRegistrarFacturaTab('preview')">
+                            📄 <span id="facturaFormPdfName">Ver factura adjunta</span> →
+                        </div>
                         <form id="facturaForm" onsubmit="saveFactura(event)">
                             <div id="facturaProveedorRow" style="display:none; margin-bottom:0.6rem; padding-bottom:0.6rem; border-bottom:1px solid var(--border);">
                                 <div style="display:flex; align-items:center; gap:0.5rem;">
@@ -1468,11 +1494,11 @@
                                         📁 Arrastra aquí
                                     </div>
                                 </div>
-                                <div id="facturaFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534; display:none;">
-                                </div>
+                                <div id="facturaFilePreview" style="display:none; margin-top:0.4rem; padding:0.35rem 0.6rem; background:#f0fdf4; border:1px solid #86efac; border-radius:6px; font-size:0.82rem; color:#166534;"></div>
                             </div>
                         </form>
                     </div>
+
                 </div>
             </div>
         </div>
