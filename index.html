@@ -1250,34 +1250,110 @@
                     <button class="close-modal" onclick="closeUploadInvoicePdfModal()">×</button>
                 </div>
             </div>
+
+            <!-- ── Estilos responsivos del modal ── -->
+            <style>
+                /* Por default esconder el bloque mobile, mostrar desktop */
+                #invoiceMobileUpload  { display: none;  }
+                #invoiceDesktopUpload { display: block; }
+                /* En móvil: mostrar mobile, esconder desktop */
+                @media (max-width: 768px) {
+                    #invoiceMobileUpload  { display: block !important; }
+                    #invoiceDesktopUpload { display: none  !important; }
+                }
+                /* Tabs de resultado: solo en mobile */
+                #invoiceResultTabs { display: none; }
+                @media (max-width: 768px) {
+                    #invoiceResultTabs { display: block !important; }
+                    #invoiceResultFlex { flex-direction: column !important; gap: 0 !important; }
+                }
+                /* Botón de tab */
+                .inv-tab-btn {
+                    flex: 1; padding: 0.65rem 0.5rem;
+                    border: none; font-size: 0.92rem; font-weight: 600;
+                    cursor: pointer; transition: background 0.15s, color 0.15s;
+                }
+                .inv-tab-btn.active  { background: #3b82f6; color: white; }
+                .inv-tab-btn.inactive{ background: #f1f5f9; color: #475569; }
+            </style>
+
             <div style="padding: 1rem 1.25rem;">
-                <!-- Drop Area (initial upload state) -->
+
+                <!-- ══════════════════════════════════════
+                     ESTADO 1: SUBIR ARCHIVO
+                     ══════════════════════════════════════ -->
                 <div id="invoicePdfDropArea">
-                    <p style="font-size:0.88rem; color:var(--text); margin-bottom:0.6rem; text-align:center;">
+                    <p style="font-size:0.88rem; color:var(--text); margin-bottom:0.75rem; text-align:center;">
                         Sube el PDF de la factura para extraer los datos automáticamente
                     </p>
-                    <!-- Main: Drag & Drop -->
-                    <div id="invoicePdfDragZone" style="padding:1.2rem; border:2px dashed var(--primary); border-radius:8px; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc; cursor:default;" ondragover="event.preventDefault();this.style.background='#eff6ff';this.style.borderColor='#2563eb';" ondragleave="this.style.background='#f8fafc';this.style.borderColor='var(--primary)';" ondrop="handleInvoicePdfDrop(event);">
-                        <div style="font-size:2.5rem; margin-bottom:0.3rem;">📁</div>
-                        <strong>Arrastra tu PDF aquí</strong>
-                    </div>
-                    <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.5rem 0;">— o —</div>
-                    <!-- Secondary: Click & Paste side by side -->
-                    <div style="display:flex; gap:0.5rem;">
-                        <div onclick="document.getElementById('invoicePdfInput').click()" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onmouseout="this.style.borderColor='var(--border)';this.style.background='';">
-                            <input type="file" id="invoicePdfInput" accept=".pdf" style="display:none;" onchange="handleInvoicePdfSelect(this)">
-                            📎 Seleccionar archivo
+
+                    <!-- Input único — compartido por todos los botones -->
+                    <input type="file" id="invoicePdfInput" accept=".pdf,image/*,.heic,.heif" style="display:none;" onchange="handleInvoicePdfSelect(this)">
+                    <input type="file" id="invoiceCameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handleInvoiceImageSelect(this)">
+
+                    <!-- ── MOBILE: Botones grandes ── -->
+                    <div id="invoiceMobileUpload">
+
+                        <!-- Botón 1: Seleccionar desde Archivos / Drive / Mail -->
+                        <label for="invoicePdfInput" style="display:flex; align-items:center; gap:1rem; padding:1rem 1.2rem; background:#f0f9ff; border:2px solid #3b82f6; border-radius:14px; cursor:pointer; margin-bottom:0.75rem; -webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:2.2rem; line-height:1;">📂</span>
+                            <div>
+                                <div style="font-weight:700; font-size:1rem; color:#1e40af;">Seleccionar Archivo</div>
+                                <div style="font-size:0.78rem; color:#3b82f6; margin-top:0.1rem;">PDF desde Archivos, Drive, Mail o Fotos</div>
+                            </div>
+                        </label>
+
+                        <!-- Botón 2: Fotografiar factura en papel -->
+                        <label for="invoiceCameraInput" style="display:flex; align-items:center; gap:1rem; padding:1rem 1.2rem; background:#f0fdf4; border:2px solid #22c55e; border-radius:14px; cursor:pointer; margin-bottom:0.75rem; -webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:2.2rem; line-height:1;">📷</span>
+                            <div>
+                                <div style="font-weight:700; font-size:1rem; color:#166534;">Fotografiar Factura</div>
+                                <div style="font-size:0.78rem; color:#22c55e; margin-top:0.1rem;">Para facturas impresas en papel</div>
+                            </div>
+                        </label>
+
+                        <!-- Tip: Compartir desde WhatsApp / Gmail -->
+                        <div style="padding:0.9rem 1rem; background:#fffbeb; border:1px solid #fde68a; border-radius:12px; margin-bottom:0.5rem;">
+                            <div style="font-weight:700; font-size:0.88rem; color:#92400e; margin-bottom:0.45rem;">
+                                📤 Compartir desde Gmail o WhatsApp
+                            </div>
+                            <div style="font-size:0.82rem; color:#78350f; line-height:1.75;">
+                                <span style="display:block;">1. Abre el PDF en Gmail o WhatsApp</span>
+                                <span style="display:block;">2. Toca <strong>Compartir ↗</strong> (o los 3 puntitos)</span>
+                                <span style="display:block;">3. Selecciona <strong>ESWU</strong> en la lista</span>
+                            </div>
+                            <div style="font-size:0.74rem; color:#b45309; margin-top:0.45rem; display:flex; align-items:flex-start; gap:0.3rem;">
+                                <span>ℹ️</span>
+                                <span>ESWU debe estar instalada en tu pantalla de inicio para aparecer en la lista de apps</span>
+                            </div>
                         </div>
-                        <div id="invoicePdfPasteZone" tabindex="0" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
-                            📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                    </div>
+
+                    <!-- ── DESKTOP: Drag & Drop + Click + Paste ── -->
+                    <div id="invoiceDesktopUpload">
+                        <div id="invoicePdfDragZone" style="padding:1.2rem; border:2px dashed var(--primary); border-radius:8px; text-align:center; font-size:0.95rem; color:var(--primary); transition:all 0.2s; background:#f8fafc; cursor:default;" ondragover="event.preventDefault();this.style.background='#eff6ff';this.style.borderColor='#2563eb';" ondragleave="this.style.background='#f8fafc';this.style.borderColor='var(--primary)';" ondrop="handleInvoicePdfDrop(event);">
+                            <div style="font-size:2.5rem; margin-bottom:0.3rem;">📁</div>
+                            <strong>Arrastra tu PDF aquí</strong>
+                        </div>
+                        <div style="text-align:center; color:var(--text-light); font-size:0.78rem; margin:0.5rem 0;">— o —</div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <div onclick="document.getElementById('invoicePdfInput').click()" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onmouseout="this.style.borderColor='var(--border)';this.style.background='';">
+                                📎 Seleccionar archivo
+                            </div>
+                            <div id="invoicePdfPasteZone" tabindex="0" style="flex:1; padding:0.6rem; border:1px dashed var(--border); border-radius:6px; cursor:pointer; text-align:center; font-size:0.85rem; color:var(--text-light); transition:all 0.2s; outline:none;" onclick="this.focus();" onfocus="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onblur="this.style.borderColor='var(--border)';this.style.background='';">
+                                📋 Pega aquí<br><span style="font-size:0.72rem;">(Ctrl+V)</span>
+                            </div>
                         </div>
                     </div>
+
                     <div style="text-align:center; margin-top:0.8rem;">
                         <a href="#" onclick="event.preventDefault(); _skipExtractionAndRegister();" style="font-size:0.82rem; color:var(--text-light);">Registrar sin PDF →</a>
                     </div>
                 </div>
 
-                <!-- Processing State -->
+                <!-- ══════════════════════════════════════
+                     ESTADO 2: PROCESANDO
+                     ══════════════════════════════════════ -->
                 <div id="invoicePdfProcessing" style="display:none; text-align:center; padding:2rem 1rem;">
                     <div style="font-size:2rem; margin-bottom:0.5rem;">⏳</div>
                     <p id="invoicePdfProcessingMsg" style="font-size:0.9rem; color:var(--text);">Extrayendo datos de la factura...</p>
@@ -1287,15 +1363,30 @@
                     <style>@keyframes invoiceProgress { 0%{transform:translateX(-100%)} 50%{transform:translateX(0)} 100%{transform:translateX(100%)} }</style>
                 </div>
 
-                <!-- Results Area: Split Layout -->
+                <!-- ══════════════════════════════════════
+                     ESTADO 3: RESULTADOS
+                     (Desktop: split layout  |  Mobile: tabs)
+                     ══════════════════════════════════════ -->
                 <div id="invoicePdfResult" style="display:none;">
-                    <div style="display:flex; gap:1rem; align-items:flex-start;">
-                        <!-- Left: PDF Preview (60%) -->
-                        <div style="flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
+
+                    <!-- ── MOBILE: barra de tabs ── -->
+                    <div id="invoiceResultTabs" style="margin-bottom:0.75rem;">
+                        <div style="display:flex; border:1px solid var(--border); border-radius:10px; overflow:hidden;">
+                            <button id="invoiceTabDataBtn"    class="inv-tab-btn active"   onclick="switchInvoiceTab('data')">📋 Datos</button>
+                            <button id="invoiceTabPreviewBtn" class="inv-tab-btn inactive" onclick="switchInvoiceTab('preview')">📄 Ver Factura</button>
+                        </div>
+                    </div>
+
+                    <!-- ── Contenedor flex (desktop: row | mobile: column) ── -->
+                    <div id="invoiceResultFlex" style="display:flex; gap:1rem; align-items:flex-start;">
+
+                        <!-- Panel izquierdo: Preview PDF (60%) -->
+                        <div id="invoiceResultPreviewPanel" style="flex:3; min-width:0; max-height:75vh; overflow-y:auto; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc;">
                             <img id="invoicePdfThumb" src="" alt="PDF" style="display:block; width:100%; height:auto;">
                         </div>
-                        <!-- Right: Extracted Data (40%) -->
-                        <div style="flex:2; min-width:0;">
+
+                        <!-- Panel derecho: Datos extraídos (40%) -->
+                        <div id="invoiceResultDataPanel" style="flex:2; min-width:0;">
                             <div id="invoiceExtractedSummary" style="margin-bottom:0.5rem;"></div>
                             <div id="invoiceExtractStatus" style="font-size:0.85rem; margin-bottom:0.5rem;"></div>
                             <div id="invoiceProveedorMatch" style="display:none; margin-bottom:0.5rem;"></div>
@@ -1304,8 +1395,10 @@
                                 <button onclick="_continueToRegistrarFactura()" style="padding:0.4rem 0.8rem; background:#22c55e; color:white; border:none; border-radius:4px; font-size:0.85rem; cursor:pointer; font-weight:500;">Continuar →</button>
                             </div>
                         </div>
+
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -2084,6 +2177,21 @@
         // Prevent browser from opening files dropped outside drop zones
         document.addEventListener('dragover', function(e) { e.preventDefault(); });
         document.addEventListener('drop', function(e) { e.preventDefault(); });
+    </script>
+
+    <!-- ── Service Worker (PWA + Web Share Target) ── -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                    .then(function(reg) {
+                        console.log('✅ SW registrado — scope:', reg.scope);
+                    })
+                    .catch(function(err) {
+                        console.warn('⚠️ SW no pudo registrarse:', err);
+                    });
+            });
+        }
     </script>
 </body>
 </html>
