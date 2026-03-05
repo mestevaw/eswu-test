@@ -1,7 +1,12 @@
 /* ========================================
-   js/invoice-extractor.js — V7
-   Extracción inteligente de datos de facturas PDF
-   Fecha: 2026-03-01
+   js/invoice-extractor.js — V8
+   Ruta: js/invoice-extractor.js
+   Fecha: 2026-03-05
+   Cambios V8:
+   - Soporte para imágenes desde cámara (handleInvoiceImageSelect)
+   - Web Share Target: detección de ?from=share al cargar
+   - Vista de verificación mobile con tabs (Datos / Ver Factura)
+   - handleInvoicePdfSelect enruta PDF vs imagen automáticamente
    ======================================== */
 
 // ============================================
@@ -62,10 +67,22 @@ function closeUploadInvoicePdfModal() {
     document.getElementById('uploadInvoicePdfModal').classList.remove('active');
 }
 
-// Handle file selection (click, paste, drag)
+// Handle file selection (click, paste, drag) — enruta PDF vs imagen
 function handleInvoicePdfSelect(input) {
     if (input.files && input.files[0]) {
-        _processInvoicePdf(input.files[0]);
+        var file = input.files[0];
+        if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|heic|heif|webp|gif|bmp|tiff?)$/i.test(file.name)) {
+            _processInvoiceImage(file);
+        } else {
+            _processInvoicePdf(file);
+        }
+    }
+}
+
+// Handle camera capture / image selection
+function handleInvoiceImageSelect(input) {
+    if (input.files && input.files[0]) {
+        _processInvoiceImage(input.files[0]);
     }
 }
 
@@ -324,8 +341,66 @@ async function _extractPdfWithOCR(arrayBuffer) {
 }
 
 // ============================================
-// 3. PARSER INTELIGENTE DE FACTURAS MEXICANAS
+// 2c. PROCESAMIENTO DE IMAGEN (cámara / foto)
 // ============================================
+
+async function _processInvoiceImage(file) {
+    _invoicePdfFile = file;  // se guarda igual para el flujo posterior
+
+    var dropArea    = document.getElementById('invoicePdfDropArea');
+    var processing  = document.getElementById('invoicePdfProcessing');
+    var processingMsg = document.getElementById('invoicePdfProcessingMsg');
+    if (dropArea)  dropArea.style.display = 'none';
+    if (processing) processing.style.display = '';
+    if (processingMsg) processingMsg.textContent = 'Procesando imagen...';
+
+    try {
+        // Generar thumbnail desde el DataURL
+        var thumbnailUrl = await _generateImageThumbnail(file);
+        _invoicePdfThumbnailUrl = thumbnailUrl;
+
+        // OCR directo sobre la imagen
+        if (typeof Tesseract === 'undefined') {
+            throw new Error('Tesseract.js no está cargado');
+        }
+        if (processingMsg) processingMsg.textContent = 'Leyendo datos con OCR...';
+
+        var result = await Tesseract.recognize(file, 'spa', {
+            logger: function(info) {
+                if (info.status === 'recognizing text') {
+                    var pct = Math.round((info.progress || 0) * 100);
+                    if (processingMsg) processingMsg.textContent = 'OCR... ' + pct + '%';
+                }
+            }
+        });
+
+        var text   = result.data.text || '';
+        var parsed = _parseInvoiceText(text);
+        _extractedInvoiceData = parsed;
+
+        console.log('📷 Texto OCR imagen:', text.substring(0, 300));
+        console.log('📋 Datos parseados:', JSON.stringify(parsed, null, 2));
+
+        _showExtractionResults(parsed, thumbnailUrl);
+
+    } catch(err) {
+        console.error('❌ Error procesando imagen:', err);
+        _extractedInvoiceData = {};
+        alert('No se pudieron extraer datos de la imagen. Puedes llenar los datos manualmente.');
+        _proceedToRegistrarFactura();
+    }
+}
+
+async function _generateImageThumbnail(file) {
+    return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.onload = function(e) { resolve(e.target.result); };
+        reader.onerror = function()  { resolve(null); };
+        reader.readAsDataURL(file);
+    });
+}
+
+
 
 function _parseInvoiceText(text) {
     var result = {
@@ -1196,6 +1271,33 @@ function _calcDefaultVencimiento(fechaFactura) {
 }
 
 // ============================================
+// 4b. CONTROL DE TABS MOBILE (Datos / Factura)
+// ============================================
+
+function switchInvoiceTab(tab) {
+    var previewPanel = document.getElementById('invoiceResultPreviewPanel');
+    var dataPanel    = document.getElementById('invoiceResultDataPanel');
+    var previewBtn   = document.getElementById('invoiceTabPreviewBtn');
+    var dataBtn      = document.getElementById('invoiceTabDataBtn');
+    if (!previewPanel || !dataPanel) return;
+
+    var activeStyle   = { bg: '#3b82f6',  color: 'white'          };
+    var inactiveStyle = { bg: '#f1f5f9',  color: 'var(--text)'    };
+
+    if (tab === 'data') {
+        previewPanel.style.display = 'none';
+        dataPanel.style.display    = '';
+        if (dataBtn)    { dataBtn.style.background = activeStyle.bg;   dataBtn.style.color = activeStyle.color; }
+        if (previewBtn) { previewBtn.style.background = inactiveStyle.bg; previewBtn.style.color = inactiveStyle.color; }
+    } else {
+        previewPanel.style.display = '';
+        dataPanel.style.display    = 'none';
+        if (previewBtn) { previewBtn.style.background = activeStyle.bg;   previewBtn.style.color = activeStyle.color; }
+        if (dataBtn)    { dataBtn.style.background = inactiveStyle.bg; dataBtn.style.color = inactiveStyle.color; }
+    }
+}
+
+// ============================================
 // 4. MOSTRAR RESULTADOS DE EXTRACCIÓN
 // ============================================
 
@@ -1205,11 +1307,17 @@ function _showExtractionResults(parsed, thumbnailUrl) {
     if (processing) processing.style.display = 'none';
     if (resultArea) resultArea.style.display = '';
 
-    // Expand modal for split layout
+    // Expand modal — en desktop: ancho completo; en mobile: sin cambiar
     var modalContent = document.getElementById('uploadInvoicePdfModalContent');
     if (modalContent) {
-        modalContent.style.maxWidth = '900px';
-        modalContent.style.width = '92vw';
+        if (!isMobile()) {
+            modalContent.style.maxWidth = '900px';
+            modalContent.style.width    = '92vw';
+        } else {
+            // En mobile conservar ancho natural del modal
+            modalContent.style.maxWidth = '';
+            modalContent.style.width    = '';
+        }
     }
 
     // Thumbnail
@@ -1257,6 +1365,19 @@ function _showExtractionResults(parsed, thumbnailUrl) {
         } else {
             statusEl.innerHTML = '<span style="color:#dc2626;">⚠️ Solo se detectaron ' + foundCount + '/7 campos. Completa manualmente.</span>';
         }
+    }
+
+    // ── MOBILE: activar tabs y empezar en "Datos" ──────────────────
+    if (isMobile()) {
+        var tabsEl  = document.getElementById('invoiceResultTabs');
+        var flexEl  = document.getElementById('invoiceResultFlex');
+        if (tabsEl) tabsEl.style.display = '';
+        if (flexEl) {
+            flexEl.style.flexDirection = 'column';
+            flexEl.style.gap = '0';
+        }
+        // Arranca mostrando Datos (el preview se muestra al tocar la otra tab)
+        switchInvoiceTab('data');
     }
 
     // Check RFC against proveedores
@@ -1598,6 +1719,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS V7 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V8 cargado — flujo de factura interceptado');
     }, 200);
+
+    // ── Web Share Target: detectar ?from=share en la URL ──────────────
+    // Cuando el usuario comparte un PDF desde WhatsApp/Gmail a ESWU,
+    // el SW guarda el archivo y redirige aquí con ?from=share
+    if (window.location.search.indexOf('from=share') !== -1) {
+        // Limpiar URL inmediatamente para no confundir al usuario
+        history.replaceState({}, '', window.location.pathname);
+
+        // Esperar a que la app cargue y luego abrir modal con el archivo compartido
+        var shareAttempts = 0;
+        var checkAndOpenShare = function() {
+            shareAttempts++;
+            // Intentar fetch del archivo guardado por el SW
+            fetch('./eswu-shared-file').then(function(r) {
+                if (!r.ok) throw new Error('Archivo no disponible (' + r.status + ')');
+                var filename = 'factura-compartida.pdf';
+                try {
+                    var raw = r.headers.get('X-Filename');
+                    if (raw) filename = decodeURIComponent(raw);
+                } catch(e) {}
+                var contentType = r.headers.get('Content-Type') || 'application/pdf';
+                return r.blob().then(function(blob) {
+                    return new File([blob], filename, { type: contentType });
+                });
+            }).then(function(file) {
+                console.log('📤 Archivo compartido recibido:', file.name, file.type, file.size + 'B');
+                window.facturaActionContext = 'standalone-porpagar';
+                showUploadInvoicePdfModal('standalone-porpagar');
+                setTimeout(function() {
+                    if (file.type.startsWith('image/')) {
+                        _processInvoiceImage(file);
+                    } else {
+                        _processInvoicePdf(file);
+                    }
+                }, 400);
+            }).catch(function(err) {
+                console.warn('[Share] Intento ' + shareAttempts + ' fallido:', err);
+                // Reintentar hasta 4 veces (el SW puede tardar en activarse)
+                if (shareAttempts < 4) {
+                    setTimeout(checkAndOpenShare, 600);
+                } else {
+                    console.warn('[Share] No se pudo recuperar el archivo compartido.');
+                }
+            });
+        };
+
+        // Esperar a que la app esté lista (datos cargados) antes de abrir el modal
+        setTimeout(checkAndOpenShare, 1200);
+    }
 });
