@@ -1763,55 +1763,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Intercept the factura flow after a short delay to ensure other scripts loaded
     setTimeout(function() {
         _interceptRegistrarFactura();
-        console.log('✅ INVOICE-EXTRACTOR.JS V8 cargado — flujo de factura interceptado');
+        console.log('✅ INVOICE-EXTRACTOR.JS V9 cargado — flujo de factura interceptado');
     }, 200);
-
-    // ── Web Share Target: detectar ?from=share en la URL ──────────────
-    // Cuando el usuario comparte un PDF desde WhatsApp/Gmail a ESWU,
-    // el SW guarda el archivo y redirige aquí con ?from=share
-    if (window.location.search.indexOf('from=share') !== -1) {
-        // Limpiar URL inmediatamente para no confundir al usuario
-        history.replaceState({}, '', window.location.pathname);
-
-        // Esperar a que la app cargue y luego abrir modal con el archivo compartido
-        var shareAttempts = 0;
-        var checkAndOpenShare = function() {
-            shareAttempts++;
-            // Intentar fetch del archivo guardado por el SW
-            fetch('./eswu-shared-file').then(function(r) {
-                if (!r.ok) throw new Error('Archivo no disponible (' + r.status + ')');
-                var filename = 'factura-compartida.pdf';
-                try {
-                    var raw = r.headers.get('X-Filename');
-                    if (raw) filename = decodeURIComponent(raw);
-                } catch(e) {}
-                var contentType = r.headers.get('Content-Type') || 'application/pdf';
-                return r.blob().then(function(blob) {
-                    return new File([blob], filename, { type: contentType });
-                });
-            }).then(function(file) {
-                console.log('📤 Archivo compartido recibido:', file.name, file.type, file.size + 'B');
-                window.facturaActionContext = 'standalone-porpagar';
-                showUploadInvoicePdfModal('standalone-porpagar');
-                setTimeout(function() {
-                    if (file.type.startsWith('image/')) {
-                        _processInvoiceImage(file);
-                    } else {
-                        _processInvoicePdf(file);
-                    }
-                }, 400);
-            }).catch(function(err) {
-                console.warn('[Share] Intento ' + shareAttempts + ' fallido:', err);
-                // Reintentar hasta 4 veces (el SW puede tardar en activarse)
-                if (shareAttempts < 4) {
-                    setTimeout(checkAndOpenShare, 600);
-                } else {
-                    console.warn('[Share] No se pudo recuperar el archivo compartido.');
-                }
-            });
-        };
-
-        // Esperar a que la app esté lista (datos cargados) antes de abrir el modal
-        setTimeout(checkAndOpenShare, 1200);
-    }
 });
