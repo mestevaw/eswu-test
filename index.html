@@ -1068,7 +1068,7 @@
                     <!-- Desktop: tabs -->
                     <div class="tabs tabs-desktop-only" id="proveedorTabs">
                         <button class="tab active" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'pagadas')">F. Pagadas</button>
-                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); window.facturaActionContext=null; showRegistrarFacturaModal();" title="Agregar factura">+</span></button>
+                        <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'porpagar')">F. x Pagar<span class="btn-add-inline" onclick="event.stopPropagation(); showUploadInvoicePdfModal(window.facturaActionContext);" title="Agregar factura">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'docs')">Documentos<span class="btn-add-inline" onclick="event.stopPropagation(); showAgregarDocumentoProveedorModal();" title="Agregar documento">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'mantenimiento')">Mntto<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoTrabajoModal();" title="Nuevo trabajo" style="color:var(--success);">+</span></button>
                         <button class="tab" style="display:inline-block;white-space:nowrap;" onclick="switchTab('proveedor', 'notas')">Mensajes<span class="btn-add-inline" onclick="event.stopPropagation(); showNuevoMensajeFicha('proveedor');" title="Nuevo Mensaje" style="color:var(--success);">+</span></button>
@@ -2183,7 +2183,7 @@
     <script src="js/modals/modals.js?v=25"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=12"></script>
+    <script src="js/invoice-extractor.js?v=13"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
