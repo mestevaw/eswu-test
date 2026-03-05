@@ -353,9 +353,9 @@ function showRegistrarFacturaFromDash() {
     window.facturaActionContext = 'dashboard-porpagar';
     currentProveedorId = null;
     
-    // Open the regular factura modal (which will show the proveedor row)
-    if (typeof showRegistrarFacturaModal === 'function') {
-        showRegistrarFacturaModal();
+    // Open PDF upload flow instead of going directly to the form
+    if (typeof showUploadInvoicePdfModal === 'function') {
+        showUploadInvoicePdfModal('dashboard-porpagar');
     }
 }
 
