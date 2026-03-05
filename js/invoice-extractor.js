@@ -1787,10 +1787,27 @@ function _getOriginalFileUploadHtml() {
 var _originalShowRegistrarFacturaModal = null;
 
 function _interceptRegistrarFactura() {
-    // Replace showRegistrarFacturaModal to show PDF upload first
-    if (typeof showRegistrarFacturaModal === 'function' && !_originalShowRegistrarFacturaModal) {
-        _originalShowRegistrarFacturaModal = showRegistrarFacturaModal;
+    // proveedor-modals.js ya no expone showRegistrarFacturaModal globalmente.
+    // Guardamos _showRegistrarFacturaModalDirect como referencia interna.
+    if (typeof _showRegistrarFacturaModalDirect === 'function') {
+        _originalShowRegistrarFacturaModal = _showRegistrarFacturaModalDirect;
     }
+
+    // Seguro extra: si algún código viejo llama showRegistrarFacturaModal, redirigir al upload.
+    window.showRegistrarFacturaModal = function() {
+        showUploadInvoicePdfModal(window.facturaActionContext);
+    };
+
+    // showRegistrarFacturaFromDash ya fue corregido en db-facturas.js; esta es protección adicional.
+    window.showRegistrarFacturaFromDash = function() {
+        _proveedorListSorted = (typeof proveedores !== 'undefined' ? proveedores : []).slice().sort(function(a, b) {
+            return a.nombre.localeCompare(b.nombre);
+        });
+        window.facturaActionContext = 'dashboard-porpagar';
+        currentProveedorId = null;
+        showUploadInvoicePdfModal('dashboard-porpagar');
+    };
+}
 
     window.showRegistrarFacturaModal = function() {
         // Show PDF upload modal instead
