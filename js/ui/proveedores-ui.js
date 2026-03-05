@@ -109,7 +109,7 @@ function showProveedoresView(view) {
         ];
         headerCfg.actions = [
             { icon: '📊', onclick: 'exportFacturasPorPagarToExcel()' },
-            { icon: '+', onclick: "window.facturaActionContext='standalone-porpagar'; showRegistrarFacturaModal();" }
+            { icon: '+', onclick: "showUploadInvoicePdfModal('standalone-porpagar');" }
         ];
     } else if (view === 'mantenimiento') {
         currentSearchContext = null;
