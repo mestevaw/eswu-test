@@ -1,8 +1,14 @@
 /* ========================================
-   js/invoice-extractor.js — V11
+   js/invoice-extractor.js — V12
    Ruta: js/invoice-extractor.js
-   Fecha: 2026-03-05
-   Cambios V11:
+   Fecha: 2026-03-06
+   Cambios V12:
+   - Cuando se encuentra el proveedor por nombre
+     (pero sin RFC en BD), auto-guarda el RFC en
+     Supabase para que futuras facturas del mismo
+     emisor se detecten automáticamente.
+     Ej: Bonafont → RFC GUJN650703Q14 →
+         proveedor "Nereo Gutierrez Juarez"
    - Total: toma el MAYOR valor (no el primero) para evitar
      confundir Subtotal con Total cuando aparecen separados
    - Exclusión explícita de líneas cuyo monto == subtotal
@@ -1578,10 +1584,19 @@ function _checkRfcAgainstProveedores(parsed) {
                 var pNorm = (p.nombre || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
                 return pNorm.length > 4 && (pNorm.indexOf(nameNorm.substring(0, 8)) !== -1 || nameNorm.indexOf(pNorm.substring(0, 8)) !== -1);
             });
-            // Si encontramos por nombre, guardar el RFC en el proveedor encontrado para futuras búsquedas
-            if (found) {
-                console.log('📋 Proveedor encontrado por nombre:', found.nombre, '— considerar agregar RFC', parsed.rfc_emisor);
-            }
+        // Si encontramos por nombre y el proveedor no tiene RFC → guardar el RFC en Supabase
+        if (found && !found.rfc && parsed.rfc_emisor) {
+            console.log('💾 Auto-guardando RFC', parsed.rfc_emisor, 'en proveedor:', found.nombre);
+            supabaseClient.from('proveedores')
+                .update({ rfc: parsed.rfc_emisor })
+                .eq('id', found.id)
+                .then(function(r) {
+                    if (!r.error) {
+                        found.rfc = parsed.rfc_emisor; // Actualizar en memoria
+                        console.log('✅ RFC', parsed.rfc_emisor, 'guardado para', found.nombre);
+                    }
+                });
+        }
         }
     }
 
