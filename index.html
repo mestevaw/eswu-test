@@ -511,6 +511,7 @@
                                     <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
                                 </select>
                                 <span class="toolbar-btn" onclick="exportFacturasPorPagarToExcel()" title="Exportar">📊</span>
+                                <span class="toolbar-btn" onclick="window.open('flujo-facturas.html','_blank')" title="Cómo guardar facturas" style="font-size:0.85rem; font-weight:700;">?</span>
                             </div>
                         </div>
                         <div class="table-container">
@@ -1339,6 +1340,14 @@
                             </div>
                         </label>
 
+                        <!-- Botón 3: Instrucciones -->
+                        <div onclick="window.open('flujo-facturas.html','_blank')" style="display:flex; align-items:center; gap:1rem; padding:0.8rem 1.2rem; background:#fafafa; border:1.5px dashed #94a3b8; border-radius:14px; cursor:pointer; -webkit-tap-highlight-color:transparent;">
+                            <span style="font-size:1.8rem; line-height:1;">❓</span>
+                            <div>
+                                <div style="font-weight:600; font-size:0.9rem; color:#475569;">Instrucciones para subir facturas</div>
+                                <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.1rem;">Ver el flujo paso a paso</div>
+                            </div>
+                        </div>
 
                     </div>
 
@@ -2200,7 +2209,7 @@
     <script src="js/ui/navigation.js?v=52"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=36"></script>
-    <script src="js/ui/proveedores-ui.js?v=46"></script>
+    <script src="js/ui/proveedores-ui.js?v=47"></script>
     <script src="js/ui/mantenimiento-ui.js?v=16"></script>
     <script src="js/ui/contabilidad-ui.js?v=29"></script>
     <script src="js/ui/eswu-ui.js?v=42"></script>
