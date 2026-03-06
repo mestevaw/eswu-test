@@ -1,10 +1,15 @@
 /* ========================================
-   js/invoice-extractor.js — V18
+   js/invoice-extractor.js — V19
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-06
-   Cambios V18:
-   - Extracción de texto y OCR limitados a página 1.
-     Evita ruido de páginas adicionales (ej. Telmex 4 págs).
+   Cambios V19:
+   - _checkRfcAgainstProveedores ahora es async.
+   - Intento 3: consulta Supabase directamente por RFC
+     cuando el array local no lo encuentra (cubre cuando
+     el proveedor no tiene RFC guardado aún, ej. TELMEX).
+   - Intento 4: Supabase por nombre como último recurso.
+   - Corregido bug de braces en Intento 2 (Supabase update
+     estaba anidado incorrectamente).
    ======================================== */
 
 // ============================================
@@ -1550,7 +1555,7 @@ function _formatDateDisplay(dateStr) {
 // 5. VERIFICAR RFC CONTRA BASE DE DATOS
 // ============================================
 
-function _checkRfcAgainstProveedores(parsed) {
+async function _checkRfcAgainstProveedores(parsed) {
     var matchEl = document.getElementById('invoiceProveedorMatch');
     if (!matchEl) return;
 
@@ -1562,31 +1567,26 @@ function _checkRfcAgainstProveedores(parsed) {
     }
 
     // ── RFCS CONOCIDOS (hardcoded) ─────────────────────────────────────────
-    // Cuando la factura trae un RFC que no está en la BD de proveedores,
-    // aquí lo mapeamos al proveedor correcto + su RFC oficial.
-    // Formato: 'RFC_EN_FACTURA': { nombre: 'Nombre en BD', rfc: 'RFC oficial del proveedor' }
     var RFC_CONOCIDOS = {
         'EAM001231D51': { nombre: 'Nereo Gutierrez Juarez', rfc: 'GUJN650703Q14' }
     };
-    
-    // Buscar por RFC en proveedores
+
     var rfcUpper = parsed.rfc_emisor.toUpperCase().replace(/[\s\-]/g, '');
     var found = null;
-    var rfcParaGuardar = rfcUpper; // Por defecto guardamos el RFC de la factura
+    var rfcParaGuardar = rfcUpper;
+
     if (typeof proveedores !== 'undefined') {
         // Intento 0: RFC conocido → buscar proveedor por nombre hardcoded
         var conocido = RFC_CONOCIDOS[rfcUpper];
         if (conocido) {
-            rfcParaGuardar = conocido.rfc; // Usar el RFC oficial del proveedor
+            rfcParaGuardar = conocido.rfc;
             found = proveedores.find(function(p) {
                 return (p.nombre || '').toLowerCase().trim() === conocido.nombre.toLowerCase().trim();
             });
             if (found) {
                 console.log('🔑 RFC conocido ' + rfcUpper + ' → proveedor:', found.nombre, '| RFC oficial:', rfcParaGuardar);
-                // Actualizar el RFC mostrado en el resumen al RFC oficial
                 parsed.rfc_emisor = rfcParaGuardar;
                 _extractedInvoiceData.rfc_emisor = rfcParaGuardar;
-                // Actualizar fila RFC en el summary
                 var _sumEl = document.getElementById('invoiceExtractedSummary');
                 if (_sumEl) {
                     var _rows = _sumEl.querySelectorAll('div');
@@ -1595,7 +1595,6 @@ function _checkRfcAgainstProveedores(parsed) {
                             '<span style="font-weight:500;text-align:right;">' + rfcParaGuardar + '</span>';
                     }
                 }
-                // Guardar el RFC oficial en Supabase si el proveedor aún no lo tiene
                 if (!found.rfc || found.rfc.toUpperCase().replace(/[\s\-]/g, '') !== rfcParaGuardar) {
                     supabaseClient.from('proveedores')
                         .update({ rfc: rfcParaGuardar })
@@ -1609,54 +1608,109 @@ function _checkRfcAgainstProveedores(parsed) {
                 }
             }
         }
-        // Intento 1: match exacto de RFC en BD
-        if (!found) found = proveedores.find(function(p) {
-            return p.rfc && p.rfc.toUpperCase().replace(/[\s\-]/g, '') === rfcUpper;
-        });
-        // Intento 2: el proveedor existe pero sin RFC — buscar por nombre si tenemos nombre_emisor
+
+        // Intento 1: match exacto de RFC en array local
+        if (!found) {
+            found = proveedores.find(function(p) {
+                return p.rfc && p.rfc.toUpperCase().replace(/[\s\-]/g, '') === rfcUpper;
+            });
+            if (found) console.log('✅ Intento 1 (RFC local):', found.nombre);
+        }
+
+        // Intento 2: buscar por nombre (array local)
         if (!found && parsed.nombre_emisor) {
             var nameNorm = parsed.nombre_emisor.toUpperCase().replace(/[^A-Z0-9]/g, '');
             found = proveedores.find(function(p) {
                 var pNorm = (p.nombre || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-                return pNorm.length > 4 && (pNorm.indexOf(nameNorm.substring(0, 8)) !== -1 || nameNorm.indexOf(pNorm.substring(0, 8)) !== -1);
+                return pNorm.length > 4 && (
+                    pNorm.indexOf(nameNorm.substring(0, 8)) !== -1 ||
+                    nameNorm.indexOf(pNorm.substring(0, 8)) !== -1
+                );
             });
-        // Si encontramos por nombre y el proveedor no tiene RFC → guardar el RFC en Supabase
-        if (found && !found.rfc && parsed.rfc_emisor) {
-            console.log('💾 Auto-guardando RFC', rfcParaGuardar, 'en proveedor:', found.nombre);
-            supabaseClient.from('proveedores')
-                .update({ rfc: rfcParaGuardar })
-                .eq('id', found.id)
-                .then(function(r) {
-                    if (!r.error) {
-                        found.rfc = rfcParaGuardar;
-                        console.log('✅ RFC', rfcParaGuardar, 'guardado para', found.nombre);
-                    }
-                });
+            if (found) {
+                console.log('✅ Intento 2 (nombre local):', found.nombre);
+                if (!found.rfc && parsed.rfc_emisor) {
+                    supabaseClient.from('proveedores')
+                        .update({ rfc: rfcParaGuardar })
+                        .eq('id', found.id)
+                        .then(function(r) {
+                            if (!r.error) { found.rfc = rfcParaGuardar; }
+                        });
+                }
+            }
         }
+    }
+
+    // Intento 3: consulta directa a Supabase por RFC (cubre el caso donde el
+    // array local no tiene el RFC guardado aún, ej. primer uso de ese proveedor)
+    if (!found && typeof supabaseClient !== 'undefined') {
+        try {
+            console.log('🔍 Intento 3: buscando RFC', rfcUpper, 'en Supabase...');
+            var res = await supabaseClient
+                .from('proveedores')
+                .select('id, nombre, rfc')
+                .ilike('rfc', rfcUpper)
+                .limit(1);
+            if (!res.error && res.data && res.data.length > 0) {
+                found = res.data[0];
+                // Sync into local array so futuras búsquedas funcionen
+                var localIdx = (proveedores || []).findIndex(function(p) { return p.id === found.id; });
+                if (localIdx >= 0) proveedores[localIdx].rfc = found.rfc;
+                console.log('✅ Intento 3 (Supabase RFC):', found.nombre);
+            }
+        } catch(e) {
+            console.warn('⚠️ Intento 3 falló:', e);
+        }
+    }
+
+    // Intento 4: Supabase por nombre (último recurso)
+    if (!found && parsed.nombre_emisor && typeof supabaseClient !== 'undefined') {
+        try {
+            var nombreBuscar = parsed.nombre_emisor.substring(0, 15);
+            console.log('🔍 Intento 4: buscando nombre "' + nombreBuscar + '" en Supabase...');
+            var res2 = await supabaseClient
+                .from('proveedores')
+                .select('id, nombre, rfc')
+                .ilike('nombre', '%' + nombreBuscar + '%')
+                .limit(1);
+            if (!res2.error && res2.data && res2.data.length > 0) {
+                found = res2.data[0];
+                console.log('✅ Intento 4 (Supabase nombre):', found.nombre);
+                // Guardar RFC en BD si aún no lo tiene
+                if ((!found.rfc) && rfcUpper) {
+                    supabaseClient.from('proveedores')
+                        .update({ rfc: rfcUpper })
+                        .eq('id', found.id)
+                        .then(function(r) {
+                            if (!r.error) {
+                                found.rfc = rfcUpper;
+                                console.log('✅ RFC', rfcUpper, 'guardado para', found.nombre);
+                            }
+                        });
+                }
+            }
+        } catch(e) {
+            console.warn('⚠️ Intento 4 falló:', e);
         }
     }
 
     if (found) {
-        // Proveedor encontrado
         _extractedInvoiceData._proveedorId = found.id;
         _extractedInvoiceData._proveedorNombre = found.nombre;
         _extractedInvoiceData.nombre_emisor = found.nombre;
         matchEl.innerHTML = '<div style="padding:0.5rem;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;font-size:0.85rem;">' +
             '✅ Proveedor encontrado: <strong>' + found.nombre + '</strong></div>';
         matchEl.style.display = '';
-        
-        // Update the Proveedor name in the summary above
+
         var summaryEl = document.getElementById('invoiceExtractedSummary');
         if (summaryEl) {
             var rows = summaryEl.querySelectorAll('div');
             if (rows.length > 0) {
-                // First row is Proveedor
                 rows[0].innerHTML = '<span>✅ Proveedor</span>' +
                     '<span style="font-weight:500;text-align:right;">' + found.nombre + '</span>';
             }
         }
     } else {
-        // Proveedor NO encontrado
         _extractedInvoiceData._proveedorId = null;
         _extractedInvoiceData._proveedorNombre = null;
         matchEl.innerHTML = '<div style="padding:0.5rem;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;font-size:0.85rem;">' +
