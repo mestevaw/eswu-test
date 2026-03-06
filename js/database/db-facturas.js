@@ -1,5 +1,12 @@
 /* ========================================
-   DB-FACTURAS.JS v2
+   DB-FACTURAS.JS v3
+   Ruta: js/database/db-facturas.js
+   Fecha: 2026-03-06
+   
+   Cambios v3:
+   - Nueva nomenclatura de archivos en Drive:
+     "{Proveedor} {NumFactura} - {d mmm aa}.ext"
+     Ej: "La Mexicana 6669 - 6 mar 26.pdf"
    ======================================== */
 
 // File captured from any input method (click, paste, drag)
@@ -162,6 +169,25 @@ function navigateAfterFacturaAction(defaultTab) {
     }
 }
 
+// ============================================
+// HELPER: NOMBRE DE ARCHIVO EN DRIVE
+// Formato: "Proveedor NumFactura - d mmm aa.ext"
+// Ej:      "La Mexicana 6669 - 6 mar 26.pdf"
+// ============================================
+
+function _buildFacturaDriveFileName(provNombre, numero, ext) {
+    var meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    var d = new Date();
+    var day  = d.getDate();
+    var mes  = meses[d.getMonth()];
+    var yr   = String(d.getFullYear()).slice(-2);
+    var fechaStr = day + ' ' + mes + ' ' + yr;
+    var nombre   = (provNombre || 'Proveedor').trim();
+    var numPart  = numero ? (' ' + numero.trim()) : '';
+    var extPart  = ext ? ('.' + ext.replace(/^\./, '')) : '.pdf';
+    return nombre + numPart + ' - ' + fechaStr + extPart;
+}
+
 async function saveFactura(event) {
     event.preventDefault();
     
@@ -199,11 +225,12 @@ async function saveFactura(event) {
                     var facturaFecha = facturaData.fecha;
                     var folderId = await getFacturasProveedoresFolderId(facturaFecha);
                     
-                    // Rename file: PROVEEDOR original_name.ext
+                    // Nombre del archivo: "Proveedor NumFactura - d mmm aa.ext"
                     var prov = proveedores.find(p => p.id === currentProveedorId);
-                    var provName = prov ? prov.nombre.toUpperCase() : '';
-                    var originalName = docFile.name;
-                    var uploadName = provName ? (provName + ' ' + originalName) : originalName;
+                    var provName = prov ? prov.nombre : '';
+                    var numFact = (facturaData.numero || '').trim();
+                    var ext = docFile.name.split('.').pop() || 'pdf';
+                    var uploadName = _buildFacturaDriveFileName(provName, numFact, ext);
                     var renamedFile = new File([docFile], uploadName, { type: docFile.type });
                     
                     var result = await uploadFileToDrive(renamedFile, folderId);
