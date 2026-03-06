@@ -1,12 +1,13 @@
 /* ========================================
-   js/ui/proveedores-ui.js — V4
+   js/ui/proveedores-ui.js — V5
    Ruta: js/ui/proveedores-ui.js
    Fecha: 2026-03-06
-   Cambios V4:
-   - En mobile "Facturas x Pagar", clic en fila abre
-     el PDF de la factura directamente (viewFacturaDoc).
-   - Agrega utilidades de limpieza: deleteFacturaAndDriveFile,
-     renameLaMexicanaFile, cleanupCasellasFacturas.
+   Cambios V5:
+   - Panel "Limpieza" con listado completo de facturas
+     y botón 🗑️ para eliminar cada una (Supabase + Drive).
+   - Al guardar factura x pagar, navega de inmediato
+     a la vista Facturas x Pagar desde cualquier contexto.
+   - En mobile "Facturas x Pagar", clic en fila abre PDF.
    ======================================== */
 
 // ============================================
@@ -66,6 +67,8 @@ function showProveedoresView(view) {
     document.getElementById('proveedoresFacturasPagadasView').classList.add('hidden');
     document.getElementById('proveedoresFacturasPorPagarView').classList.add('hidden');
     document.getElementById('proveedoresMantenimientoView').classList.add('hidden');
+    var _limpView = document.getElementById('proveedoresLimpiezaView');
+    if (_limpView) _limpView.classList.add('hidden');
     
     currentSubContext = 'proveedores-' + view;
     
@@ -76,7 +79,8 @@ function showProveedoresView(view) {
         { key: 'list', label: 'Proveedores', action: "showProveedoresView('list')" },
         { key: 'facturasPagadas', label: 'Facturas Pagadas', action: "showProveedoresView('facturasPagadas')" },
         { key: 'facturasPorPagar', label: 'Facturas x Pagar', action: "showProveedoresView('facturasPorPagar')" },
-        { key: 'mantenimiento', label: 'Mantenimiento', action: "showProveedoresView('mantenimiento')" }
+        { key: 'mantenimiento', label: 'Mantenimiento', action: "showProveedoresView('mantenimiento')" },
+        { key: 'limpieza', label: '🗑️ Limpieza', action: "showProveedoresView('limpieza')" }
     ];
     var navItems = [{ label: '🏠 Home', action: 'showDashboard()', isHome: true }];
     var subtitle = '';
@@ -116,6 +120,9 @@ function showProveedoresView(view) {
         ];
     } else if (view === 'mantenimiento') {
         currentSearchContext = null;
+    } else if (view === 'limpieza') {
+        currentSearchContext = null;
+        headerCfg.actions = [{ icon: '🔄', onclick: 'renderLimpiezaPanel()' }];
     }
     
     setHeaderContext(headerCfg);
@@ -136,6 +143,10 @@ function showProveedoresView(view) {
     } else if (view === 'mantenimiento') {
         document.getElementById('proveedoresMantenimientoView').classList.remove('hidden');
         renderMantenimientoGlobal();
+    } else if (view === 'limpieza') {
+        var limpiezaView = document.getElementById('proveedoresLimpiezaView');
+        if (limpiezaView) limpiezaView.classList.remove('hidden');
+        renderLimpiezaPanel();
     }
 }
 
@@ -1385,4 +1396,96 @@ async function listFacturasForCleanup() {
     console.log('💡 Para borrar: deleteFacturaAndDriveFile(ID)');
 }
 
-console.log('✅ PROVEEDORES-UI.JS v45 cargado (2026-03-06)');
+// ============================================
+// PANEL DE LIMPIEZA DE FACTURAS
+// ============================================
+
+function renderLimpiezaPanel() {
+    var div = document.getElementById('limpiezaContent');
+    if (!div) return;
+
+    var meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+    // Recopilar todas las facturas de todos los proveedores
+    var rows = [];
+    proveedores.forEach(function(p) {
+        (p.facturas || []).forEach(function(f) {
+            rows.push({
+                factId: f.id,
+                provId: p.id,
+                proveedor: p.nombre,
+                numero: f.numero || 'S/N',
+                fecha: f.fecha || '',
+                monto: f.monto || 0,
+                pagada: !!f.fecha_pago,
+                driveId: f.documento_drive_file_id || null
+            });
+        });
+    });
+
+    if (rows.length === 0) {
+        div.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:2rem;">No hay facturas registradas.</p>';
+        return;
+    }
+
+    // Ordenar: no pagadas primero, luego por fecha desc
+    rows.sort(function(a, b) {
+        if (a.pagada !== b.pagada) return a.pagada ? 1 : -1;
+        return (b.fecha || '').localeCompare(a.fecha || '');
+    });
+
+    var html = '<p style="font-size:0.82rem;color:var(--text-light);margin-bottom:0.75rem;">' +
+        rows.length + ' facturas en total. Para borrar, da clic en 🗑️ de la fila correspondiente.</p>';
+
+    html += '<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">';
+    rows.forEach(function(r, i) {
+        var bg = i % 2 === 0 ? 'white' : 'var(--bg)';
+        var estadoColor = r.pagada ? 'color:#16a34a;' : 'color:var(--danger);font-weight:600;';
+        var estadoLabel = r.pagada ? '✅ Pagada' : '⏳ Por pagar';
+        var driveIcon = r.driveId
+            ? '<span onclick="event.stopPropagation(); viewDriveFileInline(\'' + r.driveId + '\',\'' + r.proveedor.replace(/'/g, "\\'") + '\')" title="Ver PDF" style="cursor:pointer;font-size:1rem;padding:0.15rem 0.25rem;border-radius:4px;" onmouseover="this.style.background=\'#dbeafe\'" onmouseout="this.style.background=\'transparent\'">📄</span>'
+            : '<span style="font-size:0.8rem;color:var(--text-light);">—</span>';
+        var nombre = r.proveedor.length > 28 ? r.proveedor.substring(0, 26) + '…' : r.proveedor;
+        html += '<div style="display:flex;align-items:center;gap:0.5rem;padding:0.45rem 0.75rem;background:' + bg + ';border-bottom:1px solid var(--border);">';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-size:0.88rem;font-weight:500;">' + nombre + '</div>';
+        html += '<div style="font-size:0.75rem;color:var(--text-light);">Fact. #' + r.numero + ' · ' + (r.fecha || '—') + ' · $' + (r.monto).toLocaleString('en-US',{minimumFractionDigits:2}) + '</div>';
+        html += '</div>';
+        html += '<span style="font-size:0.75rem;white-space:nowrap;' + estadoColor + '">' + estadoLabel + '</span>';
+        html += driveIcon;
+        html += '<span onclick="deleteFacturaFromLimpieza(' + r.factId + ',\'' + r.proveedor.replace(/'/g, "\\'") + '\',' + (r.driveId ? '\'' + r.driveId + '\'' : 'null') + ')" title="Eliminar factura" style="cursor:pointer;color:var(--danger);font-size:1.1rem;font-weight:700;padding:0.15rem 0.3rem;border-radius:4px;flex-shrink:0;" onmouseover="this.style.background=\'#fed7d7\'" onmouseout="this.style.background=\'transparent\'">🗑️</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+
+    div.innerHTML = html;
+}
+
+async function deleteFacturaFromLimpieza(facturaId, proveedorNombre, driveFileId) {
+    if (!confirm('¿Eliminar la factura de "' + proveedorNombre + '"?\n\nEsto la borrará de Supabase' + (driveFileId ? ' y su PDF de Google Drive.' : '.'))) return;
+    showLoading();
+    try {
+        // Intentar borrar el PDF de Drive
+        if (driveFileId && typeof deleteFileInDrive === 'function' && isGoogleConnected()) {
+            try {
+                await deleteFileInDrive(driveFileId);
+                console.log('🗑️ PDF eliminado de Drive:', driveFileId);
+            } catch (e) {
+                console.warn('No se pudo eliminar el PDF de Drive:', e.message);
+            }
+        }
+        // Borrar de Supabase
+        var { error } = await supabaseClient.from('facturas').delete().eq('id', facturaId);
+        if (error) throw error;
+        console.log('✅ Factura', facturaId, 'eliminada de Supabase');
+        // Recargar proveedores y refrescar panel
+        await loadProveedores();
+        renderLimpiezaPanel();
+    } catch (e) {
+        alert('Error al eliminar: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+console.log('✅ PROVEEDORES-UI.JS v46 cargado (2026-03-06)');
