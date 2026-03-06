@@ -985,7 +985,7 @@ function _parseInvoiceText(text) {
         // Excluir líneas con códigos fiscales o retenciones
         if (/\b(?:002|001)\s*[-:]|iva\s*\d|\bisr\b|trasladad|retenid|ret\.?\s*iva/i.test(line)) continue;
         // Excluir encabezados de columna de tabla sin importe
-        if (/\b(descripci[oó]n|unidad|cantidad|clave|l[ií]nea|venta|base)\b/i.test(line) && ![\d,]+\.\d{2}/.test(line)) continue;
+        if (/\b(descripci[oó]n|unidad|cantidad|clave|l[ií]nea|venta|base)\b/i.test(line) && !/[\d,]+\.\d{2}/.test(line)) continue;
 
         var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
         if (totalMatch) {
@@ -1805,25 +1805,6 @@ function _interceptRegistrarFactura() {
         });
         window.facturaActionContext = 'dashboard-porpagar';
         currentProveedorId = null;
-        showUploadInvoicePdfModal('dashboard-porpagar');
-    };
-}
-
-    window.showRegistrarFacturaModal = function() {
-        // Show PDF upload modal instead
-        showUploadInvoicePdfModal(window.facturaActionContext);
-    };
-
-    // Also intercept showRegistrarFacturaFromDash
-    var _origFromDash = window.showRegistrarFacturaFromDash;
-    window.showRegistrarFacturaFromDash = function() {
-        // Prepare sorted list (same as original)
-        _proveedorListSorted = (typeof proveedores !== 'undefined' ? proveedores : []).slice().sort(function(a, b) {
-            return a.nombre.localeCompare(b.nombre);
-        });
-        window.facturaActionContext = 'dashboard-porpagar';
-        currentProveedorId = null;
-        // Show PDF upload instead
         showUploadInvoicePdfModal('dashboard-porpagar');
     };
 }
