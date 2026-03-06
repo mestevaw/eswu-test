@@ -137,15 +137,14 @@ function navigateAfterFacturaAction(defaultTab) {
     const ctx = window.facturaActionContext;
     window.facturaActionContext = null; // Limpiar
     
-    if (ctx === 'dashboard-porpagar') {
-        // Came from dashboard — just refresh the dashboard proveedores tile
-        // Don't navigate anywhere, the modal is already closed
-        if (typeof renderDashProveedores === 'function') {
-            renderDashProveedores();
+    if (ctx === 'dashboard-porpagar' || ctx === 'standalone-porpagar') {
+        // Siempre navegar a la vista Facturas x Pagar para ver la factura recién cargada
+        if (typeof showProveedoresView === 'function') {
+            showProveedoresView('facturasPorPagar');
+        } else {
+            renderProveedoresFacturasPorPagar();
         }
-        return; // Done — stay on dashboard
-    } else if (ctx === 'standalone-porpagar') {
-        renderProveedoresFacturasPorPagar();
+        return;
     } else if (ctx === 'standalone-pagadas') {
         renderProveedoresFacturasPagadas();
     } else {
