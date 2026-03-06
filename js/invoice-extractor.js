@@ -1,18 +1,13 @@
 /* ========================================
-   js/invoice-extractor.js — V12
+   js/invoice-extractor.js — V13
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-06
-   Cambios V12:
-   - Cuando se encuentra el proveedor por nombre
-     (pero sin RFC en BD), auto-guarda el RFC en
-     Supabase para que futuras facturas del mismo
-     emisor se detecten automáticamente.
-     Ej: Bonafont → RFC GUJN650703Q14 →
-         proveedor "Nereo Gutierrez Juarez"
-   - Total: toma el MAYOR valor (no el primero) para evitar
-     confundir Subtotal con Total cuando aparecen separados
-   - Exclusión explícita de líneas cuyo monto == subtotal
-   - Agrega "REFERENCIA NO." como patrón de número de factura
+   Cambios V13:
+   - RFC_CONOCIDOS ahora almacena { nombre, rfc } para
+     mapear el RFC de la factura al RFC oficial del proveedor.
+     Ej: factura con EAM001231D51 → proveedor
+     "Nereo Gutierrez Juarez" + guarda RFC GUJN650703Q14.
+   - Intento 2 también usa rfcParaGuardar (el RFC oficial).
    ======================================== */
 
 // ============================================
@@ -1570,23 +1565,40 @@ function _checkRfcAgainstProveedores(parsed) {
     }
 
     // ── RFCS CONOCIDOS (hardcoded) ─────────────────────────────────────────
-    // Proveedores cuyo RFC fue dado de alta pero no está en la BD de proveedores;
-    // mapeamos el RFC al nombre exacto del proveedor en el sistema.
+    // Cuando la factura trae un RFC que no está en la BD de proveedores,
+    // aquí lo mapeamos al proveedor correcto + su RFC oficial.
+    // Formato: 'RFC_EN_FACTURA': { nombre: 'Nombre en BD', rfc: 'RFC oficial del proveedor' }
     var RFC_CONOCIDOS = {
-        'EAM001231D51': 'Nereo Gutierrez Juarez'
+        'EAM001231D51': { nombre: 'Nereo Gutierrez Juarez', rfc: 'GUJN650703Q14' }
     };
     
     // Buscar por RFC en proveedores
     var rfcUpper = parsed.rfc_emisor.toUpperCase().replace(/[\s\-]/g, '');
     var found = null;
+    var rfcParaGuardar = rfcUpper; // Por defecto guardamos el RFC de la factura
     if (typeof proveedores !== 'undefined') {
         // Intento 0: RFC conocido → buscar proveedor por nombre hardcoded
-        var nombreConocido = RFC_CONOCIDOS[rfcUpper];
-        if (nombreConocido) {
+        var conocido = RFC_CONOCIDOS[rfcUpper];
+        if (conocido) {
+            rfcParaGuardar = conocido.rfc; // Usar el RFC oficial del proveedor
             found = proveedores.find(function(p) {
-                return (p.nombre || '').toLowerCase().trim() === nombreConocido.toLowerCase().trim();
+                return (p.nombre || '').toLowerCase().trim() === conocido.nombre.toLowerCase().trim();
             });
-            if (found) console.log('🔑 RFC conocido ' + rfcUpper + ' → proveedor:', found.nombre);
+            if (found) {
+                console.log('🔑 RFC conocido ' + rfcUpper + ' → proveedor:', found.nombre, '| RFC oficial:', rfcParaGuardar);
+                // Guardar el RFC oficial en Supabase si el proveedor aún no lo tiene
+                if (!found.rfc || found.rfc.toUpperCase().replace(/[\s\-]/g, '') !== rfcParaGuardar) {
+                    supabaseClient.from('proveedores')
+                        .update({ rfc: rfcParaGuardar })
+                        .eq('id', found.id)
+                        .then(function(r) {
+                            if (!r.error) {
+                                found.rfc = rfcParaGuardar;
+                                console.log('✅ RFC oficial', rfcParaGuardar, 'guardado para', found.nombre);
+                            }
+                        });
+                }
+            }
         }
         // Intento 1: match exacto de RFC en BD
         if (!found) found = proveedores.find(function(p) {
@@ -1601,14 +1613,14 @@ function _checkRfcAgainstProveedores(parsed) {
             });
         // Si encontramos por nombre y el proveedor no tiene RFC → guardar el RFC en Supabase
         if (found && !found.rfc && parsed.rfc_emisor) {
-            console.log('💾 Auto-guardando RFC', parsed.rfc_emisor, 'en proveedor:', found.nombre);
+            console.log('💾 Auto-guardando RFC', rfcParaGuardar, 'en proveedor:', found.nombre);
             supabaseClient.from('proveedores')
-                .update({ rfc: parsed.rfc_emisor })
+                .update({ rfc: rfcParaGuardar })
                 .eq('id', found.id)
                 .then(function(r) {
                     if (!r.error) {
-                        found.rfc = parsed.rfc_emisor; // Actualizar en memoria
-                        console.log('✅ RFC', parsed.rfc_emisor, 'guardado para', found.nombre);
+                        found.rfc = rfcParaGuardar;
+                        console.log('✅ RFC', rfcParaGuardar, 'guardado para', found.nombre);
                     }
                 });
         }
