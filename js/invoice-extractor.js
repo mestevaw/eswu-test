@@ -1028,12 +1028,17 @@ function _parseInvoiceText(text) {
     }
 
     // --- IVA ---
-    // PASS 1a (IVA): Find "Total Impuestos Trasladados" line (most reliable single-line source)
+    // PASS 1a: "Impuestos trasladados [IVA] [16%] $1,456.00" (con o sin "Total" al inicio)
+    // También busca el importe en la línea siguiente si no está en la misma línea.
     var ivaFromLine = null;
     for (var li = 0; li < lines.length; li++) {
         var line = lines[li].trim();
-        if (/total\s*impuestos?\s*trasladados?/i.test(line)) {
-            var tit = /\$?\s*([\d,]+\.\d{2})/.exec(line);
+        if (/(?:total\s*)?impuestos?\s*trasladados?/i.test(line) && !/reten/i.test(line)) {
+            var tit = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line);
+            // Lookahead: importe en la línea siguiente
+            if (!tit && li + 1 < lines.length) {
+                tit = /^\s*\$?\s*([\d,]+\.\d{2})\s*$/.exec(lines[li + 1].trim());
+            }
             if (tit) {
                 var titVal = parseFloat(tit[1].replace(/,/g, ''));
                 if (!isNaN(titVal) && titVal > 0) {
@@ -1043,47 +1048,40 @@ function _parseInvoiceText(text) {
             }
         }
     }
-    
-    // PASS 1b (IVA): Individual IVA line with 16% rate (trasladado only)
+
+    // PASS 1b: SUMA todas las líneas IVA 16% trasladado (facturas con múltiples partidas)
+    // NO hace break en la primera — acumula todas.
     if (!ivaFromLine) {
+        var ivaSum = 0;
         for (var li = 0; li < lines.length; li++) {
             var line = lines[li].trim();
-            // Skip retained IVA lines
             if (/reten/i.test(line) || /ret\.?\s*iva/i.test(line)) continue;
-            
-            // Look for IVA 16% or IVA 0.16 (not just "16" anywhere)
-            if (/\biva\b/i.test(line) && (/16[.\s%]|0\.16/i.test(line))) {
-                var amounts = line.match(/\$?\s*[\d,]+\.\d{2,6}/g);
-                if (amounts) {
-                    // Find position of rate indicator (16% or 0.16)
-                    var ratePos = line.search(/16[.\s%]|0\.16/i);
-                    // Take the FIRST amount AFTER the rate position (this is the IVA amount)
-                    var bestIva = null;
-                    for (var ai = 0; ai < amounts.length; ai++) {
-                        var amtPos = line.indexOf(amounts[ai]);
-                        var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
-                        if (isNaN(av) || av <= 16.01) continue; // skip rate values
-                        if (amtPos >= ratePos && !bestIva) {
-                            bestIva = av;
-                            break;
-                        }
-                    }
-                    // Fallback: take smallest amount > 16 (IVA is typically smaller than base)
-                    if (!bestIva) {
-                        var allAmts = [];
-                        for (var ai = 0; ai < amounts.length; ai++) {
-                            var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
-                            if (!isNaN(av) && av > 16.01) allAmts.push(av);
-                        }
-                        if (allAmts.length > 0) bestIva = Math.min.apply(null, allAmts);
-                    }
-                    if (bestIva) {
-                        ivaFromLine = bestIva;
-                        break;
-                    }
-                }
+            if (!/\biva\b/i.test(line) || !/16[.\s%]|0\.16/i.test(line)) continue;
+
+            var amounts = line.match(/\$?\s*[\d,]+\.\d{2,6}/g);
+            if (!amounts) continue;
+
+            var ratePos = line.search(/16[.\s%]|0\.16/i);
+            var bestIva = null;
+            // Tomar el primer importe DESPUÉS del indicador de tasa
+            for (var ai = 0; ai < amounts.length; ai++) {
+                var amtPos = line.indexOf(amounts[ai]);
+                var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
+                if (isNaN(av) || av <= 16.01) continue;
+                if (amtPos >= ratePos) { bestIva = av; break; }
             }
+            // Fallback: el menor importe > 16 en la línea
+            if (!bestIva) {
+                var allAmts = [];
+                for (var ai = 0; ai < amounts.length; ai++) {
+                    var av = parseFloat(amounts[ai].replace(/[$\s,]/g, ''));
+                    if (!isNaN(av) && av > 16.01) allAmts.push(av);
+                }
+                if (allAmts.length > 0) bestIva = Math.min.apply(null, allAmts);
+            }
+            if (bestIva) ivaSum += bestIva;
         }
+        if (ivaSum > 0) ivaFromLine = Math.round(ivaSum * 100) / 100;
     }
     
     if (ivaFromLine) {
