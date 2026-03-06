@@ -1,11 +1,13 @@
 /* ========================================
-   DB-FACTURAS.JS v4
+   DB-FACTURAS.JS v5
    Ruta: js/database/db-facturas.js
    Fecha: 2026-03-06
 
-   Cambios v4:
-   - Validación: si "No. Factura" está vacío, muestra
-     mensaje amigable antes de intentar guardar.
+   Cambios v5:
+   - saveFactura: ya no sobreescribe currentProveedorId
+     si ya fue asignado por selectFacturaProveedor.
+     Corrige el "Selecciona un proveedor primero" cuando
+     el proveedor sí fue identificado por RFC.
    ======================================== */
 
 // File captured from any input method (click, paste, drag)
@@ -191,9 +193,12 @@ async function saveFactura(event) {
     
     // If standalone/dashboard mode, pick up proveedor from search
     if (window.facturaActionContext === 'standalone-porpagar' || window.facturaActionContext === 'dashboard-porpagar') {
-        var selId = document.getElementById('facturaProveedorId');
-        if (selId && selId.value) {
-            currentProveedorId = parseInt(selId.value);
+        // Si currentProveedorId ya fue asignado por selectFacturaProveedor, respetarlo
+        if (!currentProveedorId) {
+            var selId = document.getElementById('facturaProveedorId');
+            if (selId && selId.value) {
+                currentProveedorId = parseInt(selId.value);
+            }
         }
         if (!currentProveedorId) {
             alert('Selecciona un proveedor primero');
