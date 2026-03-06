@@ -1,12 +1,11 @@
 /* ========================================
-   DB-FACTURAS.JS v3
+   DB-FACTURAS.JS v4
    Ruta: js/database/db-facturas.js
    Fecha: 2026-03-06
-   
-   Cambios v3:
-   - Nueva nomenclatura de archivos en Drive:
-     "{Proveedor} {NumFactura} - {d mmm aa}.ext"
-     Ej: "La Mexicana 6669 - 6 mar 26.pdf"
+
+   Cambios v4:
+   - Validación: si "No. Factura" está vacío, muestra
+     mensaje amigable antes de intentar guardar.
    ======================================== */
 
 // File captured from any input method (click, paste, drag)
@@ -201,15 +200,23 @@ async function saveFactura(event) {
             return;
         }
     }
-    
+
+    // Validar No. Factura antes de continuar
+    const _numVal = (document.getElementById('facturaNumero').value || '').trim();
+    if (!_numVal) {
+        alert('⚠️ Por favor ingresa el No. de Factura antes de guardar.');
+        document.getElementById('facturaNumero').focus();
+        return;
+    }
+
     showLoading();
-    
+
     try {
         const docFile = _facturaFile || document.getElementById('facturaDocumento').files[0] || null;
-        
+
         const facturaData = {
             proveedor_id: currentProveedorId,
-            numero: document.getElementById('facturaNumero').value || null,
+            numero: _numVal,
             fecha: document.getElementById('facturaFecha').value,
             vencimiento: document.getElementById('facturaVencimiento').value,
             monto: parseFloat(document.getElementById('facturaMonto').value),
