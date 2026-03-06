@@ -1,13 +1,13 @@
 /* ========================================
-   js/invoice-extractor.js — V13
+   js/invoice-extractor.js — V17
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-06
-   Cambios V13:
-   - RFC_CONOCIDOS ahora almacena { nombre, rfc } para
-     mapear el RFC de la factura al RFC oficial del proveedor.
-     Ej: factura con EAM001231D51 → proveedor
-     "Nereo Gutierrez Juarez" + guarda RFC GUJN650703Q14.
-   - Intento 2 también usa rfcParaGuardar (el RFC oficial).
+   Cambios V17:
+   - Patrón "Serie y Folio" ahora acepta hasta 10 chars
+     alfanuméricos (cubre FACWEB-360370 de Bonafont).
+   - RFC_CONOCIDOS: al mapear EAM001231D51 → Nereo,
+     actualiza también el RFC mostrado en el resumen
+     (parsed.rfc_emisor + fila RFC del summary).
    ======================================== */
 
 // ============================================
@@ -760,7 +760,7 @@ function _parseInvoiceText(text) {
         // "Folio fiscal:" UUID-like (skip in post-check below)
         /(?:folio\s*fiscal)\s*[:;#]?\s*([A-Z0-9\-]{8,40})/i,
         /(?:no\.?\s*(?:de\s*)?factura)\s*[:;#]?\s*([A-Z0-9\-]{1,30})/i,
-        /(?:serie\s*y\s*folio)\s*[:;]?\s*([A-Z]{0,4})\s*[-]?\s*(\d{1,10})/i,
+        /(?:serie\s*y\s*folio)\s*[:;]?\s*([A-Z0-9]{0,10})\s*[-]?\s*(\d{1,10})/i,
         /(?:N[uú]mero\s*de\s*documento|Documento\s*No\.?)\s*[:;]?\s*([A-Z0-9\-]{1,30})/i,
         // CFE: "NO. DE SERVICIO:" as fallback
         /no\.?\s*de\s*servicio\s*[:;]?\s*(\d{6,20})/i
@@ -1586,6 +1586,18 @@ function _checkRfcAgainstProveedores(parsed) {
             });
             if (found) {
                 console.log('🔑 RFC conocido ' + rfcUpper + ' → proveedor:', found.nombre, '| RFC oficial:', rfcParaGuardar);
+                // Actualizar el RFC mostrado en el resumen al RFC oficial
+                parsed.rfc_emisor = rfcParaGuardar;
+                _extractedInvoiceData.rfc_emisor = rfcParaGuardar;
+                // Actualizar fila RFC en el summary
+                var _sumEl = document.getElementById('invoiceExtractedSummary');
+                if (_sumEl) {
+                    var _rows = _sumEl.querySelectorAll('div');
+                    if (_rows.length > 1) {
+                        _rows[1].innerHTML = '<span>✅ RFC</span>' +
+                            '<span style="font-weight:500;text-align:right;">' + rfcParaGuardar + '</span>';
+                    }
+                }
                 // Guardar el RFC oficial en Supabase si el proveedor aún no lo tiene
                 if (!found.rfc || found.rfc.toUpperCase().replace(/[\s\-]/g, '') !== rfcParaGuardar) {
                     supabaseClient.from('proveedores')
