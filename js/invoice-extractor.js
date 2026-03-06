@@ -1053,6 +1053,7 @@ function _parseInvoiceText(text) {
     // NO hace break en la primera — acumula todas.
     if (!ivaFromLine) {
         var ivaSum = 0;
+        var ivaSeen = [];  // para deduplicar partidas repetidas
         for (var li = 0; li < lines.length; li++) {
             var line = lines[li].trim();
             if (/reten/i.test(line) || /ret\.?\s*iva/i.test(line)) continue;
@@ -1079,7 +1080,15 @@ function _parseInvoiceText(text) {
                 }
                 if (allAmts.length > 0) bestIva = Math.min.apply(null, allAmts);
             }
-            if (bestIva) ivaSum += bestIva;
+            if (bestIva) {
+                // Deduplicar: si este valor exacto ya fue contado, ignorarlo
+                // (evita contar la misma partida que aparece en tabla Y en resumen)
+                var alreadyCounted = false;
+                for (var di = 0; di < ivaSeen.length; di++) {
+                    if (Math.abs(ivaSeen[di] - bestIva) < 0.01) { alreadyCounted = true; break; }
+                }
+                if (!alreadyCounted) { ivaSum += bestIva; ivaSeen.push(bestIva); }
+            }
         }
         if (ivaSum > 0) ivaFromLine = Math.round(ivaSum * 100) / 100;
     }
