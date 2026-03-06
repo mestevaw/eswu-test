@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flujo — Guardar Facturas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue:    #1e40af;
+    --blue-lt: #3b82f6;
+    --blue-bg: #eff6ff;
+    --green:   #15803d;
+    --green-bg:#f0fdf4;
+    --amber:   #b45309;
+    --amber-bg:#fffbeb;
+    --red:     #b91c1c;
+    --red-bg:  #fef2f2;
+    --gray:    #64748b;
+    --line:    #cbd5e1;
+    --bg:      #f8fafc;
+    --white:   #ffffff;
+    --text:    #0f172a;
+    --text-lt: #64748b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── TABS ─── */
+  .tabs-bar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--white);
+    border-bottom: 2px solid var(--line);
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    padding: 0 1rem;
+  }
+  .tab-btn {
+    padding: 1rem 2rem;
+    border: none; background: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    color: var(--text-lt);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .tab-btn.active {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+  }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ─── TITLE AREA ─── */
+  .page-header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+  }
+  .page-header h1 {
+    font-size: 1.6rem; font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .page-header p {
+    margin-top: 0.4rem;
+    font-size: 0.88rem; color: var(--text-lt);
+  }
+
+  /* ─── FLOW CONTAINER ─── */
+  .flow-wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem;
+  }
+
+  /* ─── STEP NODE ─── */
+  .step {
+    position: relative;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    animation: fadeUp 0.35s ease both;
+  }
+  .step:hover {
+    border-color: var(--blue-lt);
+    box-shadow: 0 4px 16px rgba(30,64,175,0.10);
+    transform: translateY(-1px);
+    transition: all 0.2s;
+  }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    font-size: 0.8rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    margin-top: 0.05rem;
+  }
+  .step-body { flex: 1; }
+  .step-title {
+    font-size: 0.93rem; font-weight: 600;
+    line-height: 1.3;
+  }
+  .step-desc {
+    margin-top: 0.3rem;
+    font-size: 0.78rem; color: var(--text-lt);
+    line-height: 1.5;
+  }
+  .step-icon {
+    font-size: 1.3rem;
+    margin-top: 0.05rem;
+    flex-shrink: 0;
+  }
+
+  /* Variants */
+  .step.decision {
+    border-color: #fde68a;
+    background: var(--amber-bg);
+  }
+  .step.decision .step-num { background: var(--amber); }
+
+  .step.auto {
+    border-color: #6ee7b7;
+    background: var(--green-bg);
+  }
+  .step.auto .step-num { background: var(--green); }
+
+  .step.end {
+    border-color: #a5b4fc;
+    background: #eef2ff;
+  }
+  .step.end .step-num { background: #4338ca; }
+
+  .step.warning {
+    border-color: #fca5a5;
+    background: var(--red-bg);
+  }
+  .step.warning .step-num { background: var(--red); }
+
+  /* ─── CONNECTOR ─── */
+  .connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 2px 0;
+    gap: 2px;
+  }
+  .connector-line {
+    width: 2px;
+    height: 22px;
+    background: var(--line);
+  }
+  .connector-arrow {
+    width: 0; height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid var(--line);
+  }
+  .connector-label {
+    font-size: 0.7rem; font-weight: 600;
+    color: var(--text-lt);
+    background: var(--bg);
+    padding: 0.1rem 0.5rem;
+    border-radius: 99px;
+    border: 1px solid var(--line);
+    margin: 2px 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── BRANCH ─── */
+  .branch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin: 4px 0;
+  }
+  .branch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .branch-label {
+    font-size: 0.7rem; font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    letter-spacing: 0.03em;
+  }
+  .branch-label.yes { background: #dcfce7; color: #15803d; }
+  .branch-label.no  { background: #fee2e2; color: #b91c1c; }
+  .branch-label.alt { background: #e0e7ff; color: #3730a3; }
+
+  .branch-step {
+    width: 100%;
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 0.7rem 0.75rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  .branch-step strong { display: block; font-weight: 600; font-size: 0.82rem; }
+  .branch-step span { color: var(--text-lt); font-size: 0.75rem; }
+  .branch-step.highlight { border-color: #6ee7b7; background: var(--green-bg); }
+  .branch-step.warn { border-color: #fca5a5; background: var(--red-bg); }
+
+  /* ─── BADGE ─── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; font-weight: 600;
+    padding: 0.15rem 0.55rem;
+    border-radius: 99px;
+    margin-top: 0.35rem;
+    letter-spacing: 0.02em;
+  }
+  .badge.auto { background: #dcfce7; color: #15803d; }
+  .badge.manual { background: #dbeafe; color: #1e40af; }
+  .badge.required { background: #fee2e2; color: #b91c1c; }
+
+  /* ─── SECTION LABEL ─── */
+  .section-label {
+    text-align: center;
+    font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-lt);
+    margin: 1.2rem 0 0.5rem;
+  }
+
+  /* ─── LEGEND ─── */
+  .legend {
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    margin-top: 2rem;
+    display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.75rem; color: var(--text-lt);
+  }
+  .legend-dot {
+    width: 10px; height: 10px; border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .step:nth-child(1)  { animation-delay: 0.05s; }
+  .step:nth-child(3)  { animation-delay: 0.10s; }
+  .step:nth-child(5)  { animation-delay: 0.15s; }
+  .step:nth-child(7)  { animation-delay: 0.20s; }
+  .step:nth-child(9)  { animation-delay: 0.25s; }
+  .step:nth-child(11) { animation-delay: 0.30s; }
+
+  /* ─── PHONE MOCKUP (mobile tab only) ─── */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .phone {
+    width: 220px;
+    background: #0f172a;
+    border-radius: 36px;
+    padding: 14px 10px;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .phone-notch {
+    width: 60px; height: 8px;
+    background: #1e293b;
+    border-radius: 99px;
+    margin: 0 auto 8px;
+  }
+  .phone-screen {
+    background: var(--bg);
+    border-radius: 24px;
+    overflow: hidden;
+    height: 160px;
+    display: flex; flex-direction: column;
+  }
+  .phone-bar {
+    background: var(--blue);
+    height: 32px;
+    display: flex; align-items: center;
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .phone-bar-title {
+    color: white; font-size: 0.6rem; font-weight: 700; flex: 1;
+    text-align: center;
+  }
+  .phone-content {
+    padding: 8px 6px;
+    flex: 1;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .phone-row {
+    background: var(--white);
+    border-radius: 6px;
+    padding: 5px 7px;
+    display: flex; justify-content: space-between; align-items: center;
+    border: 1px solid var(--line);
+  }
+  .phone-row-name { font-size: 0.52rem; font-weight: 600; color: var(--text); }
+  .phone-row-amt  { font-size: 0.52rem; font-weight: 700; color: var(--blue); }
+  .phone-fab {
+    position: absolute;
+    bottom: 24px; right: 18px;
+    width: 28px; height: 28px;
+    background: var(--blue-lt);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 0.9rem; font-weight: 700;
+    box-shadow: 0 4px 12px rgba(59,130,246,0.5);
+  }
+
+  /* ─── DESKTOP MOCKUP ─── */
+  .desktop-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+  }
+  .desktop {
+    width: 360px;
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 8px 8px 4px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  }
+  .desktop-bar {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 6px 6px;
+  }
+  .desktop-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .desktop-screen {
+    background: var(--bg);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 130px;
+    display: flex;
+  }
+  .desktop-sidebar {
+    width: 80px; background: #1e293b;
+    padding: 8px 5px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-item {
+    color: #94a3b8; font-size: 0.45rem; font-weight: 600;
+    padding: 4px 5px; border-radius: 4px;
+  }
+  .sidebar-item.active { background: var(--blue); color: white; }
+  .desktop-main { flex: 1; padding: 8px 8px; }
+  .desktop-toolbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .desktop-title { font-size: 0.5rem; font-weight: 700; color: var(--text); }
+  .desktop-plus {
+    width: 14px; height: 14px;
+    background: var(--blue-lt); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 0.55rem; font-weight: 700;
+  }
+  .desktop-row {
+    background: var(--white);
+    border-radius: 4px; border: 1px solid var(--line);
+    padding: 3px 5px;
+    display: flex; justify-content: space-between;
+    margin-bottom: 3px;
+  }
+  .desktop-row-name { font-size: 0.42rem; font-weight: 600; }
+  .desktop-row-amt  { font-size: 0.42rem; color: var(--blue); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('mobile')">
+    📱 Celular
+  </button>
+  <button class="tab-btn" onclick="switchTab('desktop')">
+    🖥️ Computadora
+  </button>
+</div>
+
+<!-- ══════════════════════════════════════
+     MOBILE FLOW
+═══════════════════════════════════════ -->
+<div id="tab-mobile" class="tab-panel active">
+  <div class="page-header">
+    <h1>Guardar Factura — 📱 Celular</h1>
+    <p>Desde el listado de Facturas x Pagar</p>
+  </div>
+
+  <div class="flow-wrap">
+
+    <!-- Mockup -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="phone-bar">
+            <div class="phone-bar-title">Facturas x Pagar</div>
+            <div style="color:white;font-size:1rem;font-weight:700;line-height:1;">+</div>
+          </div>
+          <div class="phone-content">
+            <div class="phone-row">
+              <span class="phone-row-name">Telmex</span>
+              <span class="phone-row-amt">$2,450</span>
+            </div>
+            <div class="phone-row">
+              <span class="phone-row-name">La Mexicana</span>
+              <span class="phone-row-amt">$8,100</span>
+            </div>
+            <div class="phone-row">
+              <span class="phone-row-name">Bonafont</span>
+              <span class="phone-row-amt">$620</span>
+            </div>
+          </div>
+        </div>
+        <div class="phone-fab">+</div>
+      </div>
+    </div>
+
+    <!-- FLOW -->
+    <div class="section-label">Parte 1 — Llega la factura al correo</div>
+
+    <div class="step">
+      <div class="step-icon">📧</div>
+      <div class="step-body">
+        <div class="step-title">Abre Gmail en el iPhone</div>
+        <div class="step-desc">Localiza el correo del proveedor. La factura viene como archivo <strong>PDF adjunto</strong>.</div>
+        <span class="badge manual">📬 App Gmail</span>
+      </div>
+      <div class="step-num">1</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">👆</div>
+      <div class="step-body">
+        <div class="step-title">Toca y mantén el PDF adjunto</div>
+        <div class="step-desc">Al mantener presionado el ícono del PDF en el correo, aparece un menú con opciones para compartir o guardar.</div>
+      </div>
+      <div class="step-num">2</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step decision">
+      <div class="step-icon">📤</div>
+      <div class="step-body">
+        <div class="step-title">Toca <strong>"Guardar en Archivos"</strong></div>
+        <div class="step-desc">Selecciona la opción en el menú flotante. iOS te pedirá elegir una ubicación.</div>
+        <div style="margin-top:0.5rem;background:#f0f9ff;border-radius:8px;padding:0.5rem 0.6rem;font-size:0.75rem;color:var(--blue);line-height:1.5;">
+          💡 Guárdalo en <strong>En mi iPhone → Descargas</strong> para encontrarlo fácil después.
+        </div>
+      </div>
+      <div class="step-num">3</div>
+    </div>
+
+    <div class="connector">
+      <div class="connector-line"></div>
+      <div class="connector-arrow"></div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div style="display:flex;align-items:center;gap:0.6rem;margin:0.5rem 0;">
+      <div style="flex:1;height:1px;background:var(--line);"></div>
+      <div class="section-label" style="margin:0;white-space:nowrap;">Parte 2 — Registra en el sistema</div>
+      <div style="flex:1;height:1px;background:var(--line);"></div>
+    </div>
+
+    <div class="step">
+      <div class="step-icon">📱</div>
+      <div class="step-body">
+        <div class="step-title">Abre la app ESWU</div>
+        <div class="step-desc">Ve al menú principal y navega a <strong>Proveedores → Facturas x Pagar</strong>.</div>
+      </div>
+      <div class="step-num">4</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">➕</div>
+      <div class="step-body">
+        <div class="step-title">Toca el botón <strong>+</strong></div>
+        <div class="step-desc">Aparece en la barra superior derecha. Se abre el panel de carga de factura.</div>
+      </div>
+      <div class="step-num">5</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">📁</div>
+      <div class="step-body">
+        <div class="step-title">Selecciona el PDF guardado</div>
+        <div class="step-desc">Toca el área de carga → aparece el explorador de <strong>Archivos</strong> → busca en <em>En mi iPhone → Descargas</em> y selecciona el PDF.</div>
+        <span class="badge manual">📁 Archivos del iPhone</span>
+      </div>
+      <div class="step-num">6</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step auto">
+      <div class="step-icon">🤖</div>
+      <div class="step-body">
+        <div class="step-title">El sistema lee la factura</div>
+        <div class="step-desc">Extrae automáticamente: proveedor (por RFC), número de factura, fecha, monto e IVA.</div>
+        <span class="badge auto">⚡ Automático</span>
+      </div>
+      <div class="step-num">7</div>
+    </div>
+
+    <div class="connector">
+      <div class="connector-line"></div>
+      <div class="connector-label">¿Proveedor detectado?</div>
+      <div class="connector-arrow"></div>
+    </div>
+
+    <div class="branch">
+      <div class="branch-col">
+        <span class="branch-label yes">✅ Sí</span>
+        <div class="branch-step highlight">
+          <strong>Asignado solo</strong>
+          <span>El nombre aparece en verde. No hay nada que hacer.</span>
+        </div>
+      </div>
+      <div class="branch-col">
+        <span class="branch-label no">❌ No</span>
+        <div class="branch-step warn">
+          <strong>Búscalo manual</strong>
+          <span>Escribe el nombre en el campo de búsqueda y selecciónalo.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step decision">
+      <div class="step-icon">👀</div>
+      <div class="step-body">
+        <div class="step-title">Revisa los datos extraídos</div>
+        <div class="step-desc">Verifica número de factura, fecha, monto e IVA. Corrige lo que sea necesario.</div>
+        <span class="badge manual">✏️ Editable</span>
+      </div>
+      <div class="step-num">8</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">📅</div>
+      <div class="step-body">
+        <div class="step-title">Confirma la fecha de vencimiento</div>
+        <div class="step-desc">Se sugieren 30 días desde la fecha de la factura. Ajusta si el proveedor maneja otro plazo.</div>
+      </div>
+      <div class="step-num">9</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">💾</div>
+      <div class="step-body">
+        <div class="step-title">Toca <strong>Guardar</strong></div>
+        <div class="step-desc">El PDF se sube a Google Drive con el nombre correcto y la factura queda registrada.</div>
+      </div>
+      <div class="step-num">10</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step end">
+      <div class="step-icon">🎉</div>
+      <div class="step-body">
+        <div class="step-title">¡Listo! Aparece en el listado</div>
+        <div class="step-desc">La factura queda visible de inmediato en <strong>Facturas x Pagar</strong>. Toca la fila para abrir el PDF en cualquier momento.</div>
+        <span class="badge auto">👁️ PDF visible al tocar la fila</span>
+      </div>
+      <div class="step-num">✓</div>
+    </div>
+
+    <!-- TIP -->
+    <div style="margin-top:1.25rem;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:0.9rem 1rem;display:flex;gap:0.65rem;align-items:flex-start;">
+      <span style="font-size:1.2rem;flex-shrink:0;">💡</span>
+      <div>
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.2rem;">Tip — Hazlo todo sin salir de Gmail</div>
+        <div style="font-size:0.77rem;color:var(--text-lt);line-height:1.5;">
+          También puedes tocar el PDF en Gmail → <strong>"Compartir"</strong> → buscar la app ESWU directamente en el menú de compartir de iOS, sin necesidad de guardarlo primero en Archivos.
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;border:1.5px solid #93c5fd;"></div> Acción del usuario</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dcfce7;border:1.5px solid #86efac;"></div> Automático</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fffbeb;border:1.5px solid #fde68a;"></div> Verificar</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#eef2ff;border:1.5px solid #a5b4fc;"></div> Resultado final</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     DESKTOP FLOW
+═══════════════════════════════════════ -->
+<div id="tab-desktop" class="tab-panel">
+  <div class="page-header">
+    <h1>Guardar Factura — 🖥️ Computadora</h1>
+    <p>Desde el menú lateral o desde la página principal</p>
+  </div>
+
+  <div class="flow-wrap">
+
+    <!-- Desktop mockup -->
+    <div class="desktop-wrap">
+      <div class="desktop">
+        <div class="desktop-bar">
+          <div class="desktop-dot" style="background:#ff5f57;"></div>
+          <div class="desktop-dot" style="background:#febc2e;"></div>
+          <div class="desktop-dot" style="background:#28c840;"></div>
+        </div>
+        <div class="desktop-screen">
+          <div class="desktop-sidebar">
+            <div class="sidebar-item">Inquilinos</div>
+            <div class="sidebar-item active">Proveedores</div>
+            <div class="sidebar-item" style="font-size:0.4rem;color:#64748b;">→ Facturas X Pagar</div>
+            <div class="sidebar-item">Admin</div>
+            <div class="sidebar-item">ESWU</div>
+          </div>
+          <div class="desktop-main">
+            <div class="desktop-toolbar">
+              <span class="desktop-title">Facturas x Pagar</span>
+              <div class="desktop-plus">+</div>
+            </div>
+            <div class="desktop-row">
+              <span class="desktop-row-name">Telmex</span>
+              <span class="desktop-row-amt">$2,450</span>
+            </div>
+            <div class="desktop-row">
+              <span class="desktop-row-name">La Mexicana</span>
+              <span class="desktop-row-amt">$8,100</span>
+            </div>
+            <div class="desktop-row">
+              <span class="desktop-row-name">Bonafont</span>
+              <span class="desktop-row-amt">$620</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2 ENTRY POINTS -->
+    <div class="section-label">2 formas de llegar</div>
+
+    <div class="branch" style="margin-bottom:0;">
+      <div class="branch-col">
+        <div class="branch-step highlight" style="text-align:center;">
+          <strong>🏠 Página principal</strong>
+          <span>Tile "Facturas x Pagar" en el dashboard</span>
+        </div>
+      </div>
+      <div class="branch-col">
+        <div class="branch-step highlight" style="text-align:center;">
+          <strong>📋 Menú lateral</strong>
+          <span>Proveedores → Facturas x Pagar</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">➕</div>
+      <div class="step-body">
+        <div class="step-title">Clic en el botón <strong>+</strong></div>
+        <div class="step-desc">Aparece en la barra superior de la tabla. Abre el modal para subir el PDF de la factura.</div>
+      </div>
+      <div class="step-num">1</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">📄</div>
+      <div class="step-body">
+        <div class="step-title">Sube el PDF de la factura</div>
+        <div class="step-desc">Tienes tres opciones según tu preferencia:</div>
+        <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap;">
+          <span class="badge manual">🖱️ Arrastrar y soltar</span>
+          <span class="badge manual">📂 Explorador de archivos</span>
+          <span class="badge manual">📋 Pegar (Ctrl+V)</span>
+        </div>
+      </div>
+      <div class="step-num">2</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step auto">
+      <div class="step-icon">🤖</div>
+      <div class="step-body">
+        <div class="step-title">Lectura automática del PDF</div>
+        <div class="step-desc">El sistema detecta: <strong>RFC del emisor</strong>, número de factura, fecha, monto total e IVA. En segundos.</div>
+        <span class="badge auto">⚡ Automático</span>
+      </div>
+      <div class="step-num">3</div>
+    </div>
+
+    <div class="connector">
+      <div class="connector-line"></div>
+      <div class="connector-label">¿RFC en el sistema?</div>
+      <div class="connector-arrow"></div>
+    </div>
+
+    <div class="branch">
+      <div class="branch-col">
+        <span class="branch-label yes">✅ Encontrado</span>
+        <div class="branch-step highlight">
+          <strong>Auto-asignado</strong>
+          <span>El proveedor se selecciona solo. Aparece en verde en el resumen.</span>
+        </div>
+      </div>
+      <div class="branch-col">
+        <span class="branch-label no">🔍 No encontrado</span>
+        <div class="branch-step warn">
+          <strong>Búsqueda manual</strong>
+          <span>Escribe parte del nombre en el campo de búsqueda y selecciona el proveedor.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step decision">
+      <div class="step-icon">📋</div>
+      <div class="step-body">
+        <div class="step-title">Revisa el resumen extraído</div>
+        <div class="step-desc">El modal muestra todos los datos. Puedes editar cualquier campo: número, fecha, monto, IVA o vencimiento.</div>
+        <span class="badge manual">✏️ Todos los campos son editables</span>
+      </div>
+      <div class="step-num">4</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">📅</div>
+      <div class="step-body">
+        <div class="step-title">Verifica la fecha de vencimiento</div>
+        <div class="step-desc">Se propone automáticamente 30 días desde la fecha de factura. Ajusta si el proveedor tiene diferente plazo.</div>
+      </div>
+      <div class="step-num">5</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step">
+      <div class="step-icon">💾</div>
+      <div class="step-body">
+        <div class="step-title">Clic en <strong>Guardar factura</strong></div>
+        <div class="step-desc">El sistema sube el PDF a Google Drive con el nombre: <code style="font-family:'DM Mono';font-size:0.75rem;background:#f1f5f9;padding:0.1rem 0.35rem;border-radius:4px;">Proveedor NumFact - d mmm aa.pdf</code></div>
+      </div>
+      <div class="step-num">6</div>
+    </div>
+
+    <div class="connector"><div class="connector-line"></div><div class="connector-arrow"></div></div>
+
+    <div class="step end">
+      <div class="step-icon">🎉</div>
+      <div class="step-body">
+        <div class="step-title">¡Listo! Aparece en la tabla</div>
+        <div class="step-desc">La factura queda visible de inmediato en <strong>Facturas x Pagar</strong>. Haz clic en la fila para abrir el PDF guardado en Drive.</div>
+        <span class="badge auto">🔗 PDF vinculado en Drive</span>
+      </div>
+      <div class="step-num">✓</div>
+    </div>
+
+    <!-- EXTRA TIP -->
+    <div style="margin-top:1.25rem;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:0.9rem 1rem;display:flex;gap:0.65rem;align-items:flex-start;">
+      <span style="font-size:1.2rem;flex-shrink:0;">💡</span>
+      <div>
+        <div style="font-size:0.82rem;font-weight:600;margin-bottom:0.2rem;">Tip — Arrastrar y soltar</div>
+        <div style="font-size:0.77rem;color:var(--text-lt);line-height:1.5;">
+          La forma más rápida en computadora: abre la carpeta con el PDF y <strong>arrástralo directamente</strong> sobre el área punteada del modal. No necesitas abrir el explorador de archivos.
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#dbeafe;border:1.5px solid #93c5fd;"></div> Acción del usuario</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dcfce7;border:1.5px solid #86efac;"></div> Automático</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fffbeb;border:1.5px solid #fde68a;"></div> Verificar</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#eef2ff;border:1.5px solid #a5b4fc;"></div> Resultado final</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function switchTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+</script>
+</body>
+</html>
