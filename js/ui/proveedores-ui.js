@@ -1,9 +1,12 @@
 /* ========================================
-   js/ui/proveedores-ui.js — V3
+   js/ui/proveedores-ui.js — V4
    Ruta: js/ui/proveedores-ui.js
-   Fecha: 2026-03-05
-   Cambios V3: Agrega botón "+" en toolbar mobile
-               de la vista Facturas x Pagar
+   Fecha: 2026-03-06
+   Cambios V4:
+   - En mobile "Facturas x Pagar", clic en fila abre
+     el PDF de la factura directamente (viewFacturaDoc).
+   - Agrega utilidades de limpieza: deleteFacturaAndDriveFile,
+     renameLaMexicanaFile, cleanupCasellasFacturas.
    ======================================== */
 
 // ============================================
@@ -523,7 +526,7 @@ function renderProveedoresFacturasPorPagar() {
         const fechaColor = isVencida ? 'color:var(--danger);font-weight:600;' : isProxima ? 'color:#d97706;font-weight:500;' : '';
         const nombre = f.proveedor.length > 35 ? f.proveedor.substring(0, 33) + '…' : f.proveedor;
         
-        cardsHtml += '<div onclick="currentProveedorId=' + f.provId + '; window.facturaActionContext=\'standalone-porpagar\'; showProveedorDetail(' + f.provId + ');" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
+        cardsHtml += '<div onclick="viewFacturaDoc(' + f.factId + ', \'documento\');" class="mc-row' + (idx % 2 ? ' mc-row-odd' : '') + '">';
         cardsHtml += '<div class="mc-line"><div class="mc-title">' + nombre + '</div>';
         cardsHtml += '<span class="mc-value">' + formatCurrency(f.monto) + '</span></div>';
         cardsHtml += '<div class="mc-line"><span class="mc-meta">' + (f.numero !== 'S/N' ? '#' + f.numero : '—') + '</span>';
@@ -1287,4 +1290,99 @@ async function selectLinkFile(fileId, fileName) {
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v21 cargado');
+// ============================================
+// UTILIDADES DE LIMPIEZA (llamar desde consola o admin)
+// ============================================
+
+// Elimina una factura de Supabase y su PDF de Drive
+async function deleteFacturaAndDriveFile(facturaId) {
+    if (!confirm('¿Eliminar factura ID ' + facturaId + ' y su archivo de Drive?')) return;
+    showLoading();
+    try {
+        // Buscar la factura en memoria para obtener el Drive file ID
+        var driveFileId = null;
+        for (var p = 0; p < proveedores.length; p++) {
+            var facs = proveedores[p].facturas || [];
+            for (var i = 0; i < facs.length; i++) {
+                if (facs[i].id === facturaId) {
+                    driveFileId = facs[i].documento_drive_file_id;
+                    break;
+                }
+            }
+            if (driveFileId) break;
+        }
+        // Si no está en memoria, buscarlo en Supabase
+        if (!driveFileId) {
+            var r = await supabaseClient.from('facturas').select('documento_drive_file_id').eq('id', facturaId).single();
+            if (!r.error && r.data) driveFileId = r.data.documento_drive_file_id;
+        }
+        // Eliminar de Drive
+        if (driveFileId && typeof deleteFileInDrive === 'function' && isGoogleConnected()) {
+            await deleteFileInDrive(driveFileId);
+            console.log('🗑️ Archivo Drive eliminado:', driveFileId);
+        }
+        // Eliminar de Supabase
+        var { error } = await supabaseClient.from('facturas').delete().eq('id', facturaId);
+        if (error) throw error;
+        console.log('✅ Factura ' + facturaId + ' eliminada de Supabase');
+        await loadProveedores();
+        renderProveedoresFacturasPorPagar();
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Renombra el archivo de La Mexicana en Drive y actualiza Supabase
+async function renameLaMexicanaFile() {
+    if (!isGoogleConnected()) { alert('Conecta Google Drive primero'); return; }
+    var oldNameFragment = 'FolioFiscal03e9d3b931cd499eb51b05fab5041f43';
+    var newName = 'La Mexicana 6669 - 6 mar 26.pdf';
+    showLoading();
+    try {
+        // Buscar en Supabase la factura cuyo documento tiene ese nombre en Drive
+        var driveFileId = null;
+        for (var p = 0; p < proveedores.length; p++) {
+            var facs = proveedores[p].facturas || [];
+            for (var i = 0; i < facs.length; i++) {
+                // El file ID lo tenemos; buscar en Drive por el nombre antiguo
+                if (facs[i].documento_drive_file_id) {
+                    driveFileId = facs[i].documento_drive_file_id;
+                    // Verificar si este archivo se llama con el folio fiscal
+                    var meta = await fetch('https://www.googleapis.com/drive/v3/files/' + driveFileId + '?fields=id,name&key=' + GOOGLE_API_KEY,
+                        { headers: { 'Authorization': 'Bearer ' + gdriveAccessToken } });
+                    var metaData = await meta.json();
+                    if (metaData.name && metaData.name.includes(oldNameFragment)) {
+                        // Renombrar en Drive
+                        if (typeof renameFileInDrive === 'function') {
+                            await renameFileInDrive(driveFileId, newName);
+                            console.log('✅ Archivo renombrado en Drive a:', newName);
+                        }
+                        alert('✅ Archivo renombrado a: ' + newName);
+                        return;
+                    }
+                }
+            }
+        }
+        alert('No se encontró el archivo de La Mexicana en los proveedores cargados. Verifica que la factura esté activa.');
+    } catch (e) {
+        alert('Error: ' + e.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Lista las facturas activas para identificar cuáles borrar (ayuda al admin)
+async function listFacturasForCleanup() {
+    var rows = [];
+    proveedores.forEach(function(p) {
+        (p.facturas || []).forEach(function(f) {
+            rows.push({ id: f.id, proveedor: p.nombre, numero: f.numero, fecha: f.fecha, drive: f.documento_drive_file_id || '(sin drive)' });
+        });
+    });
+    console.table(rows);
+    console.log('💡 Para borrar: deleteFacturaAndDriveFile(ID)');
+}
+
+console.log('✅ PROVEEDORES-UI.JS v45 cargado (2026-03-06)');
