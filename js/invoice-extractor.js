@@ -1569,12 +1569,27 @@ function _checkRfcAgainstProveedores(parsed) {
         return;
     }
 
+    // ── RFCS CONOCIDOS (hardcoded) ─────────────────────────────────────────
+    // Proveedores cuyo RFC fue dado de alta pero no está en la BD de proveedores;
+    // mapeamos el RFC al nombre exacto del proveedor en el sistema.
+    var RFC_CONOCIDOS = {
+        'EAM001231D51': 'Nereo Gutierrez Juarez'
+    };
+    
     // Buscar por RFC en proveedores
     var rfcUpper = parsed.rfc_emisor.toUpperCase().replace(/[\s\-]/g, '');
     var found = null;
     if (typeof proveedores !== 'undefined') {
-        // Intento 1: match exacto de RFC
-        found = proveedores.find(function(p) {
+        // Intento 0: RFC conocido → buscar proveedor por nombre hardcoded
+        var nombreConocido = RFC_CONOCIDOS[rfcUpper];
+        if (nombreConocido) {
+            found = proveedores.find(function(p) {
+                return (p.nombre || '').toLowerCase().trim() === nombreConocido.toLowerCase().trim();
+            });
+            if (found) console.log('🔑 RFC conocido ' + rfcUpper + ' → proveedor:', found.nombre);
+        }
+        // Intento 1: match exacto de RFC en BD
+        if (!found) found = proveedores.find(function(p) {
             return p.rfc && p.rfc.toUpperCase().replace(/[\s\-]/g, '') === rfcUpper;
         });
         // Intento 2: el proveedor existe pero sin RFC — buscar por nombre si tenemos nombre_emisor
