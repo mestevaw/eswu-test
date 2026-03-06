@@ -1,6 +1,11 @@
 /* ========================================
-   INQUILINOS-UI.JS v1
-   Última actualización: 2026-02-12 20:30 CST
+   INQUILINOS-UI.JS v2
+   Ruta: js/ui/inquilinos-ui.js
+   Fecha: 2026-03-06
+   Cambios v2:
+   - Limpia adminSubMenu al entrar a inquilinos,
+     evitando que el menú de Admin (Activos, Bitácora...)
+     quede visible sobre la pantalla.
    ======================================== */
 
 // ============================================
@@ -27,6 +32,9 @@ function showInquilinosView(view) {
     if (typeof showHeader === 'function') showHeader();
     if (isMobile()) hideMobileMenu();
     document.getElementById('inquilinosSubMenu').classList.remove('active');
+    // Limpiar adminSubMenu para que no quede visible al venir desde Admin
+    var _adm = document.getElementById('adminSubMenu');
+    if (_adm) _adm.classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('inquilinosPage').classList.add('active');
     
