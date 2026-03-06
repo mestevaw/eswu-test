@@ -170,6 +170,7 @@
                 <button class="submenu-btn" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</button>
                 <button class="submenu-btn" onclick="showProveedoresView('facturasPorPagar')">Facturas X Pagar</button>
                 <button class="submenu-btn" onclick="showProveedoresView('mantenimiento')">Mantenimiento</button>
+                <button class="submenu-btn" onclick="showProveedoresView('limpieza')" style="color:var(--danger);">🗑️ Limpieza</button>
             </div>
 
             <div id="adminSubMenu" class="submenu-container">
@@ -546,9 +547,33 @@
                         </div>
                     </div>
                 </div>
-            </div>
+                <!-- Limpieza de Facturas -->
+                <div id="proveedoresLimpiezaView" class="hidden">
+                    <div class="card">
+                        <div class="card-header section-toolbar desktop-hidden">
+                            <div class="toolbar-left">
+                                <div class="nav-menu">
+                                    <button onclick="toggleNavMenu(this)" class="toolbar-hamburger">☰</button>
+                                    <div class="nav-dropdown">
+                                        <div class="nav-dropdown-item nav-home" onclick="showDashboard()">🏠 Home</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('list')">Listado</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPagadas')">Facturas Pagadas</div>
+                                        <div class="nav-dropdown-item" onclick="showProveedoresView('facturasPorPagar')">Facturas x Pagar</div>
+                                        <div class="nav-dropdown-item active">🗑️ Limpieza</div>
+                                    </div>
+                                </div>
+                                <span class="toolbar-title">ESWU — Limpieza de Facturas</span>
+                            </div>
+                        </div>
+                        <div style="padding:1rem;">
+                            <div id="limpiezaContent">
+                                <p style="text-align:center; color:var(--text-light); padding:2rem;">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                <div id="activosPage" class="page">
+            </div>
                     <div class="card">
                         <div class="card-header">
                             <h2 class="card-title">Activos</h2>
@@ -686,7 +711,7 @@
                                 <h2 id="contabilidadTitle" class="card-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Contabilidad</h2>
                             </div>
                             <div style="display:flex; align-items:center; gap:0.4rem;">
-                                <!-- + upload btn removido: facturas solo vía Facturas x Pagar -->
+                                <span id="contabilidadUploadBtn" onclick="uploadToCurrentFolder()" title="Subir documento" style="display:none; color:var(--success); font-size:1.6rem; font-weight:700; cursor:pointer; padding:0 0.4rem; border-radius:4px; transition:background 0.2s;" onmouseover="this.style.background='#dcfce7'" onmouseout="this.style.background='transparent'">+</span>
                             </div>
                         </div>
                         <div style="padding:1rem; position:relative;">
@@ -2166,16 +2191,16 @@
     <script src="js/database/db-core.js?v=22"></script>
     <script src="js/database/db-inquilinos.js?v=17"></script>
     <script src="js/database/db-proveedores.js?v=25"></script>
-    <script src="js/database/db-facturas.js?v=35"></script>
+    <script src="js/database/db-facturas.js?v=36"></script>
     <script src="js/database/db-fetch-docs.js?v=7"></script>
     <script src="js/database/db-admin.js?v=15"></script>
     <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=52"></script>
     <script src="js/ui/tables.js?v=22"></script>
     <script src="js/ui/inquilinos-ui.js?v=36"></script>
-    <script src="js/ui/proveedores-ui.js?v=45"></script>
+    <script src="js/ui/proveedores-ui.js?v=46"></script>
     <script src="js/ui/mantenimiento-ui.js?v=16"></script>
-    <script src="js/ui/contabilidad-ui.js?v=28"></script>
+    <script src="js/ui/contabilidad-ui.js?v=29"></script>
     <script src="js/ui/eswu-ui.js?v=42"></script>
     <script src="js/ui/admin-ui.js?v=21"></script>
     <script src="js/ui/numeros-ui.js?v=24"></script>
@@ -2183,7 +2208,7 @@
     <script src="js/modals/modals.js?v=25"></script>
     <script src="js/modals/inquilino-modals.js?v=13"></script>
     <script src="js/modals/proveedor-modals.js?v=27"></script>
-    <script src="js/invoice-extractor.js?v=14"></script>
+    <script src="js/invoice-extractor.js?v=15"></script>
     <script src="js/main.js?v=29"></script>
     <script>
         // Prevent browser from opening files dropped outside drop zones
