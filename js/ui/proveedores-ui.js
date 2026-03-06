@@ -1,5 +1,5 @@
 /* ========================================
-   js/ui/proveedores-ui.js — V5
+   js/ui/proveedores-ui.js — V6
    Ruta: js/ui/proveedores-ui.js
    Fecha: 2026-03-06
    Cambios V5:
@@ -116,6 +116,7 @@ function showProveedoresView(view) {
         ];
         headerCfg.actions = [
             { icon: '📊', onclick: 'exportFacturasPorPagarToExcel()' },
+            { icon: '?', onclick: "window.open('flujo-facturas.html','_blank')", title: 'Cómo guardar facturas' },
             { icon: '+', onclick: "showUploadInvoicePdfModal('standalone-porpagar');" }
         ];
     } else if (view === 'mantenimiento') {
@@ -1488,4 +1489,4 @@ async function deleteFacturaFromLimpieza(facturaId, proveedorNombre, driveFileId
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v46 cargado (2026-03-06)');
+console.log('✅ PROVEEDORES-UI.JS v47 cargado (2026-03-06)');
