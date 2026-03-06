@@ -1,13 +1,10 @@
 /* ========================================
-   js/invoice-extractor.js — V17
+   js/invoice-extractor.js — V18
    Ruta: js/invoice-extractor.js
    Fecha: 2026-03-06
-   Cambios V17:
-   - Patrón "Serie y Folio" ahora acepta hasta 10 chars
-     alfanuméricos (cubre FACWEB-360370 de Bonafont).
-   - RFC_CONOCIDOS: al mapear EAM001231D51 → Nereo,
-     actualiza también el RFC mostrado en el resumen
-     (parsed.rfc_emisor + fila RFC del summary).
+   Cambios V18:
+   - Extracción de texto y OCR limitados a página 1.
+     Evita ruido de páginas adicionales (ej. Telmex 4 págs).
    ======================================== */
 
 // ============================================
@@ -227,8 +224,8 @@ async function _extractPdfText(arrayBuffer) {
     
     console.log('📄 PDF tiene', pdf.numPages, 'páginas');
 
-    // Extract text from all pages (most invoices are 1-2 pages)
-    var maxPages = Math.min(pdf.numPages, 4);
+    // Extraer solo la primera página — todos los datos fiscales relevantes están ahí
+    var maxPages = 1;
     for (var i = 1; i <= maxPages; i++) {
         var page = await pdf.getPage(i);
         var content = await page.getTextContent({ normalizeWhitespace: true, disableCombineTextItems: false });
@@ -320,11 +317,11 @@ async function _extractPdfWithOCR(arrayBuffer) {
     var pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
     var fullText = '';
     
-    // OCR the first 2 pages (invoices rarely need more)
-    var maxPages = Math.min(pdf.numPages, 2);
+    // OCR solo la primera página — los datos fiscales siempre están ahí
+    var maxPages = 1;
     
     for (var i = 1; i <= maxPages; i++) {
-        console.log('🔍 OCR página', i, 'de', maxPages, '...');
+        console.log('🔍 OCR página', i, '...');
         
         var page = await pdf.getPage(i);
         // Render at 2x scale for better OCR accuracy
