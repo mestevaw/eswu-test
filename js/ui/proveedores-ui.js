@@ -60,6 +60,9 @@ function showProveedoresView(view) {
     if (typeof showHeader === 'function') showHeader();
     if (isMobile()) hideMobileMenu();
     document.getElementById('proveedoresSubMenu').classList.remove('active');
+    // Limpiar adminSubMenu para que no quede visible al venir desde Admin
+    var _adm = document.getElementById('adminSubMenu');
+    if (_adm) _adm.classList.remove('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('proveedoresPage').classList.add('active');
     
@@ -1489,4 +1492,4 @@ async function deleteFacturaFromLimpieza(facturaId, proveedorNombre, driveFileId
     }
 }
 
-console.log('✅ PROVEEDORES-UI.JS v47 cargado (2026-03-06)');
+console.log('✅ PROVEEDORES-UI.JS v48 cargado (2026-03-06)');
