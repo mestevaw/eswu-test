@@ -511,7 +511,6 @@
                                     <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dic</option>
                                 </select>
                                 <span class="toolbar-btn" onclick="exportFacturasPorPagarToExcel()" title="Exportar">📊</span>
-                                <span class="toolbar-btn" onclick="window.open('flujo-facturas.html','_blank')" title="Cómo guardar facturas" style="font-size:0.85rem; font-weight:700;">?</span>
                             </div>
                         </div>
                         <div class="table-container">
@@ -1368,8 +1367,14 @@
                         </div>
                     </div>
 
-                    <div style="text-align:center; margin-top:0.8rem;">
-                        <a href="#" onclick="event.preventDefault(); _skipExtractionAndRegister();" style="font-size:0.82rem; color:var(--text-light);">Registrar sin PDF →</a>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.9rem;">
+                        <button onclick="_skipExtractionAndRegister()" style="width:100%; padding:0.55rem 1rem; background:var(--bg); border:1.5px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.85rem; color:var(--text); cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.background='#f0f9ff';" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)';">
+                            Registrar sin PDF →
+                        </button>
+                        <div onclick="window.open('flujo-facturas.html','_blank')" style="display:flex; align-items:center; justify-content:center; gap:0.6rem; padding:0.55rem 1rem; background:#fafafa; border:1.5px dashed #94a3b8; border-radius:8px; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.borderColor='#64748b';this.style.background='#f1f5f9';" onmouseout="this.style.borderColor='#94a3b8';this.style.background='#fafafa';">
+                            <span style="font-size:1rem;">❓</span>
+                            <span style="font-size:0.82rem; font-weight:600; color:#475569;">Instrucciones para subir facturas</span>
+                        </div>
                     </div>
                 </div>
 
@@ -2208,8 +2213,8 @@
     <script src="js/database/db-mensajes.js?v=23"></script>
     <script src="js/ui/navigation.js?v=52"></script>
     <script src="js/ui/tables.js?v=22"></script>
-    <script src="js/ui/inquilinos-ui.js?v=36"></script>
-    <script src="js/ui/proveedores-ui.js?v=47"></script>
+    <script src="js/ui/inquilinos-ui.js?v=37"></script>
+    <script src="js/ui/proveedores-ui.js?v=49"></script>
     <script src="js/ui/mantenimiento-ui.js?v=16"></script>
     <script src="js/ui/contabilidad-ui.js?v=29"></script>
     <script src="js/ui/eswu-ui.js?v=42"></script>
