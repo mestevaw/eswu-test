@@ -1,6 +1,11 @@
 /* ========================================
-   CONTABILIDAD-UI.JS v15 (UNIFICADO)
-   Última actualización: 2026-02-21
+   CONTABILIDAD-UI.JS v16
+   Ruta: js/ui/contabilidad-ui.js
+   Fecha: 2026-03-06
+   
+   Cambios v16:
+   - Eliminado botón "+" de Contabilidad (las facturas
+     se dan de alta solo vía Facturas x Pagar).
    
    Explorador de Drive, carpetas, búsqueda,
    vinculación, importación, sincronización,
@@ -93,7 +98,6 @@ function renderContabilidadContent() {
         return;
     }
     
-    document.getElementById('contabilidadUploadBtn').style.display = 'none';
     updateContabilidadTitle('Contabilidad');
     renderContabilidadYearsAndMonths();
 }
@@ -206,7 +210,6 @@ function navigateBackTo(index) {
         // Go back to years/months view
         contabilidadNavStack = [];
         currentDriveFolderId = null;
-        document.getElementById('contabilidadUploadBtn').style.display = 'none';
         document.getElementById('contabilidadHomeBtn').style.display = 'none';
         document.getElementById('contabilidadAnios').style.display = 'flex';
         document.getElementById('contabilidadSearchInput').value = '';
@@ -254,7 +257,6 @@ async function navigateToDriveFolder(folderId) {
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">⏳ Cargando...</p>';
     
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
-    document.getElementById('contabilidadUploadBtn').style.display = 'none';
     
     try {
         const { folders, files } = await listDriveFolder(folderId);
@@ -313,7 +315,6 @@ async function loadSubcarpetaFromSupabase() {
     var mesNum = MESES_NOMBRES.indexOf(mesNombre);
     var subcarpeta = contabilidadNavStack.length >= 2 ? contabilidadNavStack[contabilidadNavStack.length - 1].label : '';
     
-    document.getElementById('contabilidadUploadBtn').style.display = 'inline';
     
     try {
         var query = supabaseClient
@@ -649,7 +650,6 @@ async function searchContabilidadDocs() {
     contentDiv.innerHTML = '<p style="text-align:center; color:var(--text-light); padding:2rem;">🔍 Buscando...</p>';
     
     document.getElementById('contabilidadAnios').style.display = 'none';
-    document.getElementById('contabilidadUploadBtn').style.display = 'none';
     document.getElementById('contabilidadHomeBtn').style.display = 'inline';
     updateContabilidadTitle('Búsqueda: "' + term + '"');
     
@@ -1143,4 +1143,4 @@ function applyUserLevel() {
     }
 }
 
-console.log('✅ CONTABILIDAD-UI.JS v15 cargado (unificado - 2026-02-21)');
+console.log('✅ CONTABILIDAD-UI.JS v16 cargado (2026-03-06)');
