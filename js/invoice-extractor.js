@@ -1122,6 +1122,17 @@ function _parseInvoiceText(text) {
         result.iva = Math.round((result.total * 0.16 / 1.16) * 100) / 100;
     }
 
+    // ── SANITY CHECK: si IVA ≈ 16% del total, capturamos el subtotal en vez del total ──
+    // Regla: total_real = subtotal + IVA  →  si IVA / total ≈ 0.16, total está mal.
+    if (result.total && result.iva) {
+        var ivaRatio = result.iva / result.total;
+        if (ivaRatio >= 0.155 && ivaRatio <= 0.165) {
+            var correctedTotal = Math.round((result.total + result.iva) * 100) / 100;
+            console.log('⚠️ IVA ≈ 16% de total → probable subtotal. Corrigiendo: ' + result.total + ' + ' + result.iva + ' = ' + correctedTotal);
+            result.total = correctedTotal;
+        }
+    }
+
     // --- FECHA DE VENCIMIENTO ---
     var vencPatterns = [
         // CFE: "FECHA LÍMITE DE PAGO:07 MAR 2026" (possibly no space after colon)
