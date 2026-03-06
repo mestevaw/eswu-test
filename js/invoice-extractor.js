@@ -963,41 +963,48 @@ function _parseInvoiceText(text) {
         /\$\s*([\d,]{3,}\.?\d{0,2})/
     ];
     
-    // First, extract Subtotal for validation
+    // Extraer Subtotal — también busca en línea siguiente (PDFs donde label y valor están separados)
     var subtotalVal = null;
     for (var li = 0; li < lines.length; li++) {
         if (/sub\s*total/i.test(lines[li])) {
             var stm = /\$?\s*([\d,]+\.\d{2})/.exec(lines[li]);
+            if (!stm && li + 1 < lines.length) {
+                stm = /^\s*\$?\s*([\d,]+\.\d{2})\s*$/.exec(lines[li + 1]);
+            }
             if (stm) { subtotalVal = parseFloat(stm[1].replace(/,/g, '')); break; }
         }
     }
-    
-    // PASS 1 (Total): Line-by-line — recolecta TODOS los candidatos y toma el MAYOR.
-    // Razón: PDF.js puede extraer "Sub" y "Total" en líneas separadas, haciendo fallar
-    // el filtro de exclusión. El gran total SIEMPRE es >= al subtotal.
+
+    // PASS 1 (Total): recolecta candidatos y toma el MAYOR.
+    // LOOKAHEAD: si "TOTAL" está en una línea y el importe en la siguiente, lo captura igual.
     var totalCandidatesLine = [];
     for (var li = 0; li < lines.length; li++) {
         var line = lines[li].trim();
-        // Debe contener "total" como palabra individual
         if (!/\btotal\b/i.test(line)) continue;
-        // Excluir líneas compuestas de "total"
         if (/sub\s*total|total\s*(?:impuestos?|descuentos?|retenidos?|con\s*letra|trasladados?|locales?)/i.test(line)) continue;
-        // Excluir líneas con códigos fiscales o retenciones
         if (/\b(?:002|001)\s*[-:]|iva\s*\d|\bisr\b|trasladad|retenid|ret\.?\s*iva/i.test(line)) continue;
-        // Excluir encabezados de columna de tabla sin importe
         if (/\b(descripci[oó]n|unidad|cantidad|clave|l[ií]nea|venta|base)\b/i.test(line) && !/[\d,]+\.\d{2}/.test(line)) continue;
 
-        var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) || /\$\s*([\d,]+\.\d{2})/.exec(line) || /\b([\d,]+\.\d{2})\s*$/.exec(line);
+        var totalMatch = /\$?\s*([\d,]+\.\d{2})\s*$/.exec(line) ||
+                         /\$\s*([\d,]+\.\d{2})/.exec(line) ||
+                         /\b([\d,]+\.\d{2})\s*$/.exec(line);
+
+        // Lookahead: valor en la línea siguiente
+        if (!totalMatch && li + 1 < lines.length) {
+            var nxt = lines[li + 1].trim();
+            if (/^[\$\s]*([\d,]+\.\d{2})\s*$/.test(nxt)) {
+                totalMatch = /([\d,]+\.\d{2})/.exec(nxt);
+            }
+        }
+
         if (totalMatch) {
             var tv = parseFloat(totalMatch[1].replace(/,/g, ''));
             if (!isNaN(tv) && tv > 0) {
-                // Excluir si el valor coincide exactamente con el subtotal
                 if (subtotalVal && Math.abs(tv - subtotalVal) < 0.01) continue;
                 totalCandidatesLine.push(tv);
             }
         }
     }
-    // Tomar el MAYOR de todos los candidatos
     var totalFromLine = totalCandidatesLine.length > 0 ? Math.max.apply(null, totalCandidatesLine) : null;
 
     if (totalFromLine) {
@@ -1538,13 +1545,26 @@ function _checkRfcAgainstProveedores(parsed) {
         return;
     }
 
-    // Search by RFC in proveedores
-    var rfcUpper = parsed.rfc_emisor.toUpperCase();
+    // Buscar por RFC en proveedores
+    var rfcUpper = parsed.rfc_emisor.toUpperCase().replace(/[\s\-]/g, '');
     var found = null;
     if (typeof proveedores !== 'undefined') {
+        // Intento 1: match exacto de RFC
         found = proveedores.find(function(p) {
-            return p.rfc && p.rfc.toUpperCase().replace(/[\s\-]/g, '') === rfcUpper.replace(/[\s\-]/g, '');
+            return p.rfc && p.rfc.toUpperCase().replace(/[\s\-]/g, '') === rfcUpper;
         });
+        // Intento 2: el proveedor existe pero sin RFC — buscar por nombre si tenemos nombre_emisor
+        if (!found && parsed.nombre_emisor) {
+            var nameNorm = parsed.nombre_emisor.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            found = proveedores.find(function(p) {
+                var pNorm = (p.nombre || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+                return pNorm.length > 4 && (pNorm.indexOf(nameNorm.substring(0, 8)) !== -1 || nameNorm.indexOf(pNorm.substring(0, 8)) !== -1);
+            });
+            // Si encontramos por nombre, guardar el RFC en el proveedor encontrado para futuras búsquedas
+            if (found) {
+                console.log('📋 Proveedor encontrado por nombre:', found.nombre, '— considerar agregar RFC', parsed.rfc_emisor);
+            }
+        }
     }
 
     if (found) {
@@ -1808,7 +1828,6 @@ function _interceptRegistrarFactura() {
         showUploadInvoicePdfModal('dashboard-porpagar');
     };
 }
-
 // Button: "Continuar" from the extraction results (when proveedor IS found)
 function _continueToRegistrarFactura() {
     _proceedToRegistrarFactura();
