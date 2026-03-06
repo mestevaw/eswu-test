@@ -757,4 +757,44 @@ async function findOrCreateSubfolder(folderName, parentId) {
     return result.id;
 }
 
-console.log('✅ GOOGLE-DRIVE.JS v4 cargado');
+// ============================================
+// DELETE FILE IN DRIVE
+// ============================================
+
+async function deleteFileInDrive(fileId) {
+    if (!fileId || !gdriveAccessToken) return;
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + gdriveAccessToken }
+    });
+    if (!resp.ok && resp.status !== 204) {
+        var err = await resp.json().catch(function() { return {}; });
+        throw new Error('Drive delete failed: ' + (err.error && err.error.message || resp.status));
+    }
+    console.log('🗑️ Drive file deleted:', fileId);
+}
+
+// ============================================
+// RENAME FILE IN DRIVE
+// ============================================
+
+async function renameFileInDrive(fileId, newName) {
+    if (!fileId || !newName || !gdriveAccessToken) return;
+    var resp = await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '?key=' + GOOGLE_API_KEY, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': 'Bearer ' + gdriveAccessToken,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: newName })
+    });
+    if (!resp.ok) {
+        var err = await resp.json().catch(function() { return {}; });
+        throw new Error('Drive rename failed: ' + (err.error && err.error.message || resp.status));
+    }
+    var data = await resp.json();
+    console.log('✏️ Drive file renamed to:', data.name, '| ID:', fileId);
+    return data;
+}
+
+console.log('✅ GOOGLE-DRIVE.JS v5 cargado (2026-03-06)');
